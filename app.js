@@ -95,19 +95,20 @@ async function initSync() {
   const cloudData = await syncPull();
   if (!cloudData || !cloudData.daily_ledger) return;
 
-  const localLen  = (db && db.daily_ledger) ? db.daily_ledger.length : 0;
-  const cloudLen  = cloudData.daily_ledger.length;
   const cloudAt   = cloudData._synced_at ? new Date(cloudData._synced_at) : new Date(0);
   const localAt   = cfg.last_push        ? new Date(cfg.last_push)        : new Date(0);
 
-  if (cloudLen > localLen || cloudAt > localAt) {
+  if (cloudAt > localAt || !db || !db.daily_ledger) {
     db = cloudData;
     localStorage.setItem('octaneflow_db', JSON.stringify(db));
+    if (db.users) {
+      localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(db.users));
+    }
     cfg.last_push = cloudData._synced_at || new Date().toISOString();
     saveSyncCfg(cfg);
-    console.log('[Sync] Loaded cloud data — rows:', cloudLen);
+    console.log('[Sync] Loaded cloud data — rows:', db.daily_ledger.length);
   } else {
-    console.log('[Sync] Local is current — rows:', localLen);
+    console.log('[Sync] Local is current — rows:', db.daily_ledger.length);
   }
 }
 
@@ -143,10 +144,17 @@ async function hashString(str) {
 
 // ── User Store ─────────────────────────────────────────────
 function getUsers() {
+  if (db && db.users) return db.users;
   try { return JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || '{}'); }
   catch { return {}; }
 }
-function saveUsers(u) { localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(u)); }
+function saveUsers(u) {
+  if (db) {
+    db.users = u;
+    saveDB();
+  }
+  localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(u));
+}
 
 // ── Session (sessionStorage — clears on browser close) ─────
 function getSession() {
@@ -496,6 +504,12 @@ function renderUserManagement() {
     addBtn._wired = true;
     addBtn.addEventListener('click', addEmployee);
   }
+
+  const setupBtn = document.getElementById('copy-setup-link-btn');
+  if (setupBtn && !setupBtn._wired) {
+    setupBtn._wired = true;
+    setupBtn.addEventListener('click', copyEmployeeSetupLink);
+  }
 }
 
 async function addEmployee() {
@@ -537,6 +551,22 @@ function toggleEmployee(username) {
   users[username].active = !users[username].active;
   saveUsers(users);
   renderUserManagement();
+}
+
+function copyEmployeeSetupLink() {
+  const cfg = getSyncCfg();
+  if (!cfg.gistId || !cfg.gistToken) {
+    showNotification('⚠️ Setup cloud sync first under Settings.', 'danger');
+    return;
+  }
+  const token = btoa(`${cfg.gistId}|${cfg.gistToken}`);
+  const url = `${location.origin}${location.pathname}#setup=${token}`;
+  
+  navigator.clipboard.writeText(url)
+    .then(() => showNotification('📋 Setup link copied to clipboard! Send this to employees.', 'success'))
+    .catch(() => {
+      alert(`Could not copy automatically. Here is the link:\n\n${url}`);
+    });
 }
 
 // ── Format datetime helper ─────────────────────────────────
@@ -626,6 +656,15 @@ function loadDB() {
       db.stock = { ...DEFAULT_DB.stock, ...db.stock };
       db.cashflow = { ...DEFAULT_DB.cashflow, ...db.cashflow };
       
+      // Migrate users to DB if not present
+      if (!db.users) {
+        try {
+          db.users = JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || '{}');
+        } catch {
+          db.users = {};
+        }
+      }
+      
       // Sanitize fields against NaN / corrupt inputs
       db.stock.petrol = Number(db.stock.petrol);
       if (isNaN(db.stock.petrol)) db.stock.petrol = DEFAULT_DB.stock.petrol;
@@ -691,9 +730,17 @@ function loadDB() {
     } catch (e) {
       console.error("Failed to parse local storage, loading defaults", e);
       db = JSON.parse(JSON.stringify(DEFAULT_DB));
+      if (!db.users) {
+        try { db.users = JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || '{}'); }
+        catch { db.users = {}; }
+      }
     }
   } else {
     db = JSON.parse(JSON.stringify(DEFAULT_DB));
+    if (!db.users) {
+      try { db.users = JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || '{}'); }
+      catch { db.users = {}; }
+    }
     saveDB();
   }
 }
@@ -707,6 +754,8 @@ function saveDB() {
 
 function resetDB() {
   db = JSON.parse(JSON.stringify(DEFAULT_DB));
+  try { db.users = JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || '{}'); }
+  catch { db.users = {}; }
   saveDB();
   showNotification("System data reset to default.", "info");
   initApp();
@@ -3328,6 +3377,27 @@ function initApp() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  // 1. Check for configuration invite/setup link in URL hash
+  const hash = window.location.hash;
+  if (hash && hash.startsWith('#setup=')) {
+    try {
+      const encoded = hash.substring(7); // remove '#setup='
+      const decoded = atob(encoded); // decode base64
+      const [gistId, gistToken] = decoded.split('|');
+      if (gistId && gistToken) {
+        saveSyncCfg({ gistId, gistToken });
+        // Clear hash from URL immediately so it doesn't linger in navigation history
+        history.replaceState(null, document.title, window.location.pathname + window.location.search);
+        console.log('[Sync] Setup configuration successfully applied from link.');
+      }
+    } catch (e) {
+      console.error('[Sync] Failed to parse setup link:', e);
+    }
+  }
+
+  // 2. Unconditionally load database so 'db' is always defined
+  loadDB();
+
   // Wire up Take a Tour button
   const tourBtn = document.getElementById('take-tour-btn');
   if (tourBtn) tourBtn.addEventListener('click', () => startTour());
@@ -3341,12 +3411,21 @@ window.addEventListener('DOMContentLoaded', () => {
   // ── AUTH INIT ──────────────────────────────────────────
   initAuth().then(() => {
     initLoginForm();   // wire the login form submit
-    const session = checkAuth(); // show login screen or app
-    if (session && session.role === 'owner') {
-      // Already logged in as owner — init the full app
-      try { initApp(); } catch(err) { console.error('App init failed:', err); }
-    }
-    // Employee view is rendered inside checkAuth → renderEmployeeView
+
+    // Sync database with cloud (if credentials exist) so employee/device databases are updated
+    const syncPromise = (cfg.gistId && cfg.gistToken) ? initSync() : Promise.resolve();
+
+    syncPromise.then(() => {
+      const session = checkAuth(); // show login screen or app
+      if (session && session.role === 'owner') {
+        // Already logged in as owner — init the full app
+        try { initApp(); } catch(err) { console.error('App init failed:', err); }
+      }
+    }).catch(err => {
+      console.error('Initial sync failed:', err);
+      // Fallback
+      checkAuth();
+    });
   });
 });
 
