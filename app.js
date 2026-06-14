@@ -2956,6 +2956,8 @@ function deleteHoliday(dateStr) {
 }
 
 function renderSettings() {
+  const session = getSession();
+
   // ── Cloud Sync Settings ──────────────────────────────────
   const syncCfg      = getSyncCfg();
   const syncTokenEl  = document.getElementById('cfg-sync-master-key');
@@ -3001,6 +3003,81 @@ function renderSettings() {
       } else {
         showNotification('No cloud data found or sync not configured.', 'danger');
       }
+    });
+  }
+
+  // ── Owner Profile Settings ────────────────────────────────
+  if (session && session.role === 'owner') {
+    const dispNameEl = document.getElementById('owner-display-name');
+    const unameEl = document.getElementById('owner-username');
+    const newPassEl = document.getElementById('owner-new-password');
+    if (dispNameEl) dispNameEl.value = session.displayName || '';
+    if (unameEl) unameEl.value = session.username || '';
+    if (newPassEl) newPassEl.value = '';
+  }
+
+  const updateProfileBtn = document.getElementById('update-owner-profile-btn');
+  if (updateProfileBtn && !updateProfileBtn._wired) {
+    updateProfileBtn._wired = true;
+    updateProfileBtn.addEventListener('click', async () => {
+      const dispName = document.getElementById('owner-display-name')?.value?.trim();
+      const newUname = document.getElementById('owner-username')?.value?.trim()?.toLowerCase();
+      const newPass  = document.getElementById('owner-new-password')?.value;
+
+      if (!dispName || !newUname) {
+        showNotification('Display Name and Username are required.', 'danger');
+        return;
+      }
+
+      const users = getUsers();
+      if (!session || session.role !== 'owner') return;
+
+      const currentUname = session.username.toLowerCase();
+
+      // If changing username, check for conflicts
+      if (newUname !== currentUname && users[newUname]) {
+        showNotification('Username is already taken.', 'danger');
+        return;
+      }
+
+      const userRecord = users[currentUname];
+      if (!userRecord) {
+        showNotification('Owner account record not found.', 'danger');
+        return;
+      }
+
+      userRecord.displayName = dispName;
+
+      if (newPass && newPass.trim() !== '') {
+        if (newPass.length < 6) {
+          showNotification('Password must be at least 6 characters.', 'danger');
+          return;
+        }
+        userRecord.passwordHash = await hashString(newPass.trim());
+      }
+
+      if (newUname !== currentUname) {
+        userRecord.username = newUname;
+        users[newUname] = userRecord;
+        delete users[currentUname];
+      } else {
+        users[currentUname] = userRecord;
+      }
+
+      saveUsers(users);
+      setSession(userRecord);
+
+      showNotification('✅ Profile updated successfully. Syncing changes...', 'success');
+
+      try {
+        await syncPush();
+        showNotification('✅ Profile synchronized across all devices!', 'success');
+      } catch (err) {
+        showNotification('⚠️ Profile saved locally but failed to sync to cloud.', 'warning');
+      }
+
+      checkAuth();
+      renderSettings();
     });
   }
   // ── End Cloud Sync ───────────────────────────────────────
