@@ -587,7 +587,7 @@ function renderUserManagement() {
   if (addBtn && !addBtn._wired) {
     console.log('[User Management] Wiring add employee button listener');
     addBtn._wired = true;
-    addBtn.addEventListener('click', addEmployee);
+    addBtn.addEventListener('click', addUserAccount);
   }
 
   const setupBtn = document.getElementById('copy-setup-link-btn');
@@ -597,8 +597,8 @@ function renderUserManagement() {
   }
 }
 
-async function addEmployee() {
-  console.log('[User Management] addEmployee clicked!');
+async function addUserAccount() {
+  console.log('[User Management] addUserAccount clicked!');
   try {
     const name = document.getElementById('new-emp-name')?.value.trim();
     const user = document.getElementById('new-emp-username')?.value.trim().toLowerCase().replace(/\s+/g,'');
