@@ -77,6 +77,60 @@ async function syncPush() {
   if (!cfg.gistId || !cfg.gistToken) return;
   try {
     setSyncStatus('syncing');
+
+    // Pull and merge latest cloud changes before pushing to prevent overwrites
+    const cloudData = await syncPull();
+    if (cloudData && cloudData._synced_at) {
+      const cloudAt = new Date(cloudData._synced_at);
+      const localAt = cfg.last_push ? new Date(cfg.last_push) : new Date(0);
+
+      if (cloudAt > localAt) {
+        console.log('[Sync] Cloud database is newer. Merging datasets before pushing...');
+        
+        // 1. Merge pending/processed employee submissions
+        const localPending = db.pending_entries || [];
+        const cloudPending = cloudData.pending_entries || [];
+        const mergedPending = [...cloudPending];
+        
+        localPending.forEach(lp => {
+          if (!mergedPending.some(cp => cp.id === lp.id)) {
+            mergedPending.push(lp);
+          }
+        });
+
+        // 2. Merge consolidated daily ledger entries
+        const localLedger = db.daily_ledger || [];
+        const cloudLedger = cloudData.daily_ledger || [];
+        const mergedLedger = [...cloudLedger];
+
+        localLedger.forEach(ll => {
+          const matchIdx = mergedLedger.findIndex(cl => cl.date === ll.date);
+          if (matchIdx === -1) {
+            mergedLedger.push(ll);
+          } else {
+            // Keep the version with the newer approved timestamp
+            const cl = mergedLedger[matchIdx];
+            const clTime = cl._approved_at ? new Date(cl._approved_at) : new Date(0);
+            const llTime = ll._approved_at ? new Date(ll._approved_at) : new Date(0);
+            if (llTime > clTime) {
+              mergedLedger[matchIdx] = ll;
+            }
+          }
+        });
+
+        // 3. Merge user accounts
+        const localUsers = db.users || {};
+        const cloudUsers = cloudData.users || {};
+        const mergedUsers = { ...cloudUsers, ...localUsers };
+
+        db.pending_entries = mergedPending;
+        db.daily_ledger = mergedLedger;
+        db.users = mergedUsers;
+
+        localStorage.setItem('octaneflow_db', JSON.stringify(db));
+      }
+    }
+
     const payload = { ...db, _synced_at: new Date().toISOString() };
     const res = await fetch(`${GIST_API_BASE}/${cfg.gistId}`, {
       method: 'PATCH',
@@ -95,7 +149,8 @@ async function syncPush() {
       saveSyncCfg(cfg2);
     }
     setSyncStatus(res.ok ? 'synced' : 'error');
-  } catch {
+  } catch (err) {
+    console.error('[Sync] Push failed:', err);
     setSyncStatus(navigator.onLine ? 'error' : 'offline');
   }
 }
@@ -986,7 +1041,20 @@ function loadDB() {
   }
 }
 
+function prunePendingEntries() {
+  if (!db || !db.pending_entries) return;
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const cutoffTime = sevenDaysAgo.toISOString();
+
+  db.pending_entries = db.pending_entries.filter(entry => {
+    if (entry.status === 'pending') return true;
+    return entry.submittedAt >= cutoffTime;
+  });
+}
+
 function saveDB() {
+  prunePendingEntries();
   localStorage.setItem('octaneflow_db', JSON.stringify(db));
   // Auto-push to cloud on every save (debounced 2s to avoid hammering API)
   clearTimeout(saveDB._pushTimer);
