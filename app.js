@@ -1,5 +1,109 @@
 // OctaneFlow App State and Logic - Daily Ledger Spreadsheet Edition
 
+// ============================================================
+// JSONBIN AUTO-SYNC ENGINE
+// Stores data in JSONBin.io so all devices share the same data.
+// Credentials live in localStorage under 'octaneflow_sync_cfg'
+// (separate from db so they survive a DB reset).
+// ============================================================
+
+const SYNC_CFG_KEY = 'octaneflow_sync_cfg';
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3/b';
+
+function getSyncCfg() {
+  try { return JSON.parse(localStorage.getItem(SYNC_CFG_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function saveSyncCfg(cfg) {
+  localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(cfg));
+}
+
+// Show a small cloud sync indicator in the UI
+function setSyncStatus(state) {
+  // states: 'syncing' | 'synced' | 'error' | 'offline' | 'off'
+  const el = document.getElementById('sync-status-indicator');
+  if (!el) return;
+  const map = {
+    syncing: { icon: '☁️', text: 'Syncing…',  color: '#f97316' },
+    synced:  { icon: '✅', text: 'Synced',    color: '#22c55e' },
+    error:   { icon: '⚠️', text: 'Sync error', color: '#ef4444' },
+    offline: { icon: '📶', text: 'Offline',   color: '#94a3b8' },
+    off:     { icon: '🔌', text: 'Sync off',  color: '#475569' },
+  };
+  const s = map[state] || map.off;
+  el.innerHTML = `<span style="color:${s.color};font-size:0.75rem;font-weight:600;">${s.icon} ${s.text}</span>`;
+}
+
+// Pull latest data from JSONBin → returns parsed db object or null
+async function syncPull() {
+  const cfg = getSyncCfg();
+  if (!cfg.binId || !cfg.masterKey) return null;
+  try {
+    setSyncStatus('syncing');
+    const res = await fetch(`${JSONBIN_BASE}/${cfg.binId}/latest`, {
+      headers: { 'X-Master-Key': cfg.masterKey }
+    });
+    if (!res.ok) { setSyncStatus('error'); return null; }
+    const json = await res.json();
+    const record = json.record;
+    // Ignore our placeholder init record
+    if (record && record._octaneflow_sync && !record.daily_ledger) return null;
+    setSyncStatus('synced');
+    return record;
+  } catch {
+    setSyncStatus(navigator.onLine ? 'error' : 'offline');
+    return null;
+  }
+}
+
+// Push current db to JSONBin
+async function syncPush() {
+  const cfg = getSyncCfg();
+  if (!cfg.binId || !cfg.masterKey) return;
+  try {
+    setSyncStatus('syncing');
+    const payload = { ...db, _synced_at: new Date().toISOString() };
+    const res = await fetch(`${JSONBIN_BASE}/${cfg.binId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': cfg.masterKey
+      },
+      body: JSON.stringify(payload)
+    });
+    setSyncStatus(res.ok ? 'synced' : 'error');
+  } catch {
+    setSyncStatus(navigator.onLine ? 'error' : 'offline');
+  }
+}
+
+// Call this once on app start — pulls cloud data if newer than local
+async function initSync() {
+  const cfg = getSyncCfg();
+  if (!cfg.binId || !cfg.masterKey) { setSyncStatus('off'); return; }
+  const cloudData = await syncPull();
+  if (!cloudData || !cloudData.daily_ledger) return;
+
+  // Compare: use cloud data if it has more entries or is newer
+  const localLedgerLen  = (db && db.daily_ledger) ? db.daily_ledger.length  : 0;
+  const cloudLedgerLen  = cloudData.daily_ledger ? cloudData.daily_ledger.length : 0;
+  const cloudSyncedAt   = cloudData._synced_at ? new Date(cloudData._synced_at) : new Date(0);
+  const localSyncedAt   = cfg.last_push        ? new Date(cfg.last_push)        : new Date(0);
+
+  if (cloudLedgerLen > localLedgerLen || cloudSyncedAt > localSyncedAt) {
+    // Cloud is newer — load it
+    db = cloudData;
+    localStorage.setItem('octaneflow_db', JSON.stringify(db));
+    cfg.last_push = cloudData._synced_at || new Date().toISOString();
+    saveSyncCfg(cfg);
+    console.log('[Sync] Loaded cloud data — ledger rows:', cloudLedgerLen);
+  } else {
+    console.log('[Sync] Local data is current — ledger rows:', localLedgerLen);
+  }
+}
+
+
 const DEFAULT_DB = {
   settings: {
     petrol_capacity: 20000,
@@ -154,6 +258,9 @@ function loadDB() {
 
 function saveDB() {
   localStorage.setItem('octaneflow_db', JSON.stringify(db));
+  // Auto-push to cloud on every save (debounced 2s to avoid hammering API)
+  clearTimeout(saveDB._pushTimer);
+  saveDB._pushTimer = setTimeout(() => syncPush(), 2000);
 }
 
 function resetDB() {
@@ -2116,6 +2223,55 @@ function deleteHoliday(dateStr) {
 }
 
 function renderSettings() {
+  // ── Cloud Sync Settings ──────────────────────────────────
+  const syncCfg = getSyncCfg();
+  const syncMasterKeyEl = document.getElementById('cfg-sync-master-key');
+  const syncBinIdEl     = document.getElementById('cfg-sync-bin-id');
+  if (syncMasterKeyEl) syncMasterKeyEl.value = syncCfg.masterKey || '';
+  if (syncBinIdEl)     syncBinIdEl.value     = syncCfg.binId     || '';
+
+  const saveSyncBtn = document.getElementById('cfg-save-sync-btn');
+  if (saveSyncBtn && !saveSyncBtn._wired) {
+    saveSyncBtn._wired = true;
+    saveSyncBtn.addEventListener('click', async () => {
+      const mk  = (syncMasterKeyEl ? syncMasterKeyEl.value : '').trim();
+      const bid = (syncBinIdEl     ? syncBinIdEl.value     : '').trim();
+      if (!mk || !bid) { showNotification('Enter both Master Key and Bin ID.', 'danger'); return; }
+      saveSyncCfg({ masterKey: mk, binId: bid });
+      showNotification('Sync settings saved. Pushing data to cloud…', 'success');
+      await syncPush();
+      showNotification('✅ Data pushed to cloud successfully!', 'success');
+    });
+  }
+
+  const forcePushBtn = document.getElementById('cfg-force-push-btn');
+  if (forcePushBtn && !forcePushBtn._wired) {
+    forcePushBtn._wired = true;
+    forcePushBtn.addEventListener('click', async () => {
+      showNotification('Pushing all data to cloud…', 'info');
+      await syncPush();
+      showNotification('✅ All data pushed to cloud.', 'success');
+    });
+  }
+
+  const forcePullBtn = document.getElementById('cfg-force-pull-btn');
+  if (forcePullBtn && !forcePullBtn._wired) {
+    forcePullBtn._wired = true;
+    forcePullBtn.addEventListener('click', async () => {
+      showNotification('Pulling latest data from cloud…', 'info');
+      const cloudData = await syncPull();
+      if (cloudData && cloudData.daily_ledger) {
+        db = cloudData;
+        localStorage.setItem('octaneflow_db', JSON.stringify(db));
+        showNotification('✅ Cloud data loaded successfully!', 'success');
+        initApp();
+      } else {
+        showNotification('No cloud data found or sync not configured.', 'danger');
+      }
+    });
+  }
+  // ── End Cloud Sync ───────────────────────────────────────
+
   document.getElementById('cfg-petrol-capacity').value = db.settings.petrol_capacity;
   document.getElementById('cfg-diesel-capacity').value = db.settings.diesel_capacity;
   document.getElementById('cfg-safety-stock').value = db.settings.safety_stock;
@@ -2720,6 +2876,12 @@ function initApp() {
   // Read current active tab and render it
   const activeTab = document.querySelector('.nav-item.active').dataset.view;
   renderActiveView(activeTab);
+
+  // Start cloud sync check (async — won't block render)
+  initSync().then(() => {
+    // Re-render after sync in case cloud had newer data
+    renderActiveView(document.querySelector('.nav-item.active').dataset.view);
+  }).catch(() => setSyncStatus('error'));
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -2731,12 +2893,19 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Auto-configure sync if credentials are already saved
+  const cfg = getSyncCfg();
+  if (cfg.binId && cfg.masterKey) {
+    console.log('[Sync] Credentials found — auto-sync enabled');
+  }
+
   try {
     initApp();
   } catch (err) {
     console.error("App initialization failed:", err);
   }
 });
+
 
 // -------------------------------------------------------------
 // INTERACTIVE ONBOARDING WALKTHROUGH TOUR
