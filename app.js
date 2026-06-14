@@ -136,10 +136,94 @@ function getDeviceId() {
   return id;
 }
 
-// SHA-256 hash via Web Crypto API
+// Pure JS SHA-256 fallback if crypto.subtle is not available (e.g. non-secure contexts)
+function sha256_js(ascii) {
+  function rightRotate(value, amount) {
+    return (value >>> amount) | (value << (32 - amount));
+  }
+  
+  const mathPow = Math.pow;
+  const maxWord = mathPow(2, 32);
+  let result = '';
+  
+  const words = [];
+  const asciiLength = ascii.length * 8;
+  
+  let hash = [], k = [];
+  let primeCounter = 0;
+  const isPrime = {};
+  
+  for (let candidate = 2; primeCounter < 64; candidate++) {
+    if (!isPrime[candidate]) {
+      for (let i = 0; i < 313; i += candidate) {
+        isPrime[i] = 1;
+      }
+      hash[primeCounter] = (mathPow(candidate, .5) * maxWord) | 0;
+      k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+    }
+  }
+  
+  ascii += '\x80';
+  while (ascii.length % 64 - 56) ascii += '\x00';
+  
+  for (let i = 0; i < ascii.length; i++) {
+    const j = ascii.charCodeAt(i);
+    words[i >> 2] |= j << ((3 - i) % 4) * 8;
+  }
+  
+  words[words.length] = ((asciiLength / maxWord) | 0);
+  words[words.length] = (asciiLength | 0);
+  
+  for (let j = 0; j < words.length;) {
+    const w = words.slice(j, j += 16);
+    const oldHash = hash.slice(0);
+    
+    for (let i = 0; i < 64; i++) {
+      let wItem = w[i];
+      if (i >= 16) {
+        const s0 = rightRotate(w[i - 15], 7) ^ rightRotate(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+        const s1 = rightRotate(w[i - 2], 17) ^ rightRotate(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+        wItem = w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+      }
+      
+      const ch = (hash[4] & hash[5]) ^ (~hash[4] & hash[6]);
+      const maj = (hash[0] & hash[1]) ^ (hash[0] & hash[2]) ^ (hash[1] & hash[2]);
+      const s0_h = rightRotate(hash[0], 2) ^ rightRotate(hash[0], 13) ^ rightRotate(hash[0], 22);
+      const s1_h = rightRotate(hash[4], 6) ^ rightRotate(hash[4], 11) ^ rightRotate(hash[4], 25);
+      
+      const temp1 = (hash[7] + s1_h + ch + k[i] + wItem) | 0;
+      const temp2 = (s0_h + maj) | 0;
+      
+      hash = [(temp1 + temp2) | 0].concat(hash);
+      hash[4] = (hash[4] + temp1) | 0;
+    }
+    
+    for (let i = 0; i < 8; i++) {
+      hash[i] = (hash[i] + oldHash[i]) | 0;
+    }
+  }
+  
+  for (let i = 0; i < 8; i++) {
+    for (let j = 3; j + 1; j--) {
+      const b = (hash[i] >> (j * 8)) & 255;
+      result += (b < 16 ? '0' : '') + b.toString(16);
+    }
+  }
+  
+  return result;
+}
+
+// SHA-256 hash with pure JS fallback
 async function hashString(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  try {
+    if (window.crypto && crypto.subtle) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+  } catch (e) {
+    console.warn('crypto.subtle failed, falling back to JS SHA-256:', e);
+  }
+  return sha256_js(str);
 }
 
 // ── User Store ─────────────────────────────────────────────
@@ -513,25 +597,30 @@ function renderUserManagement() {
 }
 
 async function addEmployee() {
-  const name = document.getElementById('new-emp-name')?.value.trim();
-  const user = document.getElementById('new-emp-username')?.value.trim().toLowerCase().replace(/\s+/g,'');
-  const pin  = document.getElementById('new-emp-pin')?.value.trim();
-  if (!name||!user||!pin) { showNotification('Fill in all three fields.','danger'); return; }
-  if (!/^\d{4,6}$/.test(pin)) { showNotification('PIN must be 4–6 digits.','danger'); return; }
-  const users = getUsers();
-  if (users[user]) { showNotification('Username already exists.','danger'); return; }
-  users[user] = {
-    username: user, displayName: name, role: 'employee',
-    pinHash: await hashString(pin),
-    deviceId: null, deviceRegisteredAt: null,
-    active: true, createdAt: new Date().toISOString()
-  };
-  saveUsers(users);
-  document.getElementById('new-emp-name').value = '';
-  document.getElementById('new-emp-username').value = '';
-  document.getElementById('new-emp-pin').value = '';
-  showNotification(`✅ Employee "${name}" added.`, 'success');
-  renderUserManagement();
+  try {
+    const name = document.getElementById('new-emp-name')?.value.trim();
+    const user = document.getElementById('new-emp-username')?.value.trim().toLowerCase().replace(/\s+/g,'');
+    const pin  = document.getElementById('new-emp-pin')?.value.trim();
+    if (!name||!user||!pin) { showNotification('Fill in all three fields.','danger'); return; }
+    if (!/^\d{4,6}$/.test(pin)) { showNotification('PIN must be 4–6 digits.','danger'); return; }
+    const users = getUsers();
+    if (users[user]) { showNotification('Username already exists.','danger'); return; }
+    users[user] = {
+      username: user, displayName: name, role: 'employee',
+      pinHash: await hashString(pin),
+      deviceId: null, deviceRegisteredAt: null,
+      active: true, createdAt: new Date().toISOString()
+    };
+    saveUsers(users);
+    document.getElementById('new-emp-name').value = '';
+    document.getElementById('new-emp-username').value = '';
+    document.getElementById('new-emp-pin').value = '';
+    showNotification(`✅ Employee "${name}" added successfully!`, 'success');
+    renderUserManagement();
+  } catch (err) {
+    console.error('Failed to add employee:', err);
+    showNotification('❌ Failed to add employee: ' + err.message, 'danger');
+  }
 }
 
 function resetEmployeeDevice(username) {
