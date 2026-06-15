@@ -165,7 +165,7 @@ async function initSync() {
   const cloudAt   = cloudData._synced_at ? new Date(cloudData._synced_at) : new Date(0);
   const localAt   = cfg.last_push        ? new Date(cfg.last_push)        : new Date(0);
 
-  if (cloudAt > localAt || !db || !db.daily_ledger) {
+  if (cloudAt > localAt || !db || !db.daily_ledger || (db.daily_ledger.length === 0 && cloudData.daily_ledger.length > 0)) {
     db = cloudData;
     localStorage.setItem('octaneflow_db', JSON.stringify(db));
     if (db.users) {
