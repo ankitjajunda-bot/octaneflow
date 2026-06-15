@@ -6,7 +6,7 @@
 //   - Everything else               → Network First, fallback to cache
 // ============================================================
 
-const CACHE_NAME     = 'octaneflow-v20';
+const CACHE_NAME     = 'octaneflow-v21';
 const FONT_CACHE     = 'octaneflow-fonts-v1';
 
 // Detect base path automatically — works on localhost AND GitHub Pages /octaneflow/
@@ -64,9 +64,9 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // App Shell files — cache first
+  // App Shell files — network first to ensure updates are immediate when online
   if (APP_SHELL.includes(url.pathname)) {
-    event.respondWith(cacheFirst(event.request));
+    event.respondWith(networkFirst(event.request));
     return;
   }
 
