@@ -443,6 +443,58 @@ function renderDiagnostics() {
   }
 }
 
+function getPreviousShift(dateStr, shift) {
+  if (shift === 'night') {
+    return { date: dateStr, shift: 'day' };
+  } else {
+    const d = new Date(dateStr + "T12:00:00");
+    d.setDate(d.getDate() - 1);
+    return { date: d.toISOString().split('T')[0], shift: 'night' };
+  }
+}
+
+function getNozzleOpeningReading(nozzle, dateStr, shift) {
+  let curr = { date: dateStr, shift: shift };
+  for (let i = 0; i < 60; i++) { // trace back up to 60 shifts (approx 30 operating days)
+    curr = getPreviousShift(curr.date, curr.shift);
+    
+    // 1. Look in unapproved pending submissions (newest first)
+    const pending = (db.pending_entries || []).find(e => 
+      e.entryData.date === curr.date && 
+      e.entryData.shift === curr.shift && 
+      e.status === 'pending'
+    );
+    if (pending && pending.entryData[nozzle]) {
+      const val = curr.shift === 'day' 
+        ? pending.entryData[nozzle].close_day 
+        : pending.entryData[nozzle].close_night;
+      if (val && val > 0) return val;
+    }
+
+    // 2. Look in the approved daily ledger
+    const ledger = db.daily_ledger.find(r => r.date === curr.date);
+    if (ledger && ledger[nozzle]) {
+      const val = curr.shift === 'day' 
+        ? ledger[nozzle].close_day 
+        : ledger[nozzle].close_night;
+      if (val && val > 0) return val;
+      // If closing is not recorded, check opening for this date
+      if (ledger[nozzle].open && ledger[nozzle].open > 0) return ledger[nozzle].open;
+    }
+  }
+
+  // 3. Fallback: find the earliest approved ledger entry
+  const sorted = [...db.daily_ledger].sort((a, b) => a.date.localeCompare(b.date));
+  if (sorted.length > 0 && sorted[0][nozzle]) {
+    const val = sorted[0][nozzle].open;
+    if (val && val > 0) return val;
+  }
+  
+  // 4. Default hardcoded fallbacks
+  const fallbacks = { du1_p: 15400.00, du2_p: 12900.00, du1_d: 21250.00, du2_d: 18600.00 };
+  return fallbacks[nozzle] || 0;
+}
+
 
 // ============================================================
 // AUTHENTICATION — Login · Roles · Device Binding
@@ -766,11 +818,63 @@ function initEmployeeDatePicker() {
 }
 
 // ── Employee: Submit Reading form ──────────────────────────
+function updateEmpOpenings() {
+  const dayVal = document.getElementById('emp-date-day')?.value;
+  const monthVal = document.getElementById('emp-date-month')?.value;
+  const yearVal = document.getElementById('emp-date-year')?.value;
+  const shiftVal = document.getElementById('emp-shift')?.value || 'day';
+  
+  if (dayVal && monthVal && yearVal) {
+    const dateStr = `${yearVal}-${monthVal.padStart(2, '0')}-${dayVal.padStart(2, '0')}`;
+    
+    const p1 = getNozzleOpeningReading('du1_p', dateStr, shiftVal);
+    const d1 = getNozzleOpeningReading('du1_d', dateStr, shiftVal);
+    const p2 = getNozzleOpeningReading('du2_p', dateStr, shiftVal);
+    const d2 = getNozzleOpeningReading('du2_d', dateStr, shiftVal);
+    
+    const el1 = document.getElementById('emp-du1p-open');
+    const el2 = document.getElementById('emp-du1d-open');
+    const el3 = document.getElementById('emp-du2p-open');
+    const el4 = document.getElementById('emp-du2d-open');
+    
+    if (el1) el1.value = p1.toFixed(2);
+    if (el2) el2.value = d1.toFixed(2);
+    if (el3) el3.value = p2.toFixed(2);
+    if (el4) el4.value = d2.toFixed(2);
+  }
+}
+
 function renderEmployeeView(session) {
   const nameEl = document.getElementById('emp-user-name');
   if (nameEl) nameEl.textContent = session.displayName;
 
   initEmployeeDatePicker(); // Populates D/M/Y dropdown selects if empty
+
+  // Wire up listeners for opening readings pre-fill
+  const dayEl = document.getElementById('emp-date-day');
+  const monthEl = document.getElementById('emp-date-month');
+  const yearEl = document.getElementById('emp-date-year');
+  const shiftEl = document.getElementById('emp-shift');
+
+  if (dayEl && !dayEl._listened) {
+    dayEl._listened = true;
+    dayEl.addEventListener('change', updateEmpOpenings);
+  }
+  if (monthEl && !monthEl._listened) {
+    monthEl._listened = true;
+    monthEl.addEventListener('change', updateEmpOpenings);
+  }
+  if (yearEl && !yearEl._listened) {
+    yearEl._listened = true;
+    yearEl.addEventListener('change', updateEmpOpenings);
+  }
+  if (shiftEl && !shiftEl._listened) {
+    shiftEl._listened = true;
+    shiftEl.addEventListener('change', updateEmpOpenings);
+  }
+
+  // Pre-fill immediately on render
+  updateEmpOpenings();
 
   const subs = (db.pending_entries || [])
     .filter(e => e.submittedBy === session.username)
@@ -955,51 +1059,365 @@ async function submitEmployeeReading(session) {
 }
 
 // ── Owner: Approvals Panel ─────────────────────────────────
+// ── Owner: Approvals Panel ─────────────────────────────────
+function calculateNozzleSale(nozzleData, shift) {
+  if (!nozzleData) return 0;
+  const open = nozzleData.open || 0;
+  const close = shift === 'day' ? (nozzleData.close_day || 0) : (nozzleData.close_night || 0);
+  const tests = shift === 'day' ? (nozzleData.tests_day || 0) : (nozzleData.tests_night || 0);
+  return Math.max(0, close - open - tests);
+}
+
+function getPendingGroupLabel(year, month, groupSuffix) {
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthName = months[parseInt(month) - 1] || 'Month';
+  
+  if (groupSuffix === '01_10') {
+    return `${monthName} ${year} · 1st to 10th`;
+  } else if (groupSuffix === '11_20') {
+    return `${monthName} ${year} · 11th to 20th`;
+  } else {
+    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+    return `${monthName} ${year} · 21st to ${lastDay}th`;
+  }
+}
+
+function toggleSelectAllGroup(groupId, masterCheckbox) {
+  const checkboxes = document.querySelectorAll(`.bulk-select-${groupId}`);
+  checkboxes.forEach(cb => {
+    cb.checked = masterCheckbox.checked;
+  });
+  updateGroupCalculations(groupId);
+}
+
+function updateGroupCalculations(groupId) {
+  const checkboxes = document.querySelectorAll(`.bulk-select-${groupId}:checked`);
+  let totalPetrol = 0;
+  let totalDiesel = 0;
+  let totalCash = 0;
+  let totalCard = 0;
+
+  checkboxes.forEach(cb => {
+    const entryId = cb.value;
+    const entry = db.pending_entries.find(e => e.id === entryId);
+    if (entry) {
+      const ed = entry.entryData;
+      const shift = ed.shift;
+
+      const p1 = calculateNozzleSale(ed.du1_p, shift);
+      const d1 = calculateNozzleSale(ed.du1_d, shift);
+      const p2 = calculateNozzleSale(ed.du2_p, shift);
+      const d2 = calculateNozzleSale(ed.du2_d, shift);
+
+      totalPetrol += (p1 + p2);
+      totalDiesel += (d1 + d2);
+      totalCash += (ed.cash_sales || 0);
+      totalCard += (ed.card_sales || 0);
+    }
+  });
+
+  const petEl = document.getElementById(`group-calc-petrol-${groupId}`);
+  const dieEl = document.getElementById(`group-calc-diesel-${groupId}`);
+  const colEl = document.getElementById(`group-calc-collections-${groupId}`);
+  const countEl = document.getElementById(`group-calc-count-${groupId}`);
+  const btnEl = document.getElementById(`group-btn-approve-${groupId}`);
+
+  if (petEl) petEl.textContent = `${totalPetrol.toFixed(0)} L`;
+  if (dieEl) dieEl.textContent = `${totalDiesel.toFixed(0)} L`;
+  if (colEl) colEl.textContent = formatCurrency(totalCash + totalCard);
+  if (countEl) countEl.textContent = `(${checkboxes.length} selected)`;
+  if (btnEl) {
+    btnEl.disabled = checkboxes.length === 0;
+    btnEl.textContent = `✅ Approve Selected (${checkboxes.length})`;
+  }
+}
+
+function bulkApproveEntries(groupId) {
+  const selector = `.bulk-select-${groupId}:checked`;
+  const checkedCheckboxes = document.querySelectorAll(selector);
+  if (checkedCheckboxes.length === 0) {
+    showNotification('Please select at least one entry to approve.', 'warning');
+    return;
+  }
+
+  if (!confirm(`Are you sure you want to approve and post all ${checkedCheckboxes.length} selected shift entries?`)) {
+    return;
+  }
+
+  // Process approvals silently in a loop, then save and render once at the end
+  checkedCheckboxes.forEach(cb => {
+    approveEntry(cb.value, true);
+  });
+
+  saveDB();
+  showNotification(`✅ Successfully approved and posted ${checkedCheckboxes.length} entries.`, 'success');
+  renderApprovalsPanel();
+}
+
 function renderApprovalsPanel() {
   updateApprovalsBadge();
   const container = document.getElementById('approvals-list');
   if (!container) return;
-  const all = (db.pending_entries || []).sort((a,b) => b.submittedAt.localeCompare(a.submittedAt));
 
-  if (all.length === 0) {
+  const pending = (db.pending_entries || []).filter(e => e.status === 'pending');
+  const reviewed = (db.pending_entries || []).filter(e => e.status !== 'pending')
+                     .sort((a, b) => b.reviewedAt.localeCompare(a.reviewedAt))
+                     .slice(0, 20); // show last 20 reviewed items
+
+  if (pending.length === 0 && reviewed.length === 0) {
     container.innerHTML = '<div style="text-align:center;color:#64748b;padding:3rem;font-size:1rem;">No submissions yet. Employees submit readings from their phones.</div>';
     return;
   }
-  container.innerHTML = all.map(entry => {
-    const isPending = entry.status === 'pending';
-    const sc = entry.status === 'approved' ? '#22c55e' : entry.status === 'rejected' ? '#ef4444' : '#f97316';
+
+  // Group pending entries by Month-Year and 10-day period
+  const groups = {};
+  pending.forEach(entry => {
     const ed = entry.entryData;
-    const ms  = Math.max(0,
-      ((ed.du1_p?.close_day||0)+(ed.du1_p?.close_night||0)-(ed.du1_p?.open||0)-(ed.du1_p?.tests_day||0)-(ed.du1_p?.tests_night||0)) +
-      ((ed.du2_p?.close_day||0)+(ed.du2_p?.close_night||0)-(ed.du2_p?.open||0)-(ed.du2_p?.tests_day||0)-(ed.du2_p?.tests_night||0)));
-    const hsd = Math.max(0,
-      ((ed.du1_d?.close_day||0)+(ed.du1_d?.close_night||0)-(ed.du1_d?.open||0)-(ed.du1_d?.tests_day||0)-(ed.du1_d?.tests_night||0)) +
-      ((ed.du2_d?.close_day||0)+(ed.du2_d?.close_night||0)-(ed.du2_d?.open||0)-(ed.du2_d?.tests_day||0)-(ed.du2_d?.tests_night||0)));
-    return `
-      <div style="background:#1e293b;border:1px solid ${isPending?'#f97316':'#334155'};border-radius:1rem;padding:1.25rem;margin-bottom:1rem;">
-        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;">
-          <div>
-            <div style="font-weight:800;color:#f8fafc;">${ed.date} · ${ed.shift==='day'?'☀️ Day':'🌙 Night'}</div>
-            <div style="font-size:0.78rem;color:#94a3b8;">By <strong style="color:#f97316;">${entry.submittedByName}</strong> · ${entry.submittedAt.replace('T',' ').slice(0,16)}</div>
+    const dateParts = ed.date.split('-');
+    if (dateParts.length < 3) return;
+    const year = dateParts[0];
+    const month = dateParts[1];
+    const day = parseInt(dateParts[2]);
+
+    let groupSuffix = '21_End';
+    if (day <= 10) {
+      groupSuffix = '01_10';
+    } else if (day <= 20) {
+      groupSuffix = '11_20';
+    }
+
+    const key = `${year}-${month}-${groupSuffix}`;
+    if (!groups[key]) {
+      groups[key] = [];
+    }
+    groups[key].push(entry);
+  });
+
+  // Sort groups chronologically descending (latest group first)
+  const sortedGroupKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+  let html = '';
+
+  // Render Pending Batches
+  if (pending.length > 0) {
+    html += '<h3 style="font-weight:800;color:#f8fafc;font-size:1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">⏳ Pending Approvals</h3>';
+    
+    sortedGroupKeys.forEach(groupId => {
+      const entries = groups[groupId];
+      // Sort entries within group chronologically ascending (oldest first) so readings flow sequentially
+      entries.sort((a, b) => {
+        const dateDiff = a.entryData.date.localeCompare(b.entryData.date);
+        if (dateDiff !== 0) return dateDiff;
+        if (a.entryData.shift === b.entryData.shift) return 0;
+        return a.entryData.shift === 'day' ? -1 : 1;
+      });
+
+      const keyParts = groupId.split('-');
+      const groupLabel = getPendingGroupLabel(keyParts[0], keyParts[1], keyParts[2]);
+
+      html += `
+        <div class="panel" style="margin-bottom:1.5rem; border:1px solid #475569; background:rgba(30,41,59,0.4); padding:1rem; border-radius:1rem;">
+          <!-- Group Header -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; border-bottom:1px solid #334155; padding-bottom:0.75rem; margin-bottom:1rem;">
+            <div>
+              <h4 style="font-weight:800; color:#fff; font-size:1rem; margin:0;">📅 ${groupLabel}</h4>
+              <div style="font-size:0.75rem; color:#94a3b8; margin-top:0.15rem;">Contains ${entries.length} pending submissions</div>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <button id="group-btn-approve-${groupId}" onclick="bulkApproveEntries('${groupId}')" style="background:#22c55e; color:#fff; border:none; border-radius:0.5rem; padding:0.5rem 1rem; font-size:0.8rem; font-weight:700; cursor:pointer;" disabled>✅ Approve Selected (0)</button>
+            </div>
           </div>
-          <span style="color:${sc};font-weight:700;font-size:0.8rem;padding:0.2rem 0.7rem;background:rgba(0,0,0,0.4);border-radius:9999px;">${entry.status.toUpperCase()}</span>
+
+          <!-- Group Batch Real-Time Stats Card -->
+          <div style="background:#0f172a; border:1px solid #1e293b; border-radius:0.75rem; padding:0.75rem 1.25rem; margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+            <div style="font-size:0.75rem; color:#94a3b8;">
+              <strong style="color:#22c55e;">Checked Items Live Totalizer</strong><br>
+              Match these sums with your paper logs: <span id="group-calc-count-${groupId}" style="color:#f97316; font-weight:700;">(0 selected)</span>
+            </div>
+            <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+              <div style="text-align:center;"><div style="font-size:0.62rem; color:#64748b; text-transform:uppercase; letter-spacing:0.05em;">Petrol (MS)</div><strong style="font-size:1rem; color:#fff;" id="group-calc-petrol-${groupId}">0 L</strong></div>
+              <div style="text-align:center;"><div style="font-size:0.62rem; color:#64748b; text-transform:uppercase; letter-spacing:0.05em;">Diesel (HSD)</div><strong style="font-size:1rem; color:#fff;" id="group-calc-diesel-${groupId}">0 L</strong></div>
+              <div style="text-align:center;"><div style="font-size:0.62rem; color:#64748b; text-transform:uppercase; letter-spacing:0.05em;">Collections</div><strong style="font-size:1rem; color:#22c55e;" id="group-calc-collections-${groupId}">₹ 0.00</strong></div>
+            </div>
+          </div>
+
+          <!-- Master Control -->
+          <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem; padding-left:0.5rem;">
+            <input type="checkbox" id="master-select-${groupId}" onchange="toggleSelectAllGroup('${groupId}', this)" style="transform: scale(1.2); cursor:pointer;">
+            <label for="master-select-${groupId}" style="font-size:0.8rem; color:#94a3b8; font-weight:700; cursor:pointer; user-select:none;">Select All Group Entries</label>
+          </div>
+
+          <!-- Entries List -->
+          <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            ${entries.map(entry => {
+              const ed = entry.entryData;
+              const shift = ed.shift;
+
+              // Calculate nozzle sales
+              const du1_p_open = ed.du1_p?.open || 0;
+              const du1_p_close = shift === 'day' ? (ed.du1_p?.close_day || 0) : (ed.du1_p?.close_night || 0);
+              const du1_p_tests = shift === 'day' ? (ed.du1_p?.tests_day || 0) : (ed.du1_p?.tests_night || 0);
+              const du1_p_sale = calculateNozzleSale(ed.du1_p, shift);
+
+              const du1_d_open = ed.du1_d?.open || 0;
+              const du1_d_close = shift === 'day' ? (ed.du1_d?.close_day || 0) : (ed.du1_d?.close_night || 0);
+              const du1_d_tests = shift === 'day' ? (ed.du1_d?.tests_day || 0) : (ed.du1_d?.tests_night || 0);
+              const du1_d_sale = calculateNozzleSale(ed.du1_d, shift);
+
+              const du2_p_open = ed.du2_p?.open || 0;
+              const du2_p_close = shift === 'day' ? (ed.du2_p?.close_day || 0) : (ed.du2_p?.close_night || 0);
+              const du2_p_tests = shift === 'day' ? (ed.du2_p?.tests_day || 0) : (ed.du2_p?.tests_night || 0);
+              const du2_p_sale = calculateNozzleSale(ed.du2_p, shift);
+
+              const du2_d_open = ed.du2_d?.open || 0;
+              const du2_d_close = shift === 'day' ? (ed.du2_d?.close_day || 0) : (ed.du2_d?.close_night || 0);
+              const du2_d_tests = shift === 'day' ? (ed.du2_d?.tests_day || 0) : (ed.du2_d?.tests_night || 0);
+              const du2_d_sale = calculateNozzleSale(ed.du2_d, shift);
+
+              // Financial Math
+              const prices = getPricesAt(ed.date);
+              const totalPetrolSales = du1_p_sale + du2_p_sale;
+              const totalDieselSales = du1_d_sale + du2_d_sale;
+              const estimatedRevenue = (totalPetrolSales * prices.petrol) + (totalDieselSales * prices.diesel);
+              const expectedCash = Math.max(0, estimatedRevenue - (ed.card_sales || 0));
+              const variance = (ed.cash_sales || 0) - expectedCash;
+
+              const varianceColor = variance < -100 ? 'rgba(239, 68, 68, 0.4)' : variance > 100 ? 'rgba(59, 130, 246, 0.4)' : 'rgba(255,255,255,0.05)';
+              const varianceTextColor = variance < -100 ? '#ef4444' : variance > 100 ? '#60a5fa' : '#22c55e';
+              const varianceSign = variance > 0 ? '+' : '';
+
+              return `
+                <div style="background:#0f111a; border:1px solid #1e293b; border-radius:0.75rem; padding:1rem; display:flex; gap:0.75rem;">
+                  <!-- Checkbox Column -->
+                  <div style="display:flex; align-items:flex-start; padding-top:0.25rem;">
+                    <input type="checkbox" class="bulk-select-${groupId}" value="${entry.id}" onchange="updateGroupCalculations('${groupId}')" style="transform: scale(1.15); cursor:pointer;">
+                  </div>
+
+                  <!-- Details Column -->
+                  <div style="flex:1; display:flex; flex-direction:column; gap:0.5rem;">
+                    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.25rem;">
+                      <div>
+                        <strong style="font-size:0.88rem; color:#fff;">${ed.date} · ${shift === 'day' ? '☀️ Day Shift' : '🌙 Night Shift'}</strong>
+                        <span style="font-size:0.72rem; color:#64748b; margin-left:0.5rem;">by ${entry.submittedByName}</span>
+                      </div>
+                      <span style="font-size:0.7rem; color:#94a3b8; font-family:monospace;">${entry.submittedAt.replace('T',' ').slice(11,16)}</span>
+                    </div>
+
+                    <!-- Nozzles Dynamic Tables -->
+                    <table style="width:100%; font-size:0.75rem; border-collapse:collapse; background:rgba(255,255,255,0.01); border:1px solid #1e293b; border-radius:6px; overflow:hidden;">
+                      <thead>
+                        <tr style="background:rgba(255,255,255,0.03); color:#94a3b8; text-align:left; border-bottom:1px solid #1e293b;">
+                          <th style="padding:0.3rem 0.5rem;">Nozzle</th>
+                          <th style="padding:0.3rem 0.5rem; text-align:right;">Open</th>
+                          <th style="padding:0.3rem 0.5rem; text-align:right;">Close</th>
+                          <th style="padding:0.3rem 0.5rem; text-align:right;">Tests</th>
+                          <th style="padding:0.3rem 0.5rem; text-align:right; color:#22c55e;">Sale Volume</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.02); color:#e2e8f0;">
+                          <td style="padding:0.3rem 0.5rem;"><span style="color:#ef4444;">●</span> DU1-P (E2)</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right; color:#94a3b8;">${du1_p_open.toFixed(2)}</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right;">${du1_p_close.toFixed(2)}</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right; color:#64748b;">${du1_p_tests} L</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right; font-weight:700; color:#fff;">${du1_p_sale.toFixed(2)} L</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.02); color:#e2e8f0;">
+                          <td style="padding:0.3rem 0.5rem;"><span style="color:#eab308;">●</span> DU1-D (HSD)</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right; color:#94a3b8;">${du1_d_open.toFixed(2)}</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right;">${du1_d_close.toFixed(2)}</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right; color:#64748b;">${du1_d_tests} L</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right; font-weight:700; color:#fff;">${du1_d_sale.toFixed(2)} L</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.02); color:#e2e8f0;">
+                          <td style="padding:0.3rem 0.5rem;"><span style="color:#ef4444;">●</span> DU2-P (E2)</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right; color:#94a3b8;">${du2_p_open.toFixed(2)}</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right;">${du2_p_close.toFixed(2)}</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right; color:#64748b;">${du2_p_tests} L</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right; font-weight:700; color:#fff;">${du2_p_sale.toFixed(2)} L</td>
+                        </tr>
+                        <tr style="color:#e2e8f0;">
+                          <td style="padding:0.3rem 0.5rem;"><span style="color:#eab308;">●</span> DU2-D (HSD)</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right; color:#94a3b8;">${du2_d_open.toFixed(2)}</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right;">${du2_d_close.toFixed(2)}</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right; color:#64748b;">${du2_d_tests} L</td>
+                          <td style="padding:0.3rem 0.5rem; text-align:right; font-weight:700; color:#fff;">${du2_d_sale.toFixed(2)} L</td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    <!-- Financial stats grid -->
+                    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0.4rem;">
+                      <div style="background:#090a10; border-radius:0.4rem; padding:0.4rem; text-align:center;">
+                        <div style="font-size:0.6rem; color:#64748b;">Expected Rev</div>
+                        <div style="font-weight:700; color:#f8fafc; font-size:0.78rem;">${formatCurrency(estimatedRevenue)}</div>
+                      </div>
+                      <div style="background:#090a10; border-radius:0.4rem; padding:0.4rem; text-align:center;">
+                        <div style="font-size:0.6rem; color:#64748b;">Cash Coll.</div>
+                        <div style="font-weight:700; color:#f8fafc; font-size:0.78rem;">${formatCurrency(ed.cash_sales||0)}</div>
+                      </div>
+                      <div style="background:#090a10; border-radius:0.4rem; padding:0.4rem; text-align:center;">
+                        <div style="font-size:0.6rem; color:#64748b;">Card / UPI</div>
+                        <div style="font-weight:700; color:#f8fafc; font-size:0.78rem;">${formatCurrency(ed.card_sales||0)}</div>
+                      </div>
+                      <div style="background:#090a10; border-radius:0.4rem; padding:0.4rem; text-align:center; border:1px solid ${varianceColor};">
+                        <div style="font-size:0.6rem; color:#64748b;">Variance</div>
+                        <div style="font-weight:700; color:${varianceTextColor}; font-size:0.78rem;">${varianceSign}${formatCurrency(variance)}</div>
+                      </div>
+                    </div>
+
+                    ${ed.remarks ? `<div style="font-size:0.75rem; color:#94a3b8; background:rgba(255,255,255,0.02); border-left:2px solid var(--primary); padding:0.25rem 0.5rem; border-radius:2px;">📝 ${ed.remarks}</div>` : ''}
+
+                    <!-- Actions -->
+                    <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.25rem;">
+                      <button onclick="approveEntry('${entry.id}')" style="background:#22c55e; color:#fff; border:none; border-radius:0.4rem; padding:0.4rem 0.8rem; font-size:0.75rem; font-weight:700; cursor:pointer;">Approve</button>
+                      <button onclick="promptRejectEntry('${entry.id}')" style="background:#ef4444; color:#fff; border:none; border-radius:0.4rem; padding:0.4rem 0.8rem; font-size:0.75rem; font-weight:700; cursor:pointer;">Reject</button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.4rem;margin-bottom:0.75rem;">
-          ${[['MS Sold',ms.toFixed(0)+' L'],['HSD Sold',hsd.toFixed(0)+' L'],['Cash',formatCurrency(ed.cash_sales||0)],['Card/UPI',formatCurrency(ed.card_sales||0)]]
-            .map(([l,v])=>`<div style="background:#0f1117;border-radius:0.5rem;padding:0.5rem;text-align:center;"><div style="font-size:0.65rem;color:#64748b;">${l}</div><div style="font-weight:700;color:#f8fafc;font-size:0.85rem;">${v}</div></div>`).join('')}
+      `;
+    });
+  }
+
+  // Render Reviewed Submissions History
+  if (reviewed.length > 0) {
+    html += '<h3 style="font-weight:800;color:#64748b;font-size:1.1rem;margin-top:2rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">📜 Recently Reviewed (History)</h3>';
+    reviewed.forEach(entry => {
+      const isApproved = entry.status === 'approved';
+      const sc = isApproved ? '#22c55e' : '#ef4444';
+      const ed = entry.entryData;
+      
+      html += `
+        <div style="background:#1e293b; border:1px solid #334155; border-left:3px solid ${sc}; border-radius:0.75rem; padding:1rem; margin-bottom:0.75rem; opacity:0.85;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.25rem;">
+            <div>
+              <strong style="font-size:0.85rem; color:#f8fafc;">${ed.date} · ${ed.shift === 'day' ? '☀️ Day' : '🌙 Night'}</strong>
+              <span style="font-size:0.7rem; color:#94a3b8; margin-left:0.5rem;">by ${entry.submittedByName}</span>
+            </div>
+            <span style="font-size:0.7rem; color:${sc}; font-weight:700; text-transform:uppercase; padding:0.1rem 0.4rem; background:rgba(0,0,0,0.3); border-radius:4px;">
+              ${entry.status}
+            </span>
+          </div>
+          <div style="font-size:0.72rem; color:#64748b; margin-top:0.25rem; display:flex; justify-content:space-between;">
+            <span>Reviewed at: ${entry.reviewedAt ? entry.reviewedAt.replace('T',' ').slice(0,16) : 'N/A'} by ${entry.reviewedBy || 'N/A'}</span>
+            <span>Cash: ${formatCurrency(ed.cash_sales||0)} · Card: ${formatCurrency(ed.card_sales||0)}</span>
+          </div>
+          ${entry.status === 'rejected' && entry.rejectionReason 
+            ? `<div style="margin-top:0.4rem; padding:0.4rem; background:rgba(239,68,68,0.08); border-radius:4px; color:#fca5a5; font-size:0.75rem;">Reason: ${entry.rejectionReason}</div>` 
+            : ''}
         </div>
-        ${ed.remarks?`<div style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.5rem;">📝 ${ed.remarks}</div>`:''}
-        ${isPending?`
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-          <button onclick="approveEntry('${entry.id}')" style="flex:1;min-width:100px;background:#22c55e;color:#fff;border:none;border-radius:0.5rem;padding:0.55rem 1rem;font-weight:700;cursor:pointer;">✅ Approve</button>
-          <button onclick="promptRejectEntry('${entry.id}')" style="flex:1;min-width:100px;background:#ef4444;color:#fff;border:none;border-radius:0.5rem;padding:0.55rem 1rem;font-weight:700;cursor:pointer;">❌ Reject</button>
-        </div>`:''}
-        ${entry.status==='rejected'&&entry.rejectionReason?`<div style="margin-top:0.5rem;padding:0.5rem;background:rgba(239,68,68,0.1);border-radius:0.4rem;color:#fca5a5;font-size:0.78rem;">Rejected by ${entry.reviewedBy}: ${entry.rejectionReason}</div>`:''}
-      </div>`;
-  }).join('');
+      `;
+    });
+  }
+
+  container.innerHTML = html;
 }
 
-function approveEntry(entryId) {
+function approveEntry(entryId, skipRender = false) {
   const session = getSession();
   if (!session || session.role !== 'owner') return;
   const idx = (db.pending_entries||[]).findIndex(e=>e.id===entryId);
@@ -1096,9 +1514,11 @@ function approveEntry(entryId) {
   db.pending_entries[idx].reviewedBy = session.username;
   db.pending_entries[idx].reviewedAt = new Date().toISOString();
 
-  saveDB();
-  showNotification(`✅ Entry for ${ed.date} (${ed.shift === 'day' ? 'Day' : 'Night'} shift) approved and merged.`, 'success');
-  renderApprovalsPanel();
+  if (!skipRender) {
+    saveDB();
+    showNotification(`✅ Entry for ${ed.date} (${ed.shift === 'day' ? 'Day' : 'Night'} shift) approved and merged.`, 'success');
+    renderApprovalsPanel();
+  }
 }
 
 function promptRejectEntry(entryId) {
@@ -7253,3 +7673,12 @@ function switchPnlTab(tab) {
 
 window.renderPnlReport = renderPnlReport;
 window.switchPnlTab    = switchPnlTab;
+
+// Expose approvals panel and bulk approval functions to global window scope
+window.calculateNozzleSale = calculateNozzleSale;
+window.getPendingGroupLabel = getPendingGroupLabel;
+window.toggleSelectAllGroup = toggleSelectAllGroup;
+window.updateGroupCalculations = updateGroupCalculations;
+window.bulkApproveEntries = bulkApproveEntries;
+window.approveEntry = approveEntry;
+window.promptRejectEntry = promptRejectEntry;
