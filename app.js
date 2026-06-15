@@ -1834,6 +1834,7 @@ function getCSVExport(type) {
   let rows = [];
 
   if (type === 'ledger') {
+    const wacMap = buildWACTimeline();
     headers = [
       "Date", "Selling Price Petrol", "Selling Price Diesel",
       "DU1 Day MS Open", "DU1 Day MS Close", "DU1 Day HSD Open", "DU1 Day HSD Close",
@@ -1847,7 +1848,7 @@ function getCSVExport(type) {
     ];
 
     rows = db.daily_ledger.map(row => {
-      const c = computeLedgerRow(row);
+      const c = computeLedgerRow(row, wacMap);
       return [
         row.date, row.prices.petrol, row.prices.diesel,
         row.du1_p.open, row.du1_p.close_day, row.du1_d.open, row.du1_d.close_day,
@@ -5002,7 +5003,19 @@ function onReconShiftChange() {
       window.reconExpensesList = rData.expenses ? JSON.parse(JSON.stringify(rData.expenses)) : [];
 
       resetDenominations();
-      if (rData.cash_counted) {
+      if (rData.denominations) {
+        const denoms = ['500', '200', '100', '50', '20', '10', '5', 'coins'];
+        denoms.forEach(d => {
+          const val = rData.denominations[d] || 0;
+          document.getElementById('denom-' + d).value = val;
+          if (d === 'coins') {
+            document.getElementById('denom-val-coins').textContent = val.toFixed(2);
+          } else {
+            document.getElementById('denom-val-' + d).textContent = (val * parseInt(d)).toFixed(2);
+          }
+        });
+        document.getElementById('recon-cash-total-label').textContent = formatCurrency(rData.cash_counted);
+      } else if (rData.cash_counted) {
         document.getElementById('denom-coins').value = rData.cash_counted;
         document.getElementById('denom-val-coins').textContent = rData.cash_counted.toFixed(2);
         document.getElementById('recon-cash-total-label').textContent = formatCurrency(rData.cash_counted);
@@ -5903,12 +5916,19 @@ function postShiftRecon() {
   const actual_cash_accounted = counted_cash + total_expenses;
   const shift_variance = actual_cash_accounted - shift_expected_cash;
 
+  const denomsKeys = ['500', '200', '100', '50', '20', '10', '5', 'coins'];
+  const denomsObj = {};
+  denomsKeys.forEach(d => {
+    denomsObj[d] = parseFloat(document.getElementById('denom-' + d).value) || 0;
+  });
+
   row.recon = row.recon || {};
   row.recon[shift] = {
     phonepe_close: curr_pe,
     phonepe_net: net_pe,
     expenses: JSON.parse(JSON.stringify(window.reconExpensesList)),
     cash_counted: counted_cash,
+    denominations: denomsObj,
     expected_cash: shift_expected_cash,
     variance: shift_variance,
     paper_verified: !!window.ocrExtractedValues,
