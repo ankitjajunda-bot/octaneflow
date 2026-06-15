@@ -4144,6 +4144,44 @@ window.addEventListener('DOMContentLoaded', () => {
   const tourBtn = document.getElementById('take-tour-btn');
   if (tourBtn) tourBtn.addEventListener('click', () => startTour());
 
+  // Wire up Cold Restart / Repair button
+  const restartBtn = document.getElementById('cold-restart-btn');
+  if (restartBtn) {
+    restartBtn.addEventListener('click', async () => {
+      if (!confirm("Are you sure you want to force a cold restart?\n\nThis will clear the browser's asset cache, unregister the service worker, and force a fresh page reload from the network. Your saved database will NOT be deleted.")) {
+        return;
+      }
+      showNotification("Cold restarting app... clearing caches.", "info");
+
+      // 1. Unregister service worker(s)
+      if (navigator.serviceWorker) {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (let reg of regs) {
+            await reg.unregister();
+          }
+        } catch (e) {
+          console.error("Failed to unregister service worker:", e);
+        }
+      }
+
+      // 2. Clear browser cache storage
+      if (window.caches) {
+        try {
+          const keys = await caches.keys();
+          for (let key of keys) {
+            await caches.delete(key);
+          }
+        } catch (e) {
+          console.error("Failed to clear cache storage:", e);
+        }
+      }
+
+      // 3. Perform a full page reload from network
+      window.location.reload(true);
+    });
+  }
+
   // Auto-configure sync status
   const cfg = getSyncCfg();
   if (cfg.gistId && cfg.gistToken) {
