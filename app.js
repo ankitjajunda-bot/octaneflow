@@ -3901,7 +3901,11 @@ document.getElementById('export-purchases-csv-btn').addEventListener('click', ()
 });
 
 document.getElementById('dash-trigger-purchase-btn').addEventListener('click', () => {
-  document.querySelector('[data-view="purchases"]').click();
+  const tab = document.querySelector('[data-view="logistics"]');
+  if (tab) {
+    tab.click();
+    switchSubview('logistics', 'purchases');
+  }
 });
 
 // Toggle view (Detailed shift breakdown vs Consolidated 24hr)
@@ -4209,13 +4213,16 @@ const tourSteps = [
     text: `<h3>Inventory & Locked Capital</h3><p>We separately track <strong>Usable Inventory</strong> (sellable) and <strong>Locked Capital Assets</strong> (permanent dead stock below the suction pipes, e.g., 600L Petrol / 40L Diesel), providing a precise view of working capital.</p>`
   },
   {
-    target: '[data-view="ledger"]',
+    target: '[data-subview="ledger"]',
     setup: () => {
-      // Step 1: Open Sales Cumulative tab
-      const tab = document.querySelector('[data-view="ledger"]');
-      if (tab) tab.click();
+      // Step 1: Open Sales Cumulative tab under operations
+      const tab = document.querySelector('[data-view="operations"]');
+      if (tab) {
+        tab.click();
+        switchSubview('operations', 'ledger');
+      }
     },
-    align: 'right',
+    align: 'bottom',
     text: `<h3>Sales Cumulative Tab</h3><p>We are now in the <strong>Sales Cumulative</strong> section, which serves as your daily operations ledger. Here, shift totalizers, calibration tests, and daily profit margins are unified in a single database.</p>`
   },
   {
@@ -4280,12 +4287,15 @@ const tourSteps = [
     text: `<h3>Quality Calibration Tests</h3><p>Click <strong>Log Daily Readings</strong> to record totalizer readings. The entry form focuses on day-only tests. Night tests are automatically hardcoded to 0, eliminating redundant data entries.</p>`
   },
   {
-    target: '[data-view="cashflow"]',
+    target: '[data-subview="cashflow"]',
     setup: () => {
-      const tab = document.querySelector('[data-view="cashflow"]');
-      if (tab) tab.click();
+      const tab = document.querySelector('[data-view="financials"]');
+      if (tab) {
+        tab.click();
+        switchSubview('financials', 'cashflow');
+      }
     },
-    align: 'right',
+    align: 'bottom',
     text: `<h3>Cash Flow & Orders Solver</h3><p>Click here to access your new automated Excel-like dashboard. Input your current bank balance, unsettled PhonePe payments, cash, and cushions to view live 7-day cash forecasts, dry run indicators, and order deadlines.</p>`
   }
 ];
