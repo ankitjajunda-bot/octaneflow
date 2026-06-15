@@ -3525,6 +3525,55 @@ const customPLabel = document.getElementById('custom-petrol-label');
 const customDLabel = document.getElementById('custom-diesel-label');
 const customTotalLabel = document.getElementById('custom-load-total-label');
 
+function updatePriceInputRequirements() {
+  const loadType = tankerLoadSelect.value;
+  const pricePInput = document.getElementById('purchase-price-petrol');
+  const priceDInput = document.getElementById('purchase-price-diesel');
+
+  let needPetrol = false;
+  let needDiesel = false;
+
+  if (loadType === 'full-petrol') {
+    needPetrol = true;
+  } else if (loadType === 'full-diesel') {
+    needDiesel = true;
+  } else if (loadType === 'mixed-8d-4p' || loadType === 'mixed-8p-4d') {
+    needPetrol = true;
+    needDiesel = true;
+  } else if (loadType === 'custom') {
+    const p = parseInt(customPInput.value) || 0;
+    const d = parseInt(customDInput.value) || 0;
+    if (p > 0) needPetrol = true;
+    if (d > 0) needDiesel = true;
+  }
+
+  if (pricePInput) {
+    if (needPetrol) {
+      pricePInput.required = true;
+      pricePInput.removeAttribute('disabled');
+      pricePInput.placeholder = "e.g. 90.50";
+    } else {
+      pricePInput.required = false;
+      pricePInput.setAttribute('disabled', 'true');
+      pricePInput.value = "";
+      pricePInput.placeholder = "Not applicable";
+    }
+  }
+
+  if (priceDInput) {
+    if (needDiesel) {
+      priceDInput.required = true;
+      priceDInput.removeAttribute('disabled');
+      priceDInput.placeholder = "e.g. 82.20";
+    } else {
+      priceDInput.required = false;
+      priceDInput.setAttribute('disabled', 'true');
+      priceDInput.value = "";
+      priceDInput.placeholder = "Not applicable";
+    }
+  }
+}
+
 tankerLoadSelect.addEventListener('change', (e) => {
   if (e.target.value === 'custom') {
     customSliders.style.display = 'block';
@@ -3532,6 +3581,7 @@ tankerLoadSelect.addEventListener('change', (e) => {
   } else {
     customSliders.style.display = 'none';
   }
+  updatePriceInputRequirements();
 });
 
 function updateCustomLoadTotals() {
@@ -3560,12 +3610,14 @@ customPInput.addEventListener('input', () => {
   const p = parseInt(customPInput.value);
   customDInput.value = 12000 - p;
   updateCustomLoadTotals();
+  updatePriceInputRequirements();
 });
 
 customDInput.addEventListener('input', () => {
   const d = parseInt(customDInput.value);
   customPInput.value = 12000 - d;
   updateCustomLoadTotals();
+  updatePriceInputRequirements();
 });
 
 // Auto-calculate modal tests based on nozzle activity in real-time
@@ -3653,13 +3705,43 @@ document.getElementById('tanker-purchase-form').addEventListener('submit', (e) =
   const date = document.getElementById('purchase-date').value;
   const time = document.getElementById('purchase-time').value;
   const loadType = tankerLoadSelect.value;
-  const priceP = parseFloat(document.getElementById('purchase-price-petrol').value);
-  const priceD = parseFloat(document.getElementById('purchase-price-diesel').value);
 
-  const customP = parseInt(customPInput.value) || 0;
-  const customD = parseInt(customDInput.value) || 0;
+  const customP = loadType === 'custom' ? (parseInt(customPInput.value) || 0) : 0;
+  const customD = loadType === 'custom' ? (parseInt(customDInput.value) || 0) : 0;
 
-  if (!confirm(`Are you sure you want to record this tanker receipt?\n\nDate: ${formatDate(date)}\nLoad Type: ${loadType}\nPetrol Rate: ₹${priceP.toFixed(2)}/L\nDiesel Rate: ₹${priceD.toFixed(2)}/L`)) {
+  let petrolQty = 0;
+  let dieselQty = 0;
+
+  if (loadType === 'full-petrol') {
+    petrolQty = 12000;
+  } else if (loadType === 'full-diesel') {
+    dieselQty = 12000;
+  } else if (loadType === 'mixed-8d-4p') {
+    dieselQty = 8000;
+    petrolQty = 4000;
+  } else if (loadType === 'mixed-8p-4d') {
+    petrolQty = 8000;
+    dieselQty = 4000;
+  } else if (loadType === 'custom') {
+    petrolQty = customP;
+    dieselQty = customD;
+  }
+
+  const pricePVal = document.getElementById('purchase-price-petrol').value;
+  const priceDVal = document.getElementById('purchase-price-diesel').value;
+
+  const priceP = petrolQty > 0 ? (parseFloat(pricePVal) || 0) : 0;
+  const priceD = dieselQty > 0 ? (parseFloat(priceDVal) || 0) : 0;
+
+  let confirmMsg = `Are you sure you want to record this tanker receipt?\n\nDate: ${formatDate(date)}\nLoad Type: ${loadType}`;
+  if (petrolQty > 0) {
+    confirmMsg += `\nPetrol Rate: ₹${priceP.toFixed(2)}/L (${petrolQty.toLocaleString()} L)`;
+  }
+  if (dieselQty > 0) {
+    confirmMsg += `\nDiesel Rate: ₹${priceD.toFixed(2)}/L (${dieselQty.toLocaleString()} L)`;
+  }
+
+  if (!confirm(confirmMsg)) {
     return;
   }
 
@@ -4021,10 +4103,14 @@ function initApp() {
   // Read current active tab and render it
   renderCurrentView();
 
+  // Configure tanker purchase form price field requirements
+  updatePriceInputRequirements();
+
   // Start cloud sync check (async — won't block render)
   initSync().then(() => {
     // Re-render after sync in case cloud had newer data
     renderCurrentView();
+    updatePriceInputRequirements();
   }).catch(() => setSyncStatus('error'));
 }
 
