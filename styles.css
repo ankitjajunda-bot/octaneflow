@@ -1994,6 +1994,80 @@ tr:hover td {
   margin-left: 4px !important;
 }
 
+/* Print CSS Media Queries */
+@media print {
+  .sidebar,
+  header div.current-time-box button,
+  header div.current-time-box span,
+  #global-alert-banner,
+  #notification-container,
+  .no-print,
+  #take-tour-btn,
+  #manual-refresh-btn,
+  #cold-restart-btn,
+  .btn,
+  .panel-actions {
+    display: none !important;
+  }
+  
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+  
+  .main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  
+  .panel {
+    border: 1px solid #cbd5e1 !important;
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    margin-bottom: 2rem !important;
+  }
+  
+  .panel-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    color: #000 !important;
+  }
+  
+  .panel-title {
+    color: #000 !important;
+  }
+  
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    color: #000 !important;
+  }
+  
+  th, td {
+    border: 1px solid #e2e8f0 !important;
+    color: #000 !important;
+    background: #fff !important;
+    padding: 6px !important;
+  }
+  
+  th {
+    background: #f8fafc !important;
+  }
+  
+  input, select, textarea {
+    border: none !important;
+    background: transparent !important;
+    color: #000 !important;
+  }
+}
+
 
 
 
