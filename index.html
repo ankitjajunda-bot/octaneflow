@@ -229,6 +229,23 @@
             Settings
           </button>
         </li>
+        <li class="nav-item-help" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+          <button id="sidebar-help-toggle-btn" class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.35rem; font-weight: 600; font-size: 0.8rem; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #a5b4fc; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); cursor: pointer;">
+            <span style="display: flex; align-items: center; gap: 0.35rem;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+              Quick Help Guide
+            </span>
+            <span id="sidebar-help-arrow">▼</span>
+          </button>
+          <div id="sidebar-help-content" style="display: none; padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-top: 0.5rem; font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; max-height: 250px; overflow-y: auto;">
+            <strong style="color: #fff; display: block; margin-bottom: 0.25rem;">📝 Reading Submission</strong>
+            Enter daily DU1/DU2 nozzle readings. Clean variance check verifies expected vs actual cash.
+            <strong style="color: #fff; display: block; margin-top: 0.5rem; margin-bottom: 0.25rem;">⛽ Stock Reconciliation</strong>
+            Reconciles opening + purchase − sales = closing stock. Checked against daily tank dips.
+            <strong style="color: #fff; display: block; margin-top: 0.5rem; margin-bottom: 0.25rem;">📶 Sync & Offline Mode</strong>
+            Data is saved to browser storage first. Sync status updates automatically when back online.
+          </div>
+        </li>
       </ul>
 
       <div class="nav-footer">
@@ -252,6 +269,10 @@
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="color: var(--primary);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
             Take a Tour
           </button>
+          <button class="btn btn-secondary btn-sm" id="manual-refresh-btn" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); color: #22c55e; display: flex; align-items: center; gap: 0.35rem; font-weight: 600; padding: 0.35rem 0.6rem; cursor: pointer;" title="Pull latest data from GitHub Gist">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #22c55e;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Refresh
+          </button>
           <button class="btn btn-secondary btn-sm" id="cold-restart-btn" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; display: flex; align-items: center; gap: 0.35rem; font-weight: 600; padding: 0.35rem 0.6rem; cursor: pointer;" title="Force Cold Restart & Clear App Cache">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #f87171;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
             Restart & Sync
@@ -263,6 +284,15 @@
           <span id="sync-status-indicator" style="margin-left:0.5rem;"></span>
         </div>
       </header>
+
+      <!-- Global Alert/Sync Banner Container -->
+      <div id="global-alert-banner" style="display:none; margin: 1rem 1.25rem 0 1.25rem; border-radius: 0.5rem; padding: 0.75rem 1rem; font-weight: 500; font-size: 0.85rem; border: 1px solid rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.1); color: #fef08a; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+        <span id="global-alert-message" style="display: flex; align-items: center; gap: 0.5rem;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="color: #fbbf24; flex-shrink: 0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <span id="global-alert-text">Cloud Sync is not configured. Go to Settings to connect GitHub storage.</span>
+        </span>
+        <button class="btn btn-sm btn-primary" id="global-alert-action-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Configure</button>
+      </div>
 
       <!-- View 1: Dashboard -->
       <section id="view-dashboard" class="view-section active">
@@ -1928,34 +1958,34 @@
                 <tr class="header-group" style="border-bottom: 1px solid var(--border); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); text-align: left;">
                   <th rowspan="2" style="text-align: left; padding: 0.5rem;">Date</th>
                   <th colspan="4" style="background: rgba(6, 182, 212, 0.08); border-bottom: 2px solid var(--color-petrol); padding: 0.5rem; text-align: center;">Petrol Dispensing Units (Totalizers)</th>
-                  <th rowspan="2" style="background: rgba(6, 182, 212, 0.04); padding: 0.5rem; text-align: right;">Tests</th>
-                  <th rowspan="2" style="background: rgba(6, 182, 212, 0.04); padding: 0.5rem; text-align: right;">Petrol L</th>
+                  <th rowspan="2" style="background: rgba(6, 182, 212, 0.04); padding: 0.5rem; text-align: right;" title="Testing volume (typically 5L per test, deducted from sales)">Tests</th>
+                  <th rowspan="2" style="background: rgba(6, 182, 212, 0.04); padding: 0.5rem; text-align: right;" title="Calculated net petrol sales volume">Petrol L</th>
                   <th colspan="3" style="background: rgba(16, 185, 129, 0.08); border-bottom: 2px solid #10b981; padding: 0.5rem; text-align: center;">Petrol Tank Wetstock</th>
                   <th colspan="4" style="background: rgba(234, 179, 8, 0.08); border-bottom: 2px solid var(--color-diesel); padding: 0.5rem; text-align: center;">Diesel Dispensing Units (Totalizers)</th>
-                  <th rowspan="2" style="background: rgba(234, 179, 8, 0.04); padding: 0.5rem; text-align: right;">Tests</th>
-                  <th rowspan="2" style="background: rgba(234, 179, 8, 0.04); padding: 0.5rem; text-align: right;">Diesel L</th>
+                  <th rowspan="2" style="background: rgba(234, 179, 8, 0.04); padding: 0.5rem; text-align: right;" title="Testing volume (typically 5L per test, deducted from sales)">Tests</th>
+                  <th rowspan="2" style="background: rgba(234, 179, 8, 0.04); padding: 0.5rem; text-align: right;" title="Calculated net diesel sales volume">Diesel L</th>
                   <th colspan="3" style="background: rgba(245, 158, 11, 0.08); border-bottom: 2px solid #f59e0b; padding: 0.5rem; text-align: center;">Diesel Tank Wetstock</th>
                   <th colspan="3" style="background: rgba(14, 165, 233, 0.08); border-bottom: 2px solid var(--primary); padding: 0.5rem; text-align: center;">Cash Variance Analysis</th>
-                  <th rowspan="2" style="padding: 0.5rem; text-align: center;">Math Check</th>
+                  <th rowspan="2" style="padding: 0.5rem; text-align: center;" title="Mathematical checks for totalizer continuity and logical limits">Math Check</th>
                 </tr>
                 <tr class="header-sub" style="border-bottom: 1px solid var(--border); font-size: 0.7rem; color: var(--text-dim); text-align: right;">
-                  <th style="background: rgba(6, 182, 212, 0.04); padding: 0.4rem; text-align: right;">DU1 Open</th>
-                  <th style="background: rgba(6, 182, 212, 0.04); padding: 0.4rem; text-align: right;">DU1 Close</th>
-                  <th style="background: rgba(6, 182, 212, 0.04); padding: 0.4rem; text-align: right;">DU2 Open</th>
-                  <th style="background: rgba(6, 182, 212, 0.04); padding: 0.4rem; text-align: right;">DU2 Close</th>
-                  <th style="background: rgba(16, 185, 129, 0.04); padding: 0.4rem; text-align: right;">Dip (cm)</th>
-                  <th style="background: rgba(16, 185, 129, 0.04); padding: 0.4rem; text-align: right;">Volume (L)</th>
-                  <th style="background: rgba(16, 185, 129, 0.04); padding: 0.4rem; text-align: right;">Variance (L)</th>
-                  <th style="background: rgba(234, 179, 8, 0.04); padding: 0.4rem; text-align: right;">DU1 Open</th>
-                  <th style="background: rgba(234, 179, 8, 0.04); padding: 0.4rem; text-align: right;">DU1 Close</th>
-                  <th style="background: rgba(234, 179, 8, 0.04); padding: 0.4rem; text-align: right;">DU2 Open</th>
-                  <th style="background: rgba(234, 179, 8, 0.04); padding: 0.4rem; text-align: right;">DU2 Close</th>
-                  <th style="background: rgba(245, 158, 11, 0.04); padding: 0.4rem; text-align: right;">Dip (cm)</th>
-                  <th style="background: rgba(245, 158, 11, 0.04); padding: 0.4rem; text-align: right;">Volume (L)</th>
-                  <th style="background: rgba(245, 158, 11, 0.04); padding: 0.4rem; text-align: right;">Variance (L)</th>
-                  <th style="background: rgba(14, 165, 233, 0.04); padding: 0.4rem; text-align: right;">Expected Rev</th>
-                  <th style="background: rgba(14, 165, 233, 0.04); padding: 0.4rem; text-align: right;">Actual Coll</th>
-                  <th style="background: rgba(14, 165, 233, 0.04); padding: 0.4rem; text-align: right;">Variance</th>
+                  <th style="background: rgba(6, 182, 212, 0.04); padding: 0.4rem; text-align: right;" title="Opening totalizer reading for Dispensing Unit 1">DU1 Open</th>
+                  <th style="background: rgba(6, 182, 212, 0.04); padding: 0.4rem; text-align: right;" title="Closing totalizer reading for Dispensing Unit 1">DU1 Close</th>
+                  <th style="background: rgba(6, 182, 212, 0.04); padding: 0.4rem; text-align: right;" title="Opening totalizer reading for Dispensing Unit 2">DU2 Open</th>
+                  <th style="background: rgba(6, 182, 212, 0.04); padding: 0.4rem; text-align: right;" title="Closing totalizer reading for Dispensing Unit 2">DU2 Close</th>
+                  <th style="background: rgba(16, 185, 129, 0.04); padding: 0.4rem; text-align: right;" title="Measured tank dip height in centimeters">Dip (cm)</th>
+                  <th style="background: rgba(16, 185, 129, 0.04); padding: 0.4rem; text-align: right;" title="Calculated tank volume in Liters based on calibration chart">Volume (L)</th>
+                  <th style="background: rgba(16, 185, 129, 0.04); padding: 0.4rem; text-align: right;" title="Wetstock variance: Physical closing stock minus expected book stock">Variance (L)</th>
+                  <th style="background: rgba(234, 179, 8, 0.04); padding: 0.4rem; text-align: right;" title="Opening totalizer reading for Dispensing Unit 1">DU1 Open</th>
+                  <th style="background: rgba(234, 179, 8, 0.04); padding: 0.4rem; text-align: right;" title="Closing totalizer reading for Dispensing Unit 1">DU1 Close</th>
+                  <th style="background: rgba(234, 179, 8, 0.04); padding: 0.4rem; text-align: right;" title="Opening totalizer reading for Dispensing Unit 2">DU2 Open</th>
+                  <th style="background: rgba(234, 179, 8, 0.04); padding: 0.4rem; text-align: right;" title="Closing totalizer reading for Dispensing Unit 2">DU2 Close</th>
+                  <th style="background: rgba(245, 158, 11, 0.04); padding: 0.4rem; text-align: right;" title="Measured tank dip height in centimeters">Dip (cm)</th>
+                  <th style="background: rgba(245, 158, 11, 0.04); padding: 0.4rem; text-align: right;" title="Calculated tank volume in Liters based on calibration chart">Volume (L)</th>
+                  <th style="background: rgba(245, 158, 11, 0.04); padding: 0.4rem; text-align: right;" title="Wetstock variance: Physical closing stock minus expected book stock">Variance (L)</th>
+                  <th style="background: rgba(14, 165, 233, 0.04); padding: 0.4rem; text-align: right;" title="Theoretical sales value based on volume and daily rates">Expected Rev</th>
+                  <th style="background: rgba(14, 165, 233, 0.04); padding: 0.4rem; text-align: right;" title="Sum of all actual collections (Cash, PhonePe, Cards, Credit)">Actual Coll</th>
+                  <th style="background: rgba(14, 165, 233, 0.04); padding: 0.4rem; text-align: right;" title="Collection variance: Expected Revenue minus Actual Collection">Variance</th>
                 </tr>
               </thead>
               <tbody id="dsr-review-table-body">
