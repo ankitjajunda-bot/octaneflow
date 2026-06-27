@@ -1742,6 +1742,11 @@ tr:hover td {
   color: #fecdd3;
   border: 1px dashed rgba(225, 29, 72, 0.5);
 }
+.anomaly-badge-lowstock {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fdba74;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+}
 
 /* Consolidated Subtabs Navigation Bar */
 .subtab-bar {
@@ -1863,6 +1868,132 @@ tr:hover td {
   background: rgba(234, 179, 8, 0.1) !important;
   color: #eab308 !important;
 }
+
+/* Expenses popover and stock indicator styles */
+.expense-btn {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.expense-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
+}
+
+.expense-popover-container {
+  position: relative;
+  display: inline-block;
+}
+
+.expense-popover {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: rgba(21, 31, 50, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+  padding: 0.75rem !important;
+  z-index: 1000 !important;
+  min-width: 260px !important;
+  max-width: 320px !important;
+  text-align: left !important;
+  font-family: 'Outfit', sans-serif !important;
+  animation: fadeInDown 0.2s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.expense-popover-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding-bottom: 0.4rem !important;
+  margin-bottom: 0.4rem !important;
+}
+
+.expense-popover-title {
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  color: #f8fafc !important;
+}
+
+.expense-popover-close {
+  background: none !important;
+  border: none !important;
+  color: var(--text-dim) !important;
+  cursor: pointer !important;
+  font-size: 0.9rem !important;
+  padding: 0 !important;
+}
+
+.expense-popover-close:hover {
+  color: white !important;
+}
+
+.expense-popover-item {
+  display: flex !important;
+  justify-content: space-between !important;
+  font-size: 0.8rem !important;
+  padding: 0.25rem 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  color: #cbd5e1 !important;
+}
+
+.expense-popover-item:last-child {
+  border-bottom: none !important;
+}
+
+.expense-popover-item .item-val {
+  font-weight: 600 !important;
+  color: #f8fafc !important;
+}
+
+.stock-mismatch-badge {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  padding: 1px 4px !important;
+  border-radius: 4px !important;
+  font-size: 0.65rem !important;
+  font-weight: 600 !important;
+  margin-left: 4px !important;
+  cursor: help !important;
+}
+
+.stock-ok-badge {
+  background: rgba(34, 197, 94, 0.1) !important;
+  color: #22c55e !important;
+  border: 1px solid rgba(34, 197, 94, 0.2) !important;
+  padding: 1px 4px !important;
+  border-radius: 4px !important;
+  font-size: 0.65rem !important;
+  font-weight: 600 !important;
+  margin-left: 4px !important;
+}
+
 
 
 

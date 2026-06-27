@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OctaneFlow - Fuel Station Manager</title>
+  <title>Ram Kisan Sewa Kendra, Chandaroon</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
@@ -15,8 +15,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="OctaneFlow">
-  <meta name="application-name" content="OctaneFlow">
+  <meta name="apple-mobile-web-app-title" content="RKSK Chandaroon">
+  <meta name="application-name" content="RKSK Chandaroon">
   <meta name="description" content="Fuel station operations dashboard — sales, stock, P&amp;L, tanker forecast">
 
 
@@ -36,7 +36,7 @@
         <div style="width:72px;height:72px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:1.25rem;display:inline-flex;align-items:center;justify-content:center;margin-bottom:1rem;box-shadow:0 0 40px rgba(249,115,22,0.35);">
           <svg viewBox="0 0 24 24" width="40" height="40" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
         </div>
-        <h1 style="font-size:1.75rem;font-weight:800;color:#f8fafc;margin:0;">OctaneFlow</h1>
+        <h1 style="font-size:1.5rem;font-weight:800;color:#f8fafc;margin:0;line-height:1.2;">Ram Kisan Sewa Kendra<br><small style="font-size:1rem;color:#f97316;font-weight:600;">Chandaroon</small></h1>
         <p style="color:#64748b;margin:0.35rem 0 0;">Fuel Station Management</p>
       </div>
       <form id="login-form" style="display:flex;flex-direction:column;gap:1rem;">
@@ -70,7 +70,7 @@
         </div>
         <div>
           <div style="font-weight:700;color:#f8fafc;font-size:0.95rem;">👷 <span id="emp-user-name">Employee</span></div>
-          <div style="font-size:0.7rem;color:#64748b;">OctaneFlow · Submit Readings</div>
+          <div style="font-size:0.7rem;color:#64748b;">RKSK Chandaroon · Submit Readings</div>
         </div>
       </div>
       <button onclick="logoutUser()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:0.5rem;padding:0.4rem 0.85rem;font-size:0.8rem;font-weight:600;cursor:pointer;">Logout</button>
@@ -193,7 +193,7 @@
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16H11v-2h2v2zm0-4H11V7h2v7z"/>
           </svg>
         </div>
-        <span class="logo-text">OctaneFlow</span>
+        <span class="logo-text" style="font-size: 0.85rem; line-height: 1.2; display: flex; flex-direction: column;"><span>Ram Kisan Sewa Kendra</span><small style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">Chandaroon</small></span>
       </div>
 
       <ul class="nav-links">
@@ -233,7 +233,7 @@
       <div class="nav-footer">
         <div id="session-user-name" style="color:#f97316;font-weight:700;font-size:0.8rem;margin-bottom:0.5rem;"></div>
         <button onclick="logoutUser()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:0.5rem;padding:0.3rem 0.7rem;font-size:0.72rem;font-weight:600;cursor:pointer;width:100%;margin-bottom:0.5rem;">🚪 Logout</button>
-        OctaneFlow v1.0.0<br>Local-First Platform
+        RKSK Chandaroon v1.0.0<br>Local-First Platform
       </div>
     </aside>
 
@@ -395,6 +395,13 @@
               Sales Cumulative Sheet
             </h2>
             <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+              <div style="display:flex; gap:0.4rem; align-items:center; margin-right:0.5rem; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:var(--radius-sm); padding:2px 8px;">
+                <span style="font-size:0.75rem; color:var(--text-muted);">Zoom:</span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="adjustLedgerZoom(-0.1)" style="padding:0.15rem 0.35rem; font-size:0.72rem; font-weight:700; border:none; background:transparent;">➖</button>
+                <span id="ledger-zoom-label" style="font-size:0.72rem; font-weight:700; color:#fff; min-width:32px; text-align:center;">100%</span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="adjustLedgerZoom(0.1)" style="padding:0.15rem 0.35rem; font-size:0.72rem; font-weight:700; border:none; background:transparent;">➕</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="resetLedgerZoom()" style="padding:0.15rem 0.35rem; font-size:0.72rem; border:none; background:transparent; opacity:0.6;">Reset</button>
+              </div>
               <div class="view-mode-selector" id="view-mode-selector-parent" style="display: flex; gap: 2px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px;">
                 <button class="btn btn-secondary btn-sm" id="view-type-table-btn" style="border:none; border-radius:4px; padding: 0.35rem 0.75rem; background: var(--primary);">Spreadsheet View</button>
                 <button class="btn btn-secondary btn-sm" id="view-type-split-btn" style="border:none; border-radius:4px; padding: 0.35rem 0.75rem; background: transparent;">Split Analyst View</button>
@@ -893,6 +900,21 @@
 
               <div class="form-row">
                 <div class="form-group">
+                  <label for="purchase-invoice-no">Invoice / Challan Number</label>
+                  <input type="text" id="purchase-invoice-no" placeholder="e.g. 29384729" required style="width: 100%;">
+                </div>
+                <div class="form-group">
+                  <label for="purchase-payment-status">Payment Status</label>
+                  <select id="purchase-payment-status" style="width: 100%; padding:0.5rem; border-radius:var(--radius-sm); background:var(--bg-input); border:1px solid var(--border); color:#fff; font-family:inherit; font-size:0.85rem; height:42px;">
+                    <option value="Paid">Paid via RTGS</option>
+                    <option value="Pending">Pending RTGS (Due in 2-3 Days)</option>
+                    <option value="Due">Due / Under Credit</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
                   <label for="purchase-price-petrol">Petrol Purchase Price (/Liter)</label>
                   <input type="number" id="purchase-price-petrol" step="0.01" min="0.1" placeholder="e.g. 90.50" required>
                 </div>
@@ -1007,6 +1029,66 @@
           </div>
         </div>
       </section>
+
+      <!-- View: Supply Sheet (OCR Extracted Bills) -->
+      <section id="view-supplies" class="view-section">
+        
+        <!-- Summary cards for supplies -->
+        <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div class="metric-card">
+            <div class="metric-label" style="color: var(--color-petrol); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Petrol Received</div>
+            <div class="metric-value" id="supply-total-petrol" style="font-size: 1.8rem; font-weight: 700; margin-top: 0.25rem;">0 KL</div>
+            <div class="metric-trend text-muted" id="supply-count-petrol" style="font-size: 0.78rem;">0 Tankers</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label" style="color: var(--color-diesel); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Diesel Received</div>
+            <div class="metric-value" id="supply-total-diesel" style="font-size: 1.8rem; font-weight: 700; margin-top: 0.25rem;">0 KL</div>
+            <div class="metric-trend text-muted" id="supply-count-diesel" style="font-size: 0.78rem;">0 Tankers</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label" style="color: var(--primary); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Supply Cost</div>
+            <div class="metric-value" id="supply-total-cost" style="font-size: 1.8rem; font-weight: 700; margin-top: 0.25rem;">₹ 0.00</div>
+            <div class="metric-trend text-muted" id="supply-total-count" style="font-size: 0.78rem;">0 Deliveries</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header" style="flex-wrap: wrap; gap: 1rem;">
+            <h2 class="panel-title">OCR Extracted Tanker Supplies</h2>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <select id="filter-supply-product" style="padding: 0.4rem 0.8rem; font-size: 0.82rem; border-radius: 0.35rem; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); outline: none;">
+                <option value="all">All Products</option>
+                <option value="Petrol">Petrol (EBMS/MS)</option>
+                <option value="Diesel">Diesel (HSD)</option>
+              </select>
+              <input type="text" id="search-supply-input" placeholder="Search by Date/Invoice/SAP No..." style="padding: 0.4rem 0.8rem; font-size: 0.82rem; border-radius: 0.35rem; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); min-width: 220px; outline: none;">
+            </div>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Invoice Date</th>
+                  <th>Product</th>
+                  <th>Quantity (KL)</th>
+                  <th>Quantity (L)</th>
+                  <th>Material Cost</th>
+                  <th>Invoice No</th>
+                  <th>SAP Entry No</th>
+                  <th>Truck Number</th>
+                  <th>Status</th>
+                  <th>Anomalies / Remarks</th>
+                </tr>
+              </thead>
+              <tbody id="supplies-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
 
       <!-- View 4: Selling Prices -->
       <section id="view-pricing" class="view-section">
@@ -1404,6 +1486,13 @@
                 <div class="form-group"><label for="new-emp-name">Full Name</label><input type="text" id="new-emp-name" placeholder="Ramesh Kumar"></div>
                 <div class="form-group"><label for="new-emp-username">Username</label><input type="text" id="new-emp-username" placeholder="ramesh or 9876543210"></div>
                 <div class="form-group"><label for="new-emp-pin">PIN (4–6 digits)</label><input type="password" id="new-emp-pin" placeholder="e.g. 1234" maxlength="6"></div>
+                <div class="form-group">
+                  <label for="new-emp-role-select">Account Role</label>
+                  <select id="new-emp-role-select" style="width:100%; padding:0.5rem; border-radius:var(--radius-sm); background:var(--bg-input); border:1px solid var(--border); color:#fff; font-family:inherit; font-size:0.85rem; outline:none; height:42px;">
+                    <option value="employee">Employee (Operator)</option>
+                    <option value="owner">Owner (Administrator)</option>
+                  </select>
+                </div>
               </div>
               <button id="add-employee-btn" class="btn btn-primary" style="margin-top:0.5rem;">➕ Add Employee</button>
             </div>
@@ -1812,20 +1901,34 @@
 
         <!-- Spreadsheet Panel -->
         <div class="panel">
-          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
             <h2 class="panel-title">✏️ Digitized DSR Spreadsheet (Click dashed cells to edit)</h2>
             <div style="font-size: 0.72rem; color: var(--text-muted);">
               Editing automatically propagates opening values to maintain continuous sequences.
             </div>
           </div>
-          <div style="overflow-x: auto; padding: 0.5rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 1.25rem; background:rgba(255,255,255,0.01); border-bottom:1px solid var(--border); flex-wrap:wrap; gap:0.5rem;">
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <span style="font-size:0.75rem; color:var(--text-muted);">Spreadsheet Zoom:</span>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="adjustDsrZoom(-0.1)" style="padding:0.15rem 0.4rem; font-size:0.75rem; font-weight:700;">➖ Zoom Out</button>
+              <span id="dsr-zoom-label" style="font-size:0.75rem; font-weight:700; color:#fff; min-width:35px; text-align:center;">100%</span>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="adjustDsrZoom(0.1)" style="padding:0.15rem 0.4rem; font-size:0.75rem; font-weight:700;">➕ Zoom In</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="resetDsrZoom()" style="padding:0.15rem 0.4rem; font-size:0.75rem;">Reset</button>
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">
+              💡 Click any dashed cell to edit.
+            </div>
+          </div>
+          <div id="dsr-spreadsheet-container" style="overflow-x: auto; padding: 0.5rem;">
             <table class="spreadsheet-table" style="min-width: 1400px; width: 100%; border-collapse: collapse;">
               <thead>
                 <tr class="header-group" style="border-bottom: 1px solid var(--border); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); text-align: left;">
                   <th rowspan="2" style="text-align: left; padding: 0.5rem;">Date</th>
                   <th colspan="4" style="background: rgba(6, 182, 212, 0.08); border-bottom: 2px solid var(--color-petrol); padding: 0.5rem; text-align: center;">Petrol Dispensing Units (Totalizers)</th>
+                  <th rowspan="2" style="background: rgba(6, 182, 212, 0.04); padding: 0.5rem; text-align: right;">Tests</th>
                   <th rowspan="2" style="background: rgba(6, 182, 212, 0.04); padding: 0.5rem; text-align: right;">Petrol L</th>
                   <th colspan="4" style="background: rgba(234, 179, 8, 0.08); border-bottom: 2px solid var(--color-diesel); padding: 0.5rem; text-align: center;">Diesel Dispensing Units (Totalizers)</th>
+                  <th rowspan="2" style="background: rgba(234, 179, 8, 0.04); padding: 0.5rem; text-align: right;">Tests</th>
                   <th rowspan="2" style="background: rgba(234, 179, 8, 0.04); padding: 0.5rem; text-align: right;">Diesel L</th>
                   <th colspan="3" style="background: rgba(14, 165, 233, 0.08); border-bottom: 2px solid var(--primary); padding: 0.5rem; text-align: center;">Cash Variance Analysis</th>
                   <th rowspan="2" style="padding: 0.5rem; text-align: center;">Math Check</th>
@@ -1850,6 +1953,11 @@
             </table>
           </div>
         </div>
+      </section>
+
+      <!-- KC DSR Live Edit Dashboard View -->
+      <section id="view-kc-dsr-live" class="view-section" style="padding: 0; height: calc(100vh - 120px); min-height: 600px;">
+        <iframe src="live_shift_reconciliation_dashboard.html" style="width: 100%; height: 100%; border: none; border-radius: var(--radius-lg); background: var(--bg-card);"></iframe>
       </section>
 
     </main>
@@ -1992,6 +2100,57 @@
 
           </div>
 
+        </div>
+
+        <!-- Plan 21: Starting Stock Dip Overrides -->
+        <div class="modal-ledger-card" style="margin: 0 1rem 1.25rem 1rem; border: 1px dashed var(--border); background: rgba(255, 255, 255, 0.005); box-sizing: border-box;">
+          <h3 style="font-size: 0.85rem; margin-bottom: 0.25rem;">Starting Stock Dip Overrides (Morning Volume)</h3>
+          <p style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.75rem;">
+            If specified, these manual values will override the reconciled starting stock for this day. Leave blank to auto-reconcile or carry forward.
+          </p>
+          <div class="form-row" style="gap: 1rem;">
+            <div class="form-group" style="margin-bottom:0; flex: 1;">
+              <label for="ledger_p_dip_override" style="color:var(--color-petrol); font-size: 0.72rem; font-weight: 600;">Petrol Starting Dip (Liters)</label>
+              <input type="number" id="ledger_p_dip_override" step="1" min="0" placeholder="Auto-reconciled" style="width: 100%;">
+            </div>
+            <div class="form-group" style="margin-bottom:0; flex: 1;">
+              <label for="ledger_d_dip_override" style="color:var(--color-diesel); font-size: 0.72rem; font-weight: 600;">Diesel Starting Dip (Liters)</label>
+              <input type="number" id="ledger_d_dip_override" step="1" min="0" placeholder="Auto-reconciled" style="width: 100%;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily Cash Expenses (Commission Deductions) -->
+        <div class="modal-ledger-card" style="margin: 0 1rem 1.25rem 1rem; border: 1px dashed var(--border); background: rgba(255, 255, 255, 0.005); box-sizing: border-box;">
+          <h3 style="font-size: 0.85rem; margin-bottom: 0.25rem;">Daily Cash Expenses (Deducted from Commission)</h3>
+          <p style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.75rem;">
+            Log cash payments made from the drawer on this operating day (e.g. Milk, handovers).
+          </p>
+          
+          <!-- Modal Expenses List -->
+          <div id="modal-expenses-list" style="margin-bottom: 0.75rem; max-height: 120px; overflow-y: auto; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border); padding: 0.5rem; border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem;">
+            <div style="color: var(--text-dim); text-align: center; padding: 0.5rem;">No daily cash expenses logged for this date.</div>
+          </div>
+          
+          <!-- Inputs to add expense -->
+          <div class="form-row" style="gap: 0.5rem; align-items: flex-end;">
+            <div class="form-group" style="flex: 2; margin-bottom: 0;">
+              <label style="font-size: 0.72rem;">Description / Recipient</label>
+              <input type="text" id="new-dayexp-name" placeholder="e.g. Milk, ANKIT, tea" style="width:100%; height:34px; padding: 0.35rem; font-size:0.8rem;">
+            </div>
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label style="font-size: 0.72rem;">Amount (₹)</label>
+              <input type="number" id="new-dayexp-amount" placeholder="0.00" style="width:100%; height:34px; padding: 0.35rem; font-size:0.8rem;">
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="addModalExpense()" style="height:34px; padding: 0 0.75rem; font-size:0.78rem;">➕ Add</button>
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-top: 1.25rem; margin-bottom: 1.25rem; padding: 0 1rem; width: 100%;">
+          <div class="form-group" style="width: 100%; margin-bottom: 0;">
+            <label for="ledger-remarks" style="font-size:0.8rem; font-weight:600; color:var(--text-main); margin-bottom: 0.4rem; display: block;">Remarks & Feedback for AI Reconciler</label>
+            <textarea id="ledger-remarks" rows="2" placeholder="Enter instructions, notes, or explanations for the AI..." style="width: 100%; min-height: 60px; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit; font-size: 0.85rem; resize: vertical; box-sizing: border-box;"></textarea>
+          </div>
         </div>
 
         <div class="modal-footer">
@@ -2145,7 +2304,12 @@
   </div>
 
   <!-- Scripts -->
+  <script src="dsr_data.js"></script>
+  <script src="supply_bills_data.js"></script>
+  <script src="extracted_kc_expenses.js"></script>
+  <script src="ocr_stock_data.js"></script>
   <script src="app.js"></script>
+
 
   <!-- PWA: Offline banner -->
   <div id="pwa-offline-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
@@ -2227,6 +2391,71 @@
     window.addEventListener('appinstalled', () => {
       if (_installBanner) _installBanner.style.display = 'none';
       _deferredPrompt = null;
+    });
+
+    // Spreadsheet Zoom Logic
+    let currentDsrZoom = 1.0;
+    window.adjustDsrZoom = function(delta) {
+      currentDsrZoom = Math.min(2.0, Math.max(0.5, currentDsrZoom + delta));
+      const table = document.querySelector('#dsr-spreadsheet-container table');
+      if (table) {
+        table.style.zoom = currentDsrZoom;
+      }
+      const label = document.getElementById('dsr-zoom-label');
+      if (label) label.textContent = Math.round(currentDsrZoom * 100) + '%';
+    };
+    window.resetDsrZoom = function() {
+      currentDsrZoom = 1.0;
+      window.adjustDsrZoom(0);
+    };
+
+    let currentLedgerZoom = 1.0;
+    window.adjustLedgerZoom = function(delta) {
+      currentLedgerZoom = Math.min(2.0, Math.max(0.5, currentLedgerZoom + delta));
+      const table = document.querySelector('#ledger-table-container table');
+      if (table) {
+        table.style.zoom = currentLedgerZoom;
+      }
+      const label = document.getElementById('ledger-zoom-label');
+      if (label) label.textContent = Math.round(currentLedgerZoom * 100) + '%';
+    };
+    window.resetLedgerZoom = function() {
+      currentLedgerZoom = 1.0;
+      window.adjustLedgerZoom(0);
+    };
+
+    // Apple Trackpad pinch-to-zoom support (ctrl + scroll wheel gestures)
+    function setupTrackpadZoom(containerId, getZoom, setZoom) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.addEventListener('wheel', function(e) {
+        if (e.ctrlKey) {
+          e.preventDefault();
+          // deltaY is negative when pinching in, positive when pinching out
+          let delta = -e.deltaY * 0.005;
+          let newZoom = Math.min(2.0, Math.max(0.5, getZoom() + delta));
+          setZoom(newZoom);
+        }
+      }, { passive: false });
+    }
+
+    // Attach listeners on load
+    document.addEventListener('DOMContentLoaded', () => {
+      setupTrackpadZoom('dsr-spreadsheet-container', () => currentDsrZoom, (val) => {
+        currentDsrZoom = val;
+        const table = document.querySelector('#dsr-spreadsheet-container table');
+        if (table) table.style.zoom = currentDsrZoom;
+        const label = document.getElementById('dsr-zoom-label');
+        if (label) label.textContent = Math.round(currentDsrZoom * 100) + '%';
+      });
+
+      setupTrackpadZoom('ledger-table-container', () => currentLedgerZoom, (val) => {
+        currentLedgerZoom = val;
+        const table = document.querySelector('#ledger-table-container table');
+        if (table) table.style.zoom = currentLedgerZoom;
+        const label = document.getElementById('ledger-zoom-label');
+        if (label) label.textContent = Math.round(currentLedgerZoom * 100) + '%';
+      });
     });
   </script>
 </body>

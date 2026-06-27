@@ -38,3 +38,5 @@ OctaneFlow.command
 # README (optional — keep if you want)
 # README.md
 whatsapp-extension/
+dsr_agent_instructions.md
+sync_to_gist.py

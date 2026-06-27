@@ -1051,7 +1051,7 @@ async function submitEmployeeReading(session) {
   if (!db.pending_entries) db.pending_entries = [];
   db.pending_entries.push(entry);
   saveDB();
-  showNotification('✅ Reading submitted for approval!', 'success');
+  showNotification('✅ Reading submitted to Operator Draft Log! Review and merge under Operations -> Approve Shifts.', 'success');
 
   // Clear numeric form inputs
   ['emp-du1p-open','emp-du1p-close','emp-du1p-tests',
@@ -1531,7 +1531,7 @@ function approveEntry(entryId, skipRender = false) {
 
   if (!skipRender) {
     saveDB();
-    showNotification(`✅ Entry for ${ed.date} (${ed.shift === 'day' ? 'Day' : 'Night'} shift) approved and merged.`, 'success');
+    showNotification(`✅ Entry for ${ed.date} approved and merged into Daily Production Ledger. Synced to cloud Gist! View on Sales Cumulative Sheet.`, 'success');
     renderApprovalsPanel();
   }
 }
@@ -1598,13 +1598,14 @@ async function addUserAccount() {
     const name = document.getElementById('new-emp-name')?.value.trim();
     const user = document.getElementById('new-emp-username')?.value.trim().toLowerCase().replace(/\s+/g,'');
     const pin  = document.getElementById('new-emp-pin')?.value.trim();
-    console.log('[User Management] Form inputs:', { name, user, pin });
+    const role = document.getElementById('new-emp-role-select')?.value || 'employee';
+    console.log('[User Management] Form inputs:', { name, user, pin, role });
     if (!name||!user||!pin) { showNotification('Fill in all three fields.','danger'); return; }
     if (!/^\d{4,6}$/.test(pin)) { showNotification('PIN must be 4–6 digits.','danger'); return; }
     const users = getUsers();
     if (users[user]) { showNotification('Username already exists.','danger'); return; }
     users[user] = {
-      username: user, displayName: name, role: 'employee',
+      username: user, displayName: name, role: role,
       pinHash: await hashString(pin),
       deviceId: null, deviceRegisteredAt: null,
       active: true, createdAt: new Date().toISOString()
@@ -1613,11 +1614,11 @@ async function addUserAccount() {
     document.getElementById('new-emp-name').value = '';
     document.getElementById('new-emp-username').value = '';
     document.getElementById('new-emp-pin').value = '';
-    showNotification(`✅ Employee "${name}" added successfully!`, 'success');
+    showNotification(`✅ Account "${name}" (${role === 'owner' ? 'Owner' : 'Employee'}) added successfully!`, 'success');
     renderUserManagement();
   } catch (err) {
-    console.error('Failed to add employee:', err);
-    showNotification('❌ Failed to add employee: ' + err.message, 'danger');
+    console.error('Failed to add user account:', err);
+    showNotification('❌ Failed to add user account: ' + err.message, 'danger');
   }
 }
 
@@ -1829,6 +1830,27 @@ function loadDB() {
       catch { db.users = {}; }
     }
     saveDB();
+  }
+
+  // Automatically merge clean entries from dsr_data.js into active database
+  if (typeof DSR_DRAFT_DATA !== 'undefined' && DSR_DRAFT_DATA.daily_ledger) {
+    let dbModified = false;
+    DSR_DRAFT_DATA.daily_ledger.forEach(draftRow => {
+      const idx = db.daily_ledger.findIndex(r => r.date === draftRow.date);
+      if (idx === -1) {
+        db.daily_ledger.push(draftRow);
+        dbModified = true;
+      } else {
+        if (JSON.stringify(db.daily_ledger[idx]) !== JSON.stringify(draftRow)) {
+          db.daily_ledger[idx] = draftRow;
+          dbModified = true;
+        }
+      }
+    });
+    if (dbModified) {
+      db.daily_ledger.sort((a, b) => b.date.localeCompare(a.date));
+      saveDB();
+    }
   }
 }
 
@@ -2056,6 +2078,10 @@ function computeLedgerRow(row, wacMap) {
 
   const profit = total_revenue - total_cost;
 
+  const dayExps = row.expenses || (typeof KC_EXPENSES_DATA !== 'undefined' ? KC_EXPENSES_DATA[row.date] : null) || [];
+  const total_expenses = dayExps.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
+  const net_operating_profit = total_commission - total_expenses;
+
   return {
     sales: {
       du1_p: { day: d1_p_day, night: d1_p_night },
@@ -2073,9 +2099,15 @@ function computeLedgerRow(row, wacMap) {
       rev_diesel,
       total_revenue,
       total_cost,
-      profit
+      profit,
+      commission_petrol,
+      commission_diesel,
+      total_commission,
+      total_expenses,
+      net_operating_profit
     }
   };
+
 }
 
 // Reconstruct historical stock level start/end values based on today's current stock played back backwards day by day
@@ -2364,7 +2396,7 @@ function saveDailyReadings(data) {
 
     db.daily_ledger[existingIdx] = data;
     SystemLogger.success('saveDailyReadings', `Reconciliation modified and saved for date ${formatDate(data.date)}. Net Sales: Petrol = ${newNetP.toFixed(2)} L, Diesel = ${newNetD.toFixed(2)} L.`, newCalc.totals);
-    showNotification(`Reconciliation completed for ${formatDate(data.date)}.`, "success");
+    showNotification(`✅ Reconciled values saved in local database and synced to Gist cloud! Updates visible on Sales Cumulative Sheet and Profit charts.`, "success");
   } else {
     // New date log entry: directly subtract sales from stock
     db.stock.petrol = Math.max(0, db.stock.petrol - newNetP);
@@ -2372,7 +2404,7 @@ function saveDailyReadings(data) {
 
     db.daily_ledger.push(data);
     SystemLogger.success('saveDailyReadings', `Daily readings logged and saved for date ${formatDate(data.date)}. Net Sales: Petrol = ${newNetP.toFixed(2)} L, Diesel = ${newNetD.toFixed(2)} L.`, newCalc.totals);
-    showNotification(`Daily readings logged for ${formatDate(data.date)}.`, "success");
+    showNotification(`✅ Daily readings logged in local database and synced to Gist cloud! Updates visible on Sales Cumulative Sheet and Profit charts.`, "success");
   }
 
   // Sort daily ledger chronologically descending
@@ -2402,7 +2434,8 @@ function deleteLedgerRow(dateStr) {
 
 function recordTanker(dateStr, timeStr, loadType, customP, customD, priceP, priceD,
                       petrolInvoiceDensity = 0, petrolObservedDensity = 0, petrolObservedTemp = 0,
-                      dieselInvoiceDensity = 0, dieselObservedDensity = 0, dieselObservedTemp = 0) {
+                      dieselInvoiceDensity = 0, dieselObservedDensity = 0, dieselObservedTemp = 0,
+                      invoiceNo = '', paymentStatus = 'Due') {
   let petrolQty = 0;
   let dieselQty = 0;
 
@@ -2471,10 +2504,9 @@ function recordTanker(dateStr, timeStr, loadType, customP, customD, priceP, pric
     cost_petrol: petrolQty * priceP,
     cost_diesel: dieselQty * priceD,
     total_cost: (petrolQty * priceP) + (dieselQty * priceD),
-    deadline_date: creditDetails.deadlineDate,
-    rtgs_filing_date: creditDetails.rtgsDate,
-    payment_status: 'unpaid',
-    paid_date: null,
+    invoice_no: invoiceNo || ('Challan_' + Date.now()),
+    payment_status: paymentStatus === 'Paid' ? 'paid' : 'unpaid',
+    paid_date: paymentStatus === 'Paid' ? dateStr + 'T' + timeStr : null,
     interest_charged: 0,
 
     petrol_invoice_density: petrolInvoiceDensity,
@@ -2491,13 +2523,15 @@ function recordTanker(dateStr, timeStr, loadType, customP, customD, priceP, pric
     diesel_rho15: dieselRho15,
     diesel_vcf: dieselVcf,
     diesel_corrected_vol: dieselCorrectedVol,
-    diesel_shortage: dieselShortage
+    diesel_shortage: dieselShortage,
+    deadline_date: creditDetails.deadlineDate,
+    rtgs_filing_date: creditDetails.rtgsDate
   };
 
   db.purchases.unshift(purchase);
   saveDB();
   SystemLogger.success('recordTanker', `Recorded tanker delivery: Petrol = ${petrolQty} L @ ₹${priceP}/L, Diesel = ${dieselQty} L @ ₹${priceD}/L. Total Cost: ₹${purchase.total_cost.toFixed(2)}`, purchase);
-  showNotification("Tanker purchase recorded. Stock levels increased.", "success");
+  showNotification("✅ Tanker delivery saved to local database and synced to Gist cloud! Added to Tanker purchases registry and reconciled closing stock.", "success");
 }
 
 function updateSellingPrice(dateTimeStr, priceP, priceD) {
@@ -2511,7 +2545,7 @@ function updateSellingPrice(dateTimeStr, priceP, priceD) {
   db.prices.sort((a,b) => new Date(b.effective_date) - new Date(a.effective_date));
   saveDB();
   SystemLogger.success('updateSellingPrice', `Selling prices updated: Petrol = ₹${entry.petrol.toFixed(2)}/L, Diesel = ₹${entry.diesel.toFixed(2)}/L (Effective: ${entry.effective_date})`, entry);
-  showNotification("Selling prices updated.", "success");
+  showNotification("✅ Selling prices saved to local database and synced to Gist cloud! Updates will apply to future DSR commission calculations.", "success");
 }
 
 function addHoliday(dateStr, name) {
@@ -2522,13 +2556,13 @@ function addHoliday(dateStr, name) {
   db.holidays.push({ date: dateStr, name });
   db.holidays.sort((a,b) => new Date(a.date) - new Date(b.date));
   saveDB();
-  showNotification("Bank holiday added to calendar.", "success");
+  showNotification("✅ Bank holiday added to calendar database and synced to Gist cloud! Bank credit offset will apply to credit planning.", "success");
 }
 
 function removeHoliday(dateStr) {
   db.holidays = db.holidays.filter(h => h.date !== dateStr);
   saveDB();
-  showNotification("Holiday removed.", "info");
+  showNotification("✅ Holiday removed from calendar database and synced to Gist cloud.", "info");
 }
 
 function togglePayment(purchaseId) {
@@ -2553,16 +2587,16 @@ function togglePayment(purchaseId) {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       const ratePerDay = 0.15 / 365;
       p.interest_charged = p.total_cost * ratePerDay * diffDays;
-      showNotification(`Payment marked as PAID (Late by ${diffDays} days). Interest charged.`, "warning");
+      showNotification(`✅ Payment marked as PAID (Late by ${diffDays} days). Interest charged. Synced to Gist cloud!`, "warning");
     } else {
       p.interest_charged = 0;
-      showNotification("Payment marked as PAID (On Time).", "success");
+      showNotification("✅ Payment marked as PAID (On Time). Synced to Gist cloud!", "success");
     }
   } else {
     p.payment_status = 'unpaid';
     p.paid_date = null;
     p.interest_charged = 0;
-    showNotification("Payment reset to unpaid status.", "info");
+    showNotification("✅ Payment reset to unpaid status. Synced to Gist cloud!", "info");
   }
 
   saveDB();
@@ -2664,10 +2698,12 @@ const SUB_TABS = {
     { id: 'shift-recon', label: 'Shift Recon' },
     { id: 'ledger',      label: 'Sales Ledger' },
     { id: 'approvals',   label: 'Pending Approvals', badge: 'approvals-badge' },
-    { id: 'dsr-checker', label: 'DSR Data Checker' }
+    { id: 'dsr-checker', label: 'DSR Data Checker' },
+    { id: 'kc-dsr-live', label: 'Live Shift Reconciliation' }
   ],
   logistics: [
     { id: 'purchases',   label: 'Tanker Purchases' },
+    { id: 'supplies',    label: 'Supply Sheet (OCR)' },
     { id: 'pricing',     label: 'Selling Prices' }
   ],
   financials: [
@@ -2691,6 +2727,7 @@ const titles = {
   dashboard: "Dashboard Overview",
   ledger: "Sales Cumulative Ledger",
   purchases: "Tankers & Credit Operations",
+  supplies: "Supply Sheet (OCR Extracted Bills)",
   pricing: "Fuel Selling Prices",
   holidays: "Bank Holiday Calendar",
   settings: "System Settings & Utilities",
@@ -2698,7 +2735,8 @@ const titles = {
   'shift-recon': "Shift Reconciliation & Cash Count",
   expenses: "Expense Ledger",
   approvals: "Shift Approvals",
-  'dsr-checker': "DSR Data Checker & OCR Verifier"
+  'dsr-checker': "DSR Data Checker & OCR Verifier",
+  'kc-dsr-live': "Live Shift Reconciliation Dashboard"
 };
 
 function switchSubview(mainView, subviewId) {
@@ -2719,7 +2757,7 @@ function switchSubview(mainView, subviewId) {
 
   // Set header title
   const headerTitle = document.getElementById('view-title');
-  if (headerTitle) headerTitle.textContent = titles[subviewId] || "OctaneFlow";
+  if (headerTitle) headerTitle.textContent = titles[subviewId] || "Ram Kisan Sewa Kendra";
 
   // Render content
   renderActiveView(subviewId);
@@ -2791,6 +2829,7 @@ function renderActiveView(viewName) {
   if (viewName === 'dashboard')   { renderDashboard(); updateApprovalsBadge(); }
   if (viewName === 'ledger')      renderLedger();
   if (viewName === 'purchases')   renderPurchases();
+  if (viewName === 'supplies')    renderSupplies();
   if (viewName === 'pricing')     renderPricing();
   if (viewName === 'holidays')    renderHolidays();
   if (viewName === 'settings')    { renderSettings(); renderUserManagement(); }
@@ -2799,6 +2838,11 @@ function renderActiveView(viewName) {
   if (viewName === 'expenses')    renderExpenseLedger();
   if (viewName === 'approvals')   renderApprovalsPanel();
   if (viewName === 'dsr-checker') renderDsrChecker();
+  if (viewName === 'kc-dsr-live') renderKcDsrLive();
+}
+
+function renderKcDsrLive() {
+  // Let the iframe display normally
 }
 
 // -------------------------------------------------------------
@@ -3028,7 +3072,89 @@ function renderLedger() {
 
   const wacMap = buildWACTimeline();
 
+  // 1. Build forward running stock reconciliation timeline (oldest to newest)
+  const stockTimeline = {};
+  let runningPetrol = null;
+  let runningDiesel = null;
+
+  const forwardLedger = [...db.daily_ledger].sort((a, b) => a.date.localeCompare(b.date));
+
+  forwardLedger.forEach(row => {
+    let p_supply = 0;
+    let d_supply = 0;
+
+    const dateStr = row.date;
+    const phys = (typeof DSR_PHYSICAL_STOCK_DATA !== 'undefined') ? DSR_PHYSICAL_STOCK_DATA[dateStr] : null;
+    
+    if (phys) {
+      p_supply = phys.petrol_receipt || 0;
+      d_supply = phys.diesel_receipt || 0;
+    } else {
+      if (typeof SUPPLY_BILLS_DATA !== 'undefined') {
+        const daySupplies = SUPPLY_BILLS_DATA.filter(s => s.invoice_date_iso === dateStr);
+        daySupplies.forEach(s => {
+          const qty = (s.quantity_kl || 0) * 1000;
+          if (s.product === 'Petrol') p_supply += qty;
+          else if (s.product === 'Diesel') d_supply += qty;
+        });
+      }
+    }
+
+    // Plan 21: Truck capacity safeguard. Total supply cannot exceed 12,000 L (12 KL).
+    // Snaps to standard 4 KL compartments if there is an OCR typo or duplicate entry.
+    if (p_supply > 12000) p_supply = 12000;
+    if (d_supply > 12000) d_supply = 12000;
+    if (p_supply + d_supply > 12000) {
+      const ratio = p_supply / (p_supply + d_supply);
+      p_supply = Math.round((12000 * ratio) / 4000) * 4000;
+      d_supply = 12000 - p_supply;
+    }
+
+    let p_dip_raw = (row.p_dip_override !== undefined) ? row.p_dip_override : ((phys && phys.petrol_dip !== undefined) ? phys.petrol_dip : null);
+    let d_dip_raw = (row.d_dip_override !== undefined) ? row.d_dip_override : ((phys && phys.diesel_dip !== undefined) ? phys.diesel_dip : null);
+
+    let start_p = 0;
+    if (p_dip_raw !== null) {
+      start_p = p_dip_raw;
+    } else if (runningPetrol !== null) {
+      start_p = runningPetrol;
+    } else {
+      start_p = row.opening_stock?.ms ?? 8000;
+    }
+
+    let start_d = 0;
+    if (d_dip_raw !== null) {
+      start_d = d_dip_raw;
+    } else if (runningDiesel !== null) {
+      start_d = runningDiesel;
+    } else {
+      start_d = row.opening_stock?.hsd ?? 12000;
+    }
+
+    const c = computeLedgerRow(row, wacMap);
+    const sales_p = c.totals.net_24h.petrol;
+    const sales_d = c.totals.net_24h.diesel;
+
+    const close_p = start_p - sales_p + p_supply;
+    const close_d = start_d - sales_d + d_supply;
+
+    runningPetrol = close_p;
+    runningDiesel = close_d;
+
+    stockTimeline[dateStr] = {
+      start_p,
+      supply_p: p_supply,
+      close_p,
+      physical_p: p_dip_raw,
+      start_d,
+      supply_d: d_supply,
+      close_d,
+      physical_d: d_dip_raw
+    };
+  });
+
   if (ledgerViewMode === 'table') {
+
     tableContainer.style.display = 'block';
     splitContainer.style.display = 'none';
     document.getElementById('ledger-pnl-container').style.display = 'none';
@@ -3060,8 +3186,13 @@ function renderLedger() {
       const isNoSalePetrol = (c.totals?.net_24h?.petrol || 0) <= 0;
       const isNoSaleDiesel = (c.totals?.net_24h?.diesel || 0) <= 0;
 
-      const testsP = (row.du1_p?.tests_day || 0) + (row.du2_p?.tests_day || 0);
-      const testsD = (row.du1_d?.tests_day || 0) + (row.du2_d?.tests_day || 0);
+      const t1p_day   = (row.du1_p && (row.du1_p.close_day ?? 0) > (row.du1_p.open ?? 0))   ? (row.du1_p.tests_day   ?? 1) : 0;
+      const t1d_day   = (row.du1_d && (row.du1_d.close_day ?? 0) > (row.du1_d.open ?? 0))   ? (row.du1_d.tests_day   ?? 1) : 0;
+      const t2p_day   = (row.du2_p && (row.du2_p.close_day ?? 0) > (row.du2_p.open ?? 0))   ? (row.du2_p.tests_day   ?? 1) : 0;
+      const t2d_day   = (row.du2_d && (row.du2_d.close_day ?? 0) > (row.du2_d.open ?? 0))   ? (row.du2_d.tests_day   ?? 1) : 0;
+
+      const testsP = t1p_day + t2p_day;
+      const testsD = t1d_day + t2d_day;
       const isNoTesting = testsP === 0 && testsD === 0;
 
       const isNegativeProfit = c.financials.profit < 0;
@@ -3084,6 +3215,16 @@ function renderLedger() {
         badgesHtml += `<span class="anomaly-badge anomaly-badge-variance" title="Reconciliation Cash counted variance: ${v > 0 ? '+' : ''}${v.toFixed(2)}">Var: ${v > 0 ? '+' : ''}${v.toFixed(0)}</span>`;
       }
 
+      const stk = stockTimeline[row.date];
+      const isLowStockPetrol = stk && stk.close_p < 600;
+      const isLowStockDiesel = stk && stk.close_d < 40;
+      if (isLowStockPetrol || isLowStockDiesel) {
+        let lowDetails = [];
+        if (isLowStockPetrol) lowDetails.push(`Petrol (${stk.close_p.toFixed(0)}L < 600L)`);
+        if (isLowStockDiesel) lowDetails.push(`Diesel (${stk.close_d.toFixed(0)}L < 40L)`);
+        badgesHtml += `<span class="anomaly-badge anomaly-badge-lowstock" title="Low Fuel Level: ${lowDetails.join(', ')}">Low Stock</span>`;
+      }
+
       return {
         isPriceChange,
         isNoSalePetrol,
@@ -3091,6 +3232,8 @@ function renderLedger() {
         isNoTesting,
         isNegativeProfit,
         hasVariance,
+        isLowStockPetrol,
+        isLowStockDiesel,
         badgesHtml,
         testsP,
         testsD,
@@ -3112,6 +3255,10 @@ function renderLedger() {
             <th colspan="3">24hr Gross Revenue</th>
             <th rowspan="2">Estimated Cost</th>
             <th rowspan="2">Total Profit</th>
+            <th rowspan="2">Net Operating Profit (₹)</th>
+            <th colspan="3" class="col-petrol bg-petrol-group">Petrol Stock Reconciliation</th>
+            <th colspan="3" class="col-diesel bg-diesel-group">Diesel Stock Reconciliation</th>
+            <th rowspan="2">Expenses</th>
             <th rowspan="2" class="sticky-col-right" style="min-width: 90px;">Actions</th>
           </tr>
           <tr class="header-cols">
@@ -3137,6 +3284,14 @@ function renderLedger() {
             <th class="col-petrol">Petrol</th>
             <th class="col-diesel">Diesel</th>
             <th>Total</th>
+
+            <th class="bg-petrol-group">Morning Dip</th>
+            <th class="bg-petrol-group">Supply (L)</th>
+            <th class="bg-petrol-group">Reconciled Close</th>
+
+            <th class="bg-diesel-group">Morning Dip</th>
+            <th class="bg-diesel-group">Supply (L)</th>
+            <th class="bg-diesel-group">Reconciled Close</th>
           </tr>
         </thead>
       `;
@@ -3146,6 +3301,44 @@ function renderLedger() {
         const c = anomaly.c;
         const testsP = anomaly.testsP;
         const testsD = anomaly.testsD;
+
+        const stk = stockTimeline[row.date] || {
+          start_p: 0, supply_p: 0, close_p: 0, physical_p: null,
+          start_d: 0, supply_d: 0, close_d: 0, physical_d: null
+        };
+
+        let p_dip_html = stk.start_p.toFixed(0);
+        if (stk.physical_p !== null) {
+          const diff = Math.abs(stk.start_p - stk.physical_p);
+          if (diff > 500) {
+            p_dip_html += ` <span class="stock-mismatch-badge" title="Physical Dip: ${stk.physical_p.toFixed(0)} L (Diff: ${diff.toFixed(0)} L)">⚠️ Mismatch</span>`;
+          } else {
+            p_dip_html += ` <span class="stock-ok-badge" title="Physical Dip matches reconciled stock">OK</span>`;
+          }
+        }
+
+        let d_dip_html = stk.start_d.toFixed(0);
+        if (stk.physical_d !== null) {
+          const diff = Math.abs(stk.start_d - stk.physical_d);
+          if (diff > 500) {
+            d_dip_html += ` <span class="stock-mismatch-badge" title="Physical Dip: ${stk.physical_d.toFixed(0)} L (Diff: ${diff.toFixed(0)} L)">⚠️ Mismatch</span>`;
+          } else {
+            d_dip_html += ` <span class="stock-ok-badge" title="Physical Dip matches reconciled stock">OK</span>`;
+          }
+        }
+
+        const dayExps = row.expenses || (typeof KC_EXPENSES_DATA !== 'undefined' ? KC_EXPENSES_DATA[row.date] : null) || [];
+        let expenses_html = '&mdash;';
+        const totAmt = dayExps.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        if (totAmt > 0) {
+          expenses_html = `
+            <div class="expense-popover-container">
+              <button class="expense-btn" onclick="toggleExpensePopover(event, '${row.date}')">
+                ₹ ${totAmt.toFixed(0)}
+              </button>
+            </div>
+          `;
+        }
 
         rowsHtml += `
           <tr>
@@ -3184,6 +3377,22 @@ function renderLedger() {
               ${formatCurrency(c.financials?.profit ?? 0)}
             </td>
 
+            <!-- Plan 21: Net Operating Profit (Commission - Expenses) -->
+            <td style="font-weight:600;" title="Gross Commission: ${formatCurrency(c.financials?.total_commission ?? 0)} | Daily Expenses: ${formatCurrency(totAmt)}">${formatCurrency(c.financials?.net_operating_profit ?? 0)}</td>
+
+            <!-- Plan 21: Stock Reconciliation Petrol -->
+            <td class="bg-petrol-group">${p_dip_html}</td>
+            <td class="bg-petrol-group">${stk.supply_p > 0 ? stk.supply_p.toFixed(0) + ' L' : '0 L'}</td>
+            <td class="bg-petrol-group" style="font-weight:600;">${stk.close_p.toFixed(0)} L</td>
+
+            <!-- Plan 21: Stock Reconciliation Diesel -->
+            <td class="bg-diesel-group">${d_dip_html}</td>
+            <td class="bg-diesel-group">${stk.supply_d > 0 ? stk.supply_d.toFixed(0) + ' L' : '0 L'}</td>
+            <td class="bg-diesel-group" style="font-weight:600;">${stk.close_d.toFixed(0)} L</td>
+
+            <!-- Plan 21: Expenses -->
+            <td>${expenses_html}</td>
+
             <!-- Action -->
             <td class="sticky-col-right">
               <button class="btn btn-secondary btn-sm" onclick="editLedgerEntry(${index})" style="padding: 0.25rem 0.5rem; font-size:0.75rem;">Edit</button>
@@ -3192,6 +3401,7 @@ function renderLedger() {
           </tr>
         `;
       });
+
     } else {
       // DETAILED BREAKDOWN VIEW HEADERS
       headerHtml = `
@@ -3210,6 +3420,10 @@ function renderLedger() {
             <th colspan="3">24hr Gross Revenue</th>
             <th rowspan="2">Estimated Cost</th>
             <th rowspan="2">Total Profit</th>
+            <th rowspan="2">Net Operating Profit (₹)</th>
+            <th colspan="3" class="col-petrol bg-petrol-group">Petrol Stock Reconciliation</th>
+            <th colspan="3" class="col-diesel bg-diesel-group">Diesel Stock Reconciliation</th>
+            <th rowspan="2">Expenses</th>
             <th rowspan="2" class="sticky-col-right" style="min-width: 90px;">Actions</th>
           </tr>
           <tr class="header-cols">
@@ -3255,6 +3469,14 @@ function renderLedger() {
             <th class="col-petrol">Petrol</th>
             <th class="col-diesel">Diesel</th>
             <th>Total</th>
+
+            <th class="bg-petrol-group">Morning Dip</th>
+            <th class="bg-petrol-group">Supply (L)</th>
+            <th class="bg-petrol-group">Reconciled Close</th>
+
+            <th class="bg-diesel-group">Morning Dip</th>
+            <th class="bg-diesel-group">Supply (L)</th>
+            <th class="bg-diesel-group">Reconciled Close</th>
           </tr>
         </thead>
       `;
@@ -3264,6 +3486,45 @@ function renderLedger() {
         const c = anomaly.c;
         const testsP = anomaly.testsP;
         const testsD = anomaly.testsD;
+
+        const stk = stockTimeline[row.date] || {
+          start_p: 0, supply_p: 0, close_p: 0, physical_p: null,
+          start_d: 0, supply_d: 0, close_d: 0, physical_d: null
+        };
+
+        let p_dip_html = stk.start_p.toFixed(0);
+        if (stk.physical_p !== null) {
+          const diff = Math.abs(stk.start_p - stk.physical_p);
+          if (diff > 500) {
+            p_dip_html += ` <span class="stock-mismatch-badge" title="Physical Dip: ${stk.physical_p.toFixed(0)} L (Diff: ${diff.toFixed(0)} L)">⚠️ Mismatch</span>`;
+          } else {
+            p_dip_html += ` <span class="stock-ok-badge" title="Physical Dip matches reconciled stock">OK</span>`;
+          }
+        }
+
+        let d_dip_html = stk.start_d.toFixed(0);
+        if (stk.physical_d !== null) {
+          const diff = Math.abs(stk.start_d - stk.physical_d);
+          if (diff > 500) {
+            d_dip_html += ` <span class="stock-mismatch-badge" title="Physical Dip: ${stk.physical_d.toFixed(0)} L (Diff: ${diff.toFixed(0)} L)">⚠️ Mismatch</span>`;
+          } else {
+            d_dip_html += ` <span class="stock-ok-badge" title="Physical Dip matches reconciled stock">OK</span>`;
+          }
+        }
+
+        const dayExps = (typeof KC_EXPENSES_DATA !== 'undefined') ? KC_EXPENSES_DATA[row.date] : null;
+        let expenses_html = '&mdash;';
+        if (dayExps && dayExps.length > 0) {
+          const totAmt = dayExps.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+          expenses_html = `
+            <div class="expense-popover-container">
+              <button class="expense-btn" onclick="toggleExpensePopover(event, '${row.date}')">
+                ₹ ${totAmt.toFixed(0)}
+              </button>
+            </div>
+          `;
+        }
+
         rowsHtml += `
           <tr>
             <td class="sticky-col-left"><strong>${formatDate(row.date)}</strong>${anomaly.badgesHtml}</td>
@@ -3307,8 +3568,24 @@ function renderLedger() {
             <td class="col-diesel bg-diesel-group">${(c.sales?.du2_d?.night ?? 0).toFixed(1)}</td>
 
             <!-- Day Tests -->
-            <td class="col-petrol bg-petrol-group">${((row.du1_p?.tests_day || 0) + (row.du2_p?.tests_day || 0)) * 5} L</td>
-            <td class="col-diesel bg-diesel-group">${((row.du1_d?.tests_day || 0) + (row.du2_d?.tests_day || 0)) * 5} L</td>
+            <td class="col-petrol bg-petrol-group">
+              ${(() => {
+                const t1 = (row.du1_p && (row.du1_p.close_day ?? 0) > (row.du1_p.open ?? 0)) ? (row.du1_p.tests_day ?? 1) : 0;
+                const t2 = (row.du2_p && (row.du2_p.close_day ?? 0) > (row.du2_p.open ?? 0)) ? (row.du2_p.tests_day ?? 1) : 0;
+                const vol = (t1 + t2) * 5;
+                const amt = vol * (row.prices?.petrol || 0);
+                return vol > 0 ? `${vol} L <span style="font-size:0.75rem; color:var(--text-dim); display:block;">(₹ ${amt.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })})</span>` : "0 L";
+              })()}
+            </td>
+            <td class="col-diesel bg-diesel-group">
+              ${(() => {
+                const t1 = (row.du1_d && (row.du1_d.close_day ?? 0) > (row.du1_d.open ?? 0)) ? (row.du1_d.tests_day ?? 1) : 0;
+                const t2 = (row.du2_d && (row.du2_d.close_day ?? 0) > (row.du2_d.open ?? 0)) ? (row.du2_d.tests_day ?? 1) : 0;
+                const vol = (t1 + t2) * 5;
+                const amt = vol * (row.prices?.diesel || 0);
+                return vol > 0 ? `${vol} L <span style="font-size:0.75rem; color:var(--text-dim); display:block;">(₹ ${amt.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })})</span>` : "0 L";
+              })()}
+            </td>
 
             <!-- 24hr Net Liters -->
             <td class="col-petrol bg-petrol-group ${anomaly.isNoSalePetrol ? 'cell-anomaly-no-sale' : ''}" style="font-weight:600;">${(c.totals?.net_24h?.petrol ?? 0).toFixed(1)}</td>
@@ -3325,6 +3602,22 @@ function renderLedger() {
               ${formatCurrency(c.financials?.profit ?? 0)}
             </td>
 
+            <!-- Plan 21: Net Operating Profit (Commission - Expenses) -->
+            <td style="font-weight:600;" title="Gross Commission: ${formatCurrency(c.financials?.total_commission ?? 0)} | Daily Expenses: ${formatCurrency(c.financials?.total_expenses ?? 0)}">${formatCurrency(c.financials?.net_operating_profit ?? 0)}</td>
+
+            <!-- Plan 21: Stock Reconciliation Petrol -->
+            <td class="bg-petrol-group">${p_dip_html}</td>
+            <td class="bg-petrol-group">${stk.supply_p > 0 ? stk.supply_p.toFixed(0) + ' L' : '0 L'}</td>
+            <td class="bg-petrol-group" style="font-weight:600;">${stk.close_p.toFixed(0)} L</td>
+
+            <!-- Plan 21: Stock Reconciliation Diesel -->
+            <td class="bg-diesel-group">${d_dip_html}</td>
+            <td class="bg-diesel-group">${stk.supply_d > 0 ? stk.supply_d.toFixed(0) + ' L' : '0 L'}</td>
+            <td class="bg-diesel-group" style="font-weight:600;">${stk.close_d.toFixed(0)} L</td>
+
+            <!-- Plan 21: Expenses -->
+            <td>${expenses_html}</td>
+
             <!-- Action -->
             <td class="sticky-col-right">
               <button class="btn btn-secondary btn-sm" onclick="editLedgerEntry(${index})" style="padding: 0.25rem 0.5rem; font-size:0.75rem;">Edit</button>
@@ -3333,6 +3626,7 @@ function renderLedger() {
           </tr>
         `;
       });
+
     }
 
     table.innerHTML = headerHtml + '<tbody>' + rowsHtml + '</tbody>';
@@ -3832,6 +4126,116 @@ window.switchAnalystTab = function(tabName) {
   renderLedger();
 };
 
+function renderSupplies() {
+  const filterEl = document.getElementById('filter-supply-product');
+  const searchEl = document.getElementById('search-supply-input');
+  const tbody = document.getElementById('supplies-table-body');
+  if (!tbody) return;
+
+  const productFilter = filterEl ? filterEl.value : 'all';
+  const searchInput = searchEl ? searchEl.value.toLowerCase().trim() : '';
+
+  tbody.innerHTML = '';
+
+  // Check if global array is defined
+  if (typeof SUPPLY_BILLS_DATA === 'undefined') {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-dim);">Error: Supply bills data not loaded.</td></tr>`;
+    return;
+  }
+
+  let filtered = SUPPLY_BILLS_DATA;
+
+  // Apply product filter
+  if (productFilter !== 'all') {
+    filtered = filtered.filter(row => row.product === productFilter);
+  }
+
+  // Apply text search
+  if (searchInput) {
+    filtered = filtered.filter(row => 
+      row.invoice_date.toLowerCase().includes(searchInput) ||
+      (row.invoice_no && row.invoice_no.toLowerCase().includes(searchInput)) ||
+      (row.sap_entry_no && row.sap_entry_no.toLowerCase().includes(searchInput)) ||
+      (row.tt_number && row.tt_number.toLowerCase().includes(searchInput)) ||
+      (row.doubt_or_discrepancy && row.doubt_or_discrepancy.toLowerCase().includes(searchInput))
+    );
+  }
+
+  // Calculate metrics
+  let totalPetrol = 0;
+  let countPetrol = 0;
+  let totalDiesel = 0;
+  let countDiesel = 0;
+  let totalCost = 0;
+  let totalCount = 0;
+
+  filtered.forEach(row => {
+    const qty = parseFloat(row.quantity_kl) || 0;
+    const cost = parseFloat(row.material_total) || 0;
+    if (row.product === 'Petrol') {
+      totalPetrol += qty;
+      if (qty > 0) countPetrol++;
+    } else if (row.product === 'Diesel') {
+      totalDiesel += qty;
+      if (qty > 0) countDiesel++;
+    }
+    totalCost += cost;
+    totalCount++;
+  });
+
+  // Update DOM metrics
+  const petEl = document.getElementById('supply-total-petrol');
+  const petCntEl = document.getElementById('supply-count-petrol');
+  const dieEl = document.getElementById('supply-total-diesel');
+  const dieCntEl = document.getElementById('supply-count-diesel');
+  const costEl = document.getElementById('supply-total-cost');
+  const countEl = document.getElementById('supply-total-count');
+
+  if (petEl) petEl.textContent = `${totalPetrol.toFixed(1)} KL`;
+  if (petCntEl) petCntEl.textContent = `${countPetrol} Tankers`;
+  if (dieEl) dieEl.textContent = `${totalDiesel.toFixed(1)} KL`;
+  if (dieCntEl) dieCntEl.textContent = `${countDiesel} Tankers`;
+  if (costEl) costEl.textContent = formatCurrency(totalCost);
+  if (countEl) countEl.textContent = `${totalCount} Deliveries`;
+
+  // Render rows
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 1.5rem;">No supply records found matching filters.</td></tr>`;
+    return;
+  }
+
+  filtered.forEach(row => {
+    const tr = document.createElement('tr');
+    
+    const qty_kl = parseFloat(row.quantity_kl);
+    const qty_l = !isNaN(qty_kl) ? `${(qty_kl * 1000).toLocaleString('en-IN')} L` : `<span style="color:#ef4444; font-weight:600;">Unclear</span>`;
+    const qty_kl_str = !isNaN(qty_kl) ? `${qty_kl} KL` : `<span style="color:#ef4444; font-weight:600;">Unclear</span>`;
+
+    const cost = parseFloat(row.material_total);
+    const cost_str = !isNaN(cost) ? formatCurrency(cost) : `<span class="text-muted">Unclear</span>`;
+    
+    // Status color
+    const isFlagged = !!row.doubt_or_discrepancy;
+    const statusBadge = isFlagged 
+      ? `<span class="anomaly-badge anomaly-badge-notest" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171;">⚠️ Flagged</span>`
+      : `<span class="anomaly-badge anomaly-badge-price" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); color: #4ade80;">✅ Verified</span>`;
+
+    tr.innerHTML = `
+      <td style="font-weight: 600;">${row.invoice_date}</td>
+      <td class="${row.product === 'Petrol' ? 'col-petrol' : 'col-diesel'}" style="font-weight: 600;">${row.product}</td>
+      <td style="font-weight: 600;">${qty_kl_str}</td>
+      <td style="font-weight: 500;">${qty_l}</td>
+      <td style="font-weight: 600; color: var(--primary);">${cost_str}</td>
+      <td><code style="color: var(--text-dim);">${row.invoice_no || '—'}</code></td>
+      <td><code style="color: var(--text-dim);">${row.sap_entry_no || '—'}</code></td>
+      <td><code style="color: var(--text-dim);">${row.tt_number || '—'}</code></td>
+      <td>${statusBadge}</td>
+      <td style="font-size: 0.82rem; max-width: 250px; color: ${isFlagged ? '#f87171' : 'var(--text-muted)'}; line-height:1.4;">${row.doubt_or_discrepancy || 'Clean delivery'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
 function renderPurchases() {
   const tableBody = document.getElementById('purchases-log-table-body');
   const creditPlannerAlerts = document.getElementById('credit-planner-alerts');
@@ -4225,6 +4629,11 @@ function openLogReadingsModal() {
   // Clear form fields
   document.getElementById('log-readings-form').reset();
   document.getElementById('ledger-date').value = new Date().toISOString().split('T')[0];
+  const remarksEl = document.getElementById('ledger-remarks');
+  if (remarksEl) remarksEl.value = '';
+
+  tempModalExpenses = [];
+  renderModalExpenses();
 
   // Dynamic pre-fill helper
   applyLedgerPrefill();
@@ -4250,6 +4659,18 @@ function editLedgerEntry(index) {
   populate('du1_d', row.du1_d);
   populate('du2_p', row.du2_p);
   populate('du2_d', row.du2_d);
+
+  const remarksEl = document.getElementById('ledger-remarks');
+  if (remarksEl) remarksEl.value = row.feedback || '';
+
+  // Plan 21: Populate starting stock dip overrides
+  document.getElementById('ledger_p_dip_override').value = row.p_dip_override !== undefined ? row.p_dip_override : '';
+  document.getElementById('ledger_d_dip_override').value = row.d_dip_override !== undefined ? row.d_dip_override : '';
+
+  // Pre-fill daily cash expenses
+  const staticExps = (typeof KC_EXPENSES_DATA !== 'undefined') ? KC_EXPENSES_DATA[row.date] : null;
+  tempModalExpenses = row.expenses ? [...row.expenses] : (staticExps ? staticExps.map(x => ({name: x.name, amount: x.amount})) : []);
+  renderModalExpenses();
 
   updateModalTests();
   openModal('log-readings-modal');
@@ -4652,7 +5073,29 @@ document.getElementById('log-readings-form').addEventListener('submit', (e) => {
     return;
   }
 
-  const ledgerEntry = { date, prices: { petrol: prices.petrol, diesel: prices.diesel }, du1_p, du1_d, du2_p, du2_d };
+  const remarksEl = document.getElementById('ledger-remarks');
+  const remarks = remarksEl ? remarksEl.value.trim() : '';
+
+  const pDipVal = document.getElementById('ledger_p_dip_override').value.trim();
+  const dDipVal = document.getElementById('ledger_d_dip_override').value.trim();
+
+  const ledgerEntry = { 
+    date, 
+    prices: { petrol: prices.petrol, diesel: prices.diesel }, 
+    du1_p, 
+    du1_d, 
+    du2_p, 
+    du2_d, 
+    feedback: remarks,
+    expenses: tempModalExpenses
+  };
+
+  if (pDipVal !== '') {
+    ledgerEntry.p_dip_override = parseFloat(pDipVal);
+  }
+  if (dDipVal !== '') {
+    ledgerEntry.d_dip_override = parseFloat(dDipVal);
+  }
 
   saveDailyReadings(ledgerEntry);
   closeModal('log-readings-modal');
@@ -4700,6 +5143,9 @@ document.getElementById('tanker-purchase-form').addEventListener('submit', (e) =
   if (dieselQty > 0) {
     confirmMsg += `\nDiesel Rate: ₹${priceD.toFixed(2)}/L (${dieselQty.toLocaleString()} L)`;
   }
+  const invoiceNo = document.getElementById('purchase-invoice-no').value.trim();
+  const paymentStatus = document.getElementById('purchase-payment-status').value;
+
   const petrolInvoiceDensity = petrolQty > 0 ? parseFloat(document.getElementById('petrol-invoice-density').value) || 0 : 0;
   const petrolObservedDensity = petrolQty > 0 ? parseFloat(document.getElementById('petrol-observed-density').value) || 0 : 0;
   const petrolObservedTemp = petrolQty > 0 ? parseFloat(document.getElementById('petrol-observed-temp').value) || 0 : 0;
@@ -4714,7 +5160,8 @@ document.getElementById('tanker-purchase-form').addEventListener('submit', (e) =
 
   recordTanker(date, time, loadType, customP, customD, priceP, priceD,
                petrolInvoiceDensity, petrolObservedDensity, petrolObservedTemp,
-               dieselInvoiceDensity, dieselObservedDensity, dieselObservedTemp);
+               dieselInvoiceDensity, dieselObservedDensity, dieselObservedTemp,
+               invoiceNo, paymentStatus);
   initApp();
 });
 
@@ -5119,6 +5566,13 @@ function initApp() {
       el.addEventListener('change', updateLiveAstmCalculations);
     }
   });
+
+  // Bind input and change listeners for real-time supply bills filtering
+  const supplyFilterEl = document.getElementById('filter-supply-product');
+  if (supplyFilterEl) supplyFilterEl.addEventListener('change', () => renderSupplies());
+
+  const supplySearchEl = document.getElementById('search-supply-input');
+  if (supplySearchEl) supplySearchEl.addEventListener('input', () => renderSupplies());
 
   // Start cloud sync check (async — won't block render)
   initSync().then(() => {
@@ -6037,8 +6491,18 @@ function onReconShiftChange() {
       if (row.du1_d.close_day) document.getElementById('recon-du1-d-close').value = row.du1_d.close_day;
       if (row.du2_d.close_day) document.getElementById('recon-du2-d-close').value = row.du2_d.close_day;
 
-      document.getElementById('recon-p-tests').value = (row.du1_p.tests_day + row.du2_p.tests_day) * 5;
-      document.getElementById('recon-d-tests').value = (row.du1_d.tests_day + row.du2_d.tests_day) * 5;
+      const t1p = (row.du1_p.close_day > row.du1_p.open) ? (row.du1_p.tests_day ?? 1) : 0;
+      const t2p = (row.du2_p.close_day > row.du2_p.open) ? (row.du2_p.tests_day ?? 1) : 0;
+      const t1d = (row.du1_d.close_day > row.du1_d.open) ? (row.du1_d.tests_day ?? 1) : 0;
+      const t2d = (row.du2_d.close_day > row.du2_d.open) ? (row.du2_d.tests_day ?? 1) : 0;
+
+      const p_vol = (t1p + t2p) * 5;
+      const d_vol = (t1d + t2d) * 5;
+      const p_rate = row.prices?.petrol || 0;
+      const d_rate = row.prices?.diesel || 0;
+
+      document.getElementById('recon-p-tests').value = p_vol > 0 ? `${p_vol} L (₹ ${(p_vol * p_rate).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : "0 L";
+      document.getElementById('recon-d-tests').value = d_vol > 0 ? `${d_vol} L (₹ ${(d_vol * d_rate).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : "0 L";
     } else {
       if (row.du1_p.close_night) document.getElementById('recon-du1-p-close').value = row.du1_p.close_night;
       if (row.du2_p.close_night) document.getElementById('recon-du2-p-close').value = row.du2_p.close_night;
@@ -6254,8 +6718,7 @@ function calculateLiveSales() {
     d_tests = ((du1_d_close > du1_d_open ? 1 : 0) + (du2_d_close > du2_d_open ? 1 : 0)) * 5;
   }
 
-  document.getElementById('recon-p-tests').value = p_tests;
-  document.getElementById('recon-d-tests').value = d_tests;
+  // Defer setting test input values until prices are resolved below
 
   // Volume Calculations
   const du1_p_sales = du1_p_close > 0 ? Math.max(0, du1_p_close - du1_p_open) : 0;
@@ -6274,9 +6737,13 @@ function calculateLiveSales() {
 
   const total_liters = petrol_net + diesel_net;
 
-  // Financial Calculations
   const dateStr = document.getElementById('recon-date').value;
   const prices = getPricesAt(dateStr);
+
+  const p_rate = prices.petrol || 0;
+  const d_rate = prices.diesel || 0;
+  document.getElementById('recon-p-tests').value = p_tests > 0 ? `${p_tests} L (₹ ${(p_tests * p_rate).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : "0 L";
+  document.getElementById('recon-d-tests').value = d_tests > 0 ? `${d_tests} L (₹ ${(d_tests * d_rate).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : "0 L";
 
   const petrol_rev = petrol_net * prices.petrol;
   const diesel_rev = diesel_net * prices.diesel;
@@ -6884,8 +7351,8 @@ function postShiftRecon() {
     return;
   }
 
-  const p_tests = parseFloat(document.getElementById('recon-p-tests').value) || 0;
-  const d_tests = parseFloat(document.getElementById('recon-d-tests').value) || 0;
+  const p_tests = parseFloat(document.getElementById('recon-p-tests').value.split(' ')[0]) || 0;
+  const d_tests = parseFloat(document.getElementById('recon-d-tests').value.split(' ')[0]) || 0;
 
   if (p_tests < 0 || d_tests < 0) {
     showNotification("⚠️ Validation Error: Test volumes cannot be negative.", "danger");
@@ -8051,6 +8518,7 @@ function validateDsrData(data) {
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const prevRow = i > 0 ? data[i - 1] : null;
+    const nextRow = i < data.length - 1 ? data[i + 1] : null;
 
     const p1_open = row.du1_p.open || 0;
     const p1_close = row.du1_p.close_day || 0;
@@ -8070,36 +8538,65 @@ function validateDsrData(data) {
     const actualColl = row.actual_collection !== undefined ? row.actual_collection : expectedRev;
     const variance = expectedRev - actualColl;
 
+    const addNozzleIssue = (type, nozzleLabel, uKey, oVal, cVal, prevCl, nextOp, desc) => {
+      issues.push({
+        type: type,
+        date: row.date,
+        msg: `[${row.date}] ${desc}`,
+        context: {
+          nozzle: nozzleLabel,
+          prevClose: prevCl,
+          openVal: oVal,
+          closeVal: cVal,
+          nextOpen: nextOp
+        }
+      });
+    };
+
     if (p1_close < p1_open) {
-      issues.push(`[${row.date}] Petrol DU1 closing (${p1_close}) is less than opening (${p1_open})`);
+      addNozzleIssue('trend', 'Petrol DU1', 'du1_p', p1_open, p1_close, prevRow ? prevRow.du1_p.close_day : null, nextRow ? nextRow.du1_p.open : null, `Petrol DU1 closing (${p1_close.toFixed(2)}) is less than opening (${p1_open.toFixed(2)})`);
     }
     if (p2_close < p2_open) {
-      issues.push(`[${row.date}] Petrol DU2 closing (${p2_close}) is less than opening (${p2_open})`);
+      addNozzleIssue('trend', 'Petrol DU2', 'du2_p', p2_open, p2_close, prevRow ? prevRow.du2_p.close_day : null, nextRow ? nextRow.du2_p.open : null, `Petrol DU2 closing (${p2_close.toFixed(2)}) is less than opening (${p2_open.toFixed(2)})`);
     }
     if (d1_close < d1_open) {
-      issues.push(`[${row.date}] Diesel DU1 closing (${d1_close}) is less than opening (${d1_open})`);
+      addNozzleIssue('trend', 'Diesel DU1', 'du1_d', d1_open, d1_close, prevRow ? prevRow.du1_d.close_day : null, nextRow ? nextRow.du1_d.open : null, `Diesel DU1 closing (${d1_close.toFixed(2)}) is less than opening (${d1_open.toFixed(2)})`);
     }
     if (d2_close < d2_open) {
-      issues.push(`[${row.date}] Diesel DU2 closing (${d2_close}) is less than opening (${d2_open})`);
+      addNozzleIssue('trend', 'Diesel DU2', 'du2_d', d2_open, d2_close, prevRow ? prevRow.du2_d.close_day : null, nextRow ? nextRow.du2_d.open : null, `Diesel DU2 closing (${d2_close.toFixed(2)}) is less than opening (${d2_open.toFixed(2)})`);
     }
 
+    let isConsecutive = false;
     if (prevRow) {
-      if (Math.abs(p1_open - prevRow.du1_p.close_day) > 0.01) {
-        issues.push(`[${row.date}] Petrol DU1 opening (${p1_open.toFixed(2)}) doesn't match previous day's closing (${prevRow.du1_p.close_day.toFixed(2)})`);
+      const d1 = new Date(prevRow.date);
+      const d2 = new Date(row.date);
+      const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) {
+        isConsecutive = true;
       }
-      if (Math.abs(p2_open - prevRow.du2_p.close_day) > 0.01) {
-        issues.push(`[${row.date}] Petrol DU2 opening (${p2_open.toFixed(2)}) doesn't match previous day's closing (${prevRow.du2_p.close_day.toFixed(2)})`);
+    }
+
+    if (isConsecutive) {
+      if (Math.abs(p1_open - prevRow.du1_p.close_night) > 0.01) {
+        addNozzleIssue('continuity', 'Petrol DU1', 'du1_p', p1_open, p1_close, prevRow.du1_p.close_night, nextRow ? nextRow.du1_p.open : null, `Petrol DU1 opening (${p1_open.toFixed(2)}) doesn't match previous day's closing (${prevRow.du1_p.close_night.toFixed(2)})`);
       }
-      if (Math.abs(d1_open - prevRow.du1_d.close_day) > 0.01) {
-        issues.push(`[${row.date}] Diesel DU1 opening (${d1_open.toFixed(2)}) doesn't match previous day's closing (${prevRow.du1_d.close_day.toFixed(2)})`);
+      if (Math.abs(p2_open - prevRow.du2_p.close_night) > 0.01) {
+        addNozzleIssue('continuity', 'Petrol DU2', 'du2_p', p2_open, p2_close, prevRow.du2_p.close_night, nextRow ? nextRow.du2_p.open : null, `Petrol DU2 opening (${p2_open.toFixed(2)}) doesn't match previous day's closing (${prevRow.du2_p.close_night.toFixed(2)})`);
       }
-      if (Math.abs(d2_open - prevRow.du2_d.close_day) > 0.01) {
-        issues.push(`[${row.date}] Diesel DU2 opening (${d2_open.toFixed(2)}) doesn't match previous day's closing (${prevRow.du2_d.close_day.toFixed(2)})`);
+      if (Math.abs(d1_open - prevRow.du1_d.close_night) > 0.01) {
+        addNozzleIssue('continuity', 'Diesel DU1', 'du1_d', d1_open, d1_close, prevRow.du1_d.close_night, nextRow ? nextRow.du1_d.open : null, `Diesel DU1 opening (${d1_open.toFixed(2)}) doesn't match previous day's closing (${prevRow.du1_d.close_night.toFixed(2)})`);
+      }
+      if (Math.abs(d2_open - prevRow.du2_d.close_night) > 0.01) {
+        addNozzleIssue('continuity', 'Diesel DU2', 'du2_d', d2_open, d2_close, prevRow.du2_d.close_night, nextRow ? nextRow.du2_d.open : null, `Diesel DU2 opening (${d2_open.toFixed(2)}) doesn't match previous day's closing (${prevRow.du2_d.close_night.toFixed(2)})`);
       }
     }
 
     if (Math.abs(variance) > 5000) {
-      issues.push(`[${row.date}] High cash variance: expected ₹${expectedRev.toFixed(0)}, actual ₹${actualColl.toFixed(0)} (diff: ₹${variance.toFixed(0)})`);
+      issues.push({
+        type: 'variance',
+        date: row.date,
+        msg: `[${row.date}] High cash variance: expected ₹${expectedRev.toFixed(0)}, actual ₹${actualColl.toFixed(0)} (diff: ₹${variance.toFixed(0)})`
+      });
     }
   }
 
@@ -8115,6 +8612,15 @@ function updateDsrSummaryCards(petrolSales, dieselSales, issues) {
   const errorLog = document.getElementById('dsr-validation-error-log');
   const errorList = document.getElementById('dsr-validation-error-list');
 
+  // Update validation panel count header dynamically
+  const errorTitle = errorLog ? errorLog.querySelector('.error-log-title') : null;
+  if (errorTitle) {
+    errorTitle.innerHTML = `
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:middle; margin-right:4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      🔴 Review Issues — <span style="font-size: 0.85rem; font-weight: 800; background: rgba(239, 68, 68, 0.2); padding: 2px 8px; border-radius: 4px; color: #fca5a5;">${issues.length} Discrepancies Remaining</span>
+    `;
+  }
+
   if (issues.length === 0) {
     statusBadge.innerHTML = `<span class="validation-badge success" style="background: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 4px 8px; border-radius: 4px; font-size:0.75rem; font-weight:600;">✅ All Clean</span>`;
     issueCountEl.textContent = '0 issues detected';
@@ -8126,7 +8632,73 @@ function updateDsrSummaryCards(petrolSales, dieselSales, issues) {
     errorList.innerHTML = '';
     issues.forEach(issue => {
       const li = document.createElement('li');
-      li.textContent = issue;
+      li.style.marginBottom = '12px';
+      li.style.listStyle = 'none';
+      li.style.background = 'rgba(239, 68, 68, 0.05)';
+      li.style.border = '1px solid rgba(239, 68, 68, 0.15)';
+      li.style.padding = '10px';
+      li.style.borderRadius = '6px';
+      li.style.cursor = 'pointer';
+      li.style.transition = 'all 0.15s ease-in-out';
+      li.title = 'Click to auto-scroll and highlight this discrepancy cell in the table';
+
+      li.onmouseenter = () => {
+        li.style.background = 'rgba(239, 68, 68, 0.08)';
+        li.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        li.style.transform = 'translateY(-1px)';
+        li.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+      };
+      li.onmouseleave = () => {
+        li.style.background = 'rgba(239, 68, 68, 0.05)';
+        li.style.borderColor = 'rgba(239, 68, 68, 0.15)';
+        li.style.transform = '';
+        li.style.boxShadow = '';
+      };
+
+      if (issue.type === 'continuity' || issue.type === 'trend') {
+        const field = issue.type === 'continuity' ? 'open' : 'close_day';
+        li.onclick = () => window.jumpToDsrCell(issue.date, issue.context.unit, field);
+      }
+      
+      let html = `<div style="font-weight:700; color:#fca5a5; margin-bottom: 6px; font-size: 0.78rem;">${issue.msg}</div>`;
+      
+      if (issue.type === 'continuity') {
+        html += `
+          <div style="display: flex; gap: 15px; background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 4px; font-size: 0.73rem; font-family: 'JetBrains Mono', monospace;">
+            <div style="flex: 1; opacity: 0.8;">
+              <span style="color: var(--text-dim);">👈 PREV CLOSE:</span> 
+              <b style="color: #38bdf8;">${issue.context.prevClose.toFixed(2)}</b>
+            </div>
+            <div style="flex: 1; border-left: 1px solid var(--border); padding-left: 15px; color: #ef4444; font-weight:700;">
+              <span>🔴 CURRENT OPEN:</span> 
+              <b>${issue.context.openVal.toFixed(2)}</b>
+            </div>
+            <div style="flex: 1; border-left: 1px solid var(--border); padding-left: 15px; opacity: 0.8;">
+              <span style="color: var(--text-dim);">👉 NEXT OPEN:</span> 
+              <b>${issue.context.nextOpen !== null ? issue.context.nextOpen.toFixed(2) : '—'}</b>
+            </div>
+          </div>
+        `;
+      } else if (issue.type === 'trend') {
+        html += `
+          <div style="display: flex; gap: 15px; background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 4px; font-size: 0.73rem; font-family: 'JetBrains Mono', monospace;">
+            <div style="flex: 1; opacity: 0.8;">
+              <span style="color: var(--text-dim);">👈 PREV CLOSE:</span> 
+              <b>${issue.context.prevClose !== null ? issue.context.prevClose.toFixed(2) : '—'}</b>
+            </div>
+            <div style="flex: 1; border-left: 1px solid var(--border); padding-left: 15px; color: #ef4444; font-weight:700;">
+              <span>❌ GOES BACKWARDS:</span> 
+              <b>Open: ${issue.context.openVal.toFixed(2)} | Close: ${issue.context.closeVal.toFixed(2)}</b>
+            </div>
+            <div style="flex: 1; border-left: 1px solid var(--border); padding-left: 15px; opacity: 0.8;">
+              <span style="color: var(--text-dim);">👉 NEXT OPEN:</span> 
+              <b>${issue.context.nextOpen !== null ? issue.context.nextOpen.toFixed(2) : '—'}</b>
+            </div>
+          </div>
+        `;
+      }
+      
+      li.innerHTML = html;
       errorList.appendChild(li);
     });
     errorLog.style.display = 'block';
@@ -8205,10 +8777,20 @@ async function renderDsrChecker() {
     const actualColl = row.actual_collection !== undefined ? row.actual_collection : expectedRev;
     const variance = expectedRev - actualColl;
 
-    const hasP1ContinuityError = prevRow && Math.abs(p1_open - prevRow.du1_p.close_day) > 0.01;
-    const hasP2ContinuityError = prevRow && Math.abs(p2_open - prevRow.du2_p.close_day) > 0.01;
-    const hasD1ContinuityError = prevRow && Math.abs(d1_open - prevRow.du1_d.close_day) > 0.01;
-    const hasD2ContinuityError = prevRow && Math.abs(d2_open - prevRow.du2_d.close_day) > 0.01;
+    let isConsecutive = false;
+    if (prevRow) {
+      const d1 = new Date(prevRow.date);
+      const d2 = new Date(row.date);
+      const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) {
+        isConsecutive = true;
+      }
+    }
+
+    const hasP1ContinuityError = isConsecutive && Math.abs(p1_open - prevRow.du1_p.close_night) > 0.01;
+    const hasP2ContinuityError = isConsecutive && Math.abs(p2_open - prevRow.du2_p.close_night) > 0.01;
+    const hasD1ContinuityError = isConsecutive && Math.abs(d1_open - prevRow.du1_d.close_night) > 0.01;
+    const hasD2ContinuityError = isConsecutive && Math.abs(d2_open - prevRow.du2_d.close_night) > 0.01;
 
     const hasP1TrendError = p1_close < p1_open;
     const hasP2TrendError = p2_close < p2_open;
@@ -8222,27 +8804,38 @@ async function renderDsrChecker() {
                         hasVarianceError;
 
     const tr = document.createElement('tr');
+    tr.id = `dsr-row-${row.date}`;
     if (rowHasError) {
       tr.style.background = 'rgba(239, 68, 68, 0.04)';
     }
 
     const varianceColor = Math.abs(variance) > 5000 ? '#ef4444' : Math.abs(variance) > 100 ? '#eab308' : '#22c55e';
 
+    const p1OpenTitle = hasP1ContinuityError ? `Continuity Mismatch: Open (${p1_open.toFixed(2)}) does not match yesterday's close (${prevRow.du1_p.close_night.toFixed(2)})` : (prevRow ? `Clean: Matches yesterday's close (${prevRow.du1_p.close_night.toFixed(2)})` : `Clean: First day opening`);
+    const p1CloseTitle = hasP1TrendError ? `Trend Error: Evening close (${p1_close.toFixed(2)}) is less than open (${p1_open.toFixed(2)})` : `Clean: Reading is greater than open`;
+    const p2OpenTitle = hasP2ContinuityError ? `Continuity Mismatch: Open (${p2_open.toFixed(2)}) does not match yesterday's close (${prevRow.du2_p.close_night.toFixed(2)})` : (prevRow ? `Clean: Matches yesterday's close (${prevRow.du2_p.close_night.toFixed(2)})` : `Clean: First day opening`);
+    const p2CloseTitle = hasP2TrendError ? `Trend Error: Evening close (${p2_close.toFixed(2)}) is less than open (${p2_open.toFixed(2)})` : `Clean: Reading is greater than open`;
+
+    const d1OpenTitle = hasD1ContinuityError ? `Continuity Mismatch: Open (${d1_open.toFixed(2)}) does not match yesterday's close (${prevRow.du1_d.close_night.toFixed(2)})` : (prevRow ? `Clean: Matches yesterday's close (${prevRow.du1_d.close_night.toFixed(2)})` : `Clean: First day opening`);
+    const d1CloseTitle = hasD1TrendError ? `Trend Error: Evening close (${d1_close.toFixed(2)}) is less than open (${d1_open.toFixed(2)})` : `Clean: Reading is greater than open`;
+    const d2OpenTitle = hasD2ContinuityError ? `Continuity Mismatch: Open (${d2_open.toFixed(2)}) does not match yesterday's close (${prevRow.du2_d.close_night.toFixed(2)})` : (prevRow ? `Clean: Matches yesterday's close (${prevRow.du2_d.close_night.toFixed(2)})` : `Clean: First day opening`);
+    const d2CloseTitle = hasD2TrendError ? `Trend Error: Evening close (${d2_close.toFixed(2)}) is less than open (${d2_open.toFixed(2)})` : `Clean: Reading is greater than open`;
+
     tr.innerHTML = `
       <td style="font-weight:600; font-size:0.8rem; white-space:nowrap; padding: 0.5rem; border-bottom: 1px solid var(--border);">${row.date}</td>
 
       <!-- Petrol Totalizers -->
       <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;" class="col-petrol">
-        <span class="editable-cell ${hasP1ContinuityError ? 'diff-highlight' : ''}" style="border-bottom: 1px dashed var(--color-petrol); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du1_p', 'open', this.textContent)">${p1_open.toFixed(2)}</span>
+        <span class="editable-cell ${hasP1ContinuityError ? 'diff-highlight' : ''}" title="${p1OpenTitle}" style="border-bottom: 1px dashed var(--color-petrol); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du1_p', 'open', this.textContent)">${p1_open.toFixed(2)}</span>
       </td>
       <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;" class="col-petrol">
-        <span class="editable-cell ${hasP1TrendError ? 'diff-highlight' : ''}" style="border-bottom: 1px dashed var(--color-petrol); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du1_p', 'close_day', this.textContent)">${p1_close.toFixed(2)}</span>
+        <span class="editable-cell ${hasP1TrendError ? 'diff-highlight' : ''}" title="${p1CloseTitle}" style="border-bottom: 1px dashed var(--color-petrol); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du1_p', 'close_day', this.textContent)">${p1_close.toFixed(2)}</span>
       </td>
       <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;" class="col-petrol">
-        <span class="editable-cell ${hasP2ContinuityError ? 'diff-highlight' : ''}" style="border-bottom: 1px dashed var(--color-petrol); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du2_p', 'open', this.textContent)">${p2_open.toFixed(2)}</span>
+        <span class="editable-cell ${hasP2ContinuityError ? 'diff-highlight' : ''}" title="${p2OpenTitle}" style="border-bottom: 1px dashed var(--color-petrol); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du2_p', 'open', this.textContent)">${p2_open.toFixed(2)}</span>
       </td>
       <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;" class="col-petrol">
-        <span class="editable-cell ${hasP2TrendError ? 'diff-highlight' : ''}" style="border-bottom: 1px dashed var(--color-petrol); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du2_p', 'close_day', this.textContent)">${p2_close.toFixed(2)}</span>
+        <span class="editable-cell ${hasP2TrendError ? 'diff-highlight' : ''}" title="${p2CloseTitle}" style="border-bottom: 1px dashed var(--color-petrol); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du2_p', 'close_day', this.textContent)">${p2_close.toFixed(2)}</span>
       </td>
       <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right; color: var(--text-dim); font-size: 0.75rem;" class="col-petrol">
         ${p_tests} L
@@ -8253,16 +8846,16 @@ async function renderDsrChecker() {
 
       <!-- Diesel Totalizers -->
       <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;" class="col-diesel">
-        <span class="editable-cell ${hasD1ContinuityError ? 'diff-highlight' : ''}" style="border-bottom: 1px dashed var(--color-diesel); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du1_d', 'open', this.textContent)">${d1_open.toFixed(2)}</span>
+        <span class="editable-cell ${hasD1ContinuityError ? 'diff-highlight' : ''}" title="${d1OpenTitle}" style="border-bottom: 1px dashed var(--color-diesel); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du1_d', 'open', this.textContent)">${d1_open.toFixed(2)}</span>
       </td>
       <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;" class="col-diesel">
-        <span class="editable-cell ${hasD1TrendError ? 'diff-highlight' : ''}" style="border-bottom: 1px dashed var(--color-diesel); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du1_d', 'close_day', this.textContent)">${d1_close.toFixed(2)}</span>
+        <span class="editable-cell ${hasD1TrendError ? 'diff-highlight' : ''}" title="${d1CloseTitle}" style="border-bottom: 1px dashed var(--color-diesel); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du1_d', 'close_day', this.textContent)">${d1_close.toFixed(2)}</span>
       </td>
       <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;" class="col-diesel">
-        <span class="editable-cell ${hasD2ContinuityError ? 'diff-highlight' : ''}" style="border-bottom: 1px dashed var(--color-diesel); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du2_d', 'open', this.textContent)">${d2_open.toFixed(2)}</span>
+        <span class="editable-cell ${hasD2ContinuityError ? 'diff-highlight' : ''}" title="${d2OpenTitle}" style="border-bottom: 1px dashed var(--color-diesel); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du2_d', 'open', this.textContent)">${d2_open.toFixed(2)}</span>
       </td>
       <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;" class="col-diesel">
-        <span class="editable-cell ${hasD2TrendError ? 'diff-highlight' : ''}" style="border-bottom: 1px dashed var(--color-diesel); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du2_d', 'close_day', this.textContent)">${d2_close.toFixed(2)}</span>
+        <span class="editable-cell ${hasD2TrendError ? 'diff-highlight' : ''}" title="${d2CloseTitle}" style="border-bottom: 1px dashed var(--color-diesel); padding: 2px 4px; cursor: pointer;" contenteditable="true" onblur="updateDsrCell('${row.date}', 'du2_d', 'close_day', this.textContent)">${d2_close.toFixed(2)}</span>
       </td>
       <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right; color: var(--text-dim); font-size: 0.75rem;" class="col-diesel">
         ${d_tests} L
@@ -8319,8 +8912,12 @@ window.updateDsrCell = function(date, unitKey, fieldKey, rawValue) {
 
   const row = window.dsrDraftData.find(r => r.date === date);
   if (row) {
+    let changed = false;
     if (unitKey === 'recon' && fieldKey === 'actual_collection') {
-      row.actual_collection = num;
+      if (row.actual_collection !== num) {
+        row.actual_collection = num;
+        changed = true;
+      }
     } else if (row[unitKey]) {
       const oldVal = row[unitKey][fieldKey];
       if (oldVal !== num) {
@@ -8329,10 +8926,19 @@ window.updateDsrCell = function(date, unitKey, fieldKey, rawValue) {
           row[unitKey]['close_night'] = num;
         }
         propagateDsrOpeningTotalizers();
+        changed = true;
       }
     }
-    saveDsrDraftEdits();
-    renderDsrChecker();
+    
+    if (changed) {
+      saveDsrDraftEdits();
+      renderDsrChecker();
+      
+      // Toast notification confirming saved draft and merge path
+      showNotification(`✏️ Value saved to local draft. Click 'Merge to Production' (top-right) to apply and sync changes to GitHub Gist.`, 'success');
+    } else {
+      renderDsrChecker();
+    }
   }
 };
 
@@ -8417,3 +9023,131 @@ window.approveAndMergeDsr = function() {
 };
 
 window.renderDsrChecker = renderDsrChecker;
+
+// Plan 21: Toggle Expenses Details Popover
+function toggleExpensePopover(event, date) {
+  event.stopPropagation();
+  // Close any open popovers
+  const openPopovers = document.querySelectorAll('.expense-popover');
+  openPopovers.forEach(p => p.remove());
+
+  const dayExps = (typeof KC_EXPENSES_DATA !== 'undefined') ? KC_EXPENSES_DATA[date] : null;
+  if (!dayExps || dayExps.length === 0) return;
+
+  const container = event.target.closest('.expense-popover-container');
+  if (!container) return;
+
+  const popover = document.createElement('div');
+  popover.className = 'expense-popover';
+  
+  let listHtml = '';
+  dayExps.forEach(it => {
+    const amtStr = typeof it.amount === 'number' ? '₹ ' + it.amount.toFixed(0) : it.amount;
+    listHtml += `<div class="expense-popover-item"><span>${it.name}</span><span class="item-val">${amtStr}</span></div>`;
+  });
+
+  popover.innerHTML = `
+    <div class="expense-popover-header">
+      <span class="expense-popover-title">DSR Expenses: ${formatDate(date)}</span>
+      <button class="expense-popover-close" onclick="this.closest('.expense-popover').remove()">&times;</button>
+    </div>
+    <div class="expense-popover-list">
+      ${listHtml}
+    </div>
+  `;
+
+  container.appendChild(popover);
+
+  // Close when clicking outside
+  const closeHandler = (e) => {
+    if (!popover.contains(e.target) && e.target !== event.target) {
+      popover.remove();
+      document.removeEventListener('click', closeHandler);
+    }
+  };
+  document.addEventListener('click', closeHandler);
+}
+window.toggleExpensePopover = toggleExpensePopover;
+
+window.jumpToDsrCell = function(date, unit, field) {
+  const rowEl = document.getElementById(`dsr-row-${date}`);
+  if (!rowEl) return;
+  
+  rowEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  // Find span matching unit and field
+  const span = rowEl.querySelector(`span[onblur*="'${unit}'"][onblur*="'${field}'"]`);
+  if (span) {
+    span.style.transition = 'none';
+    span.style.background = '#facc15'; // highlight yellow
+    span.style.color = '#000';
+    span.style.fontWeight = '800';
+    span.style.borderRadius = '4px';
+    
+    setTimeout(() => {
+      span.focus();
+      // Select text inside cell
+      const range = document.createRange();
+      range.selectNodeContents(span);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }, 350);
+    
+    setTimeout(() => {
+      span.style.transition = 'all 1s ease';
+      span.style.background = '';
+      span.style.color = '';
+      span.style.fontWeight = '';
+    }, 1500);
+  }
+};
+
+let tempModalExpenses = [];
+
+function renderModalExpenses() {
+  const container = document.getElementById('modal-expenses-list');
+  if (!container) return;
+  
+  if (tempModalExpenses.length === 0) {
+    container.innerHTML = `<div style="color: var(--text-dim); text-align: center; padding: 0.5rem;">No daily cash expenses logged for this date.</div>`;
+    return;
+  }
+  
+  container.innerHTML = tempModalExpenses.map((exp, idx) => `
+    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:4px 8px; border-radius:4px; margin-bottom: 2px;">
+      <span>${exp.name}</span>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <span style="font-weight:700; color:var(--primary);">₹ ${exp.amount.toFixed(0)}</span>
+        <button type="button" onclick="deleteModalExpense(${idx})" style="background:none; border:none; color:#ef4444; font-size:1.1rem; line-height:1; cursor:pointer; padding:0 4px;">&times;</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addModalExpense() {
+  const nameInput = document.getElementById('new-dayexp-name');
+  const amtInput = document.getElementById('new-dayexp-amount');
+  if (!nameInput || !amtInput) return;
+  
+  const name = nameInput.value.trim();
+  const amt = parseFloat(amtInput.value);
+  
+  if (!name || isNaN(amt) || amt <= 0) {
+    showNotification('Please enter a valid description and amount.', 'warning');
+    return;
+  }
+  
+  tempModalExpenses.push({ name, amount: amt });
+  nameInput.value = '';
+  amtInput.value = '';
+  renderModalExpenses();
+}
+
+function deleteModalExpense(idx) {
+  tempModalExpenses.splice(idx, 1);
+  renderModalExpenses();
+}
+
+window.addModalExpense = addModalExpense;
+window.deleteModalExpense = deleteModalExpense;
