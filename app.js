@@ -2078,6 +2078,11 @@ function computeLedgerRow(row, wacMap) {
 
   const profit = total_revenue - total_cost;
 
+  // Gross commission per fuel type = selling price margin over purchase cost
+  const commission_petrol = rev_petrol - cost_petrol;
+  const commission_diesel = rev_diesel - cost_diesel;
+  const total_commission = commission_petrol + commission_diesel;
+
   const dayExps = row.expenses || (typeof KC_EXPENSES_DATA !== 'undefined' ? KC_EXPENSES_DATA[row.date] : null) || [];
   const total_expenses = dayExps.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
   const net_operating_profit = total_commission - total_expenses;
@@ -8920,6 +8925,8 @@ async function renderDsrChecker() {
         isConsecutive = true;
       }
     }
+
+    const deliv = getDailyDeliveries(row.date);
 
     const hasP1ContinuityError = isConsecutive && Math.abs(p1_open - prevRow.du1_p.close_night) > 0.01;
     const hasP2ContinuityError = isConsecutive && Math.abs(p2_open - prevRow.du2_p.close_night) > 0.01;
