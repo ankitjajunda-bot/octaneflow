@@ -39,6 +39,6 @@ PWA / INSTALLATION SERVICE WORKERS:
 
 SUBDIRECTORIES:
 ------------------------------------------------------------------------
-- /PUMP Bills/ : Directory for raw PDF scanned documents and OCR CSV outputs.
+- /data/       : Consolidated raw scans, invoices, and extracted CSV data.
 - /scratch/    : Background data migration and script logs sandbox.
 ========================================================================

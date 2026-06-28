@@ -1,0 +1,46 @@
+Processed PDFs: 23
+Extracted rows: 59
+
+Rows with extraction notes:
+- 11 jan 2026 to 30 jan 2026.pdf page 1 Petrol: missing rate_per_kl; missing material_total
+- 11 jan 2026 to 30 jan 2026.pdf page 1 Diesel: missing quantity_kl; missing rate_per_kl; missing material_total
+- 11 jan 2026 to 30 jan 2026.pdf page 2 Petrol: missing material_total
+- 11 jan 2026 to 30 jan 2026.pdf page 2 Diesel: missing material_total
+- 11 jan 2026 to 30 jan 2026.pdf page 3 Diesel: missing material_total
+- 12. dec 2024 to 31 dec 2024.pdf page 1 Diesel: missing material_total
+- 12. dec 2024 to 31 dec 2024.pdf page 2 Petrol: missing time
+- 12. dec 2024 to 31 dec 2024.pdf page 2 Diesel: missing time
+- 12. dec 2024 to 31 dec 2024.pdf page 3 Petrol: missing rate_per_kl
+- 5 feb 2025 to 28 feb 2025.pdf page 1 Diesel: missing rate_per_kl
+- 5 feb 2025 to 28 feb 2025.pdf page 4 Petrol: missing rate_per_kl; missing material_total
+- 5 feb 2025 to 28 feb 2025.pdf page 4 Diesel: missing rate_per_kl
+- 8 march 2025 to 31 march 2025.pdf page 1 Diesel: missing rate_per_kl
+- 8 march 2025 to 31 march 2025.pdf page 2 Diesel: missing material_total
+- 8 march 2025 to 31 march 2025.pdf page 3 Petrol: missing rate_per_kl
+- 8 march 2025 to 31 march 2025.pdf page 4 Petrol: missing sap_entry_no; missing material_total
+- 8 march 2025 to 31 march 2025.pdf page 4 Diesel: missing sap_entry_no; missing rate_per_kl; missing material_total
+- 9 nov 2024 to 30 nov 2024.pdf page 2 Petrol: missing rate_per_kl
+- 9 nov 2024 to 30 nov 2024.pdf page 3 Petrol: missing quantity_kl
+- 9 nov 2024 to 30 nov 2024.pdf page 4 Diesel: missing quantity_kl; missing rate_per_kl; missing material_total
+- 9 nov 2024 to 30 nov 2024.pdf page 5 Petrol: missing rate_per_kl
+- 9 nov 2024 to 30 nov 2024.pdf page 5 Petrol: missing quantity_kl; missing material_total
+- 14 may 2026.pdf page 1 Diesel: missing rate_per_kl
+- 17 April 2026.pdf page 1 Petrol: missing date; missing time; missing material_total
+- 17 April 2026.pdf page 1 Diesel: missing date; missing time; missing material_total
+- 18 june 2026.pdf page 1 Diesel: missing material_total
+- 19 may 2026.pdf page 1 Petrol: missing quantity_kl; missing rate_per_kl; missing material_total
+- 19 may 2026.pdf page 1 Diesel: missing quantity_kl; missing rate_per_kl
+- 2 April 2026.pdf page 1 Diesel: missing material_total
+- 21 April 2026.pdf page 1 Petrol: missing material_total
+- 21 April 2026.pdf page 1 Diesel: missing quantity_kl; missing rate_per_kl; missing material_total
+- 21 may 2026.pdf page 1 Diesel: missing time; missing tt_number
+- 23 may 2026.pdf page 1 Diesel: missing sap_entry_no
+- 26 may 2026.pdf page 1 Diesel: missing material_total
+- 27 April 2026.pdf page 1 Diesel: missing material_total
+- 29 may 2026.pdf page 1 Diesel: missing material_total
+- 30 April 2026.pdf page 1 Petrol: missing rate_per_kl
+- 5 june 2026.pdf page 1 : No EBMS/HSD material row found by OCR
+- 9 April 2026.pdf page 1 Diesel: missing material_total
+
+Page-level notes:
+- 5 june 2026.pdf page 1: no EBMS/HSD material row found
