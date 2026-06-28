@@ -2894,7 +2894,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
 
 function renderActiveView(viewName) {
   if (viewName === 'dashboard')   { renderDashboard(); updateApprovalsBadge(); }
-  if (viewName === 'ledger')      renderLedger();
+  if (viewName === 'ledger') { renderLedger(); setTimeout(loadAnchorUI, 50); }
   if (viewName === 'purchases')   renderPurchases();
   if (viewName === 'supplies')    renderSupplies();
   if (viewName === 'pricing')     renderPricing();
@@ -3215,19 +3215,113 @@ function renderLedger() {
 
   const wacMap = buildWACTimeline();
 
-  // 1. Build forward running stock reconciliation timeline (oldest to newest)
+  // 1. Build stock reconciliation timeline (forward + backward from anchor)
   // PRIORITY ORDER:
-  //   a) Running calculated chain (prev_close + supply - sales) — most reliable
-  //   b) OCR/dip reading ONLY used for Day-1 seed if no prior data exists
-  //   c) Supply is always read from supply bills first, then OCR receipts
-  //
-  // OCR dip readings are NOT used to override the running chain mid-stream.
-  // They are only used as a large-gap sanity check (>3000L diff = real event).
+  //   a) If db.settings.stock_anchor is set (user-entered verified stock on a known date),
+  //      run BACKWARD from anchor date (anchor_date + supply - sales = prev day stock),
+  //      then run FORWARD from anchor date for future dates.
+  //   b) If no anchor: run forward from Day-1, seeding from OCR dip on first row only.
+  //   c) Supply always read from supply bills first, then OCR receipts.
   const stockTimeline = {};
-  let runningPetrol = null;
-  let runningDiesel = null;
 
   const forwardLedger = [...db.daily_ledger].sort((a, b) => a.date.localeCompare(b.date));
+
+  // Helper: get supply for a date
+  function getDaySupply(dateStr) {
+    const phys = (typeof DSR_PHYSICAL_STOCK_DATA !== 'undefined') ? DSR_PHYSICAL_STOCK_DATA[dateStr] : null;
+    let p_supply = 0, d_supply = 0;
+    if (typeof SUPPLY_BILLS_DATA !== 'undefined') {
+      const daySupplies = SUPPLY_BILLS_DATA.filter(s => s.invoice_date_iso === dateStr);
+      daySupplies.forEach(s => {
+        const qty = (s.quantity_kl || 0) * 1000;
+        if (s.product === 'Petrol') p_supply += qty;
+        else if (s.product === 'Diesel') d_supply += qty;
+      });
+    }
+    if (p_supply === 0 && d_supply === 0 && phys) {
+      p_supply = phys.petrol_receipt || 0;
+      d_supply = phys.diesel_receipt || 0;
+    }
+    // Truck capacity safeguard
+    if (p_supply > 12000) p_supply = 12000;
+    if (d_supply > 12000) d_supply = 12000;
+    if (p_supply + d_supply > 12000) {
+      const ratio = p_supply / (p_supply + d_supply);
+      p_supply = Math.round((12000 * ratio) / 4000) * 4000;
+      d_supply = 12000 - p_supply;
+    }
+    return { p_supply, d_supply };
+  }
+
+  const anchor = db.settings?.stock_anchor; // { date, petrol_L, diesel_L }
+
+  if (anchor && anchor.date && anchor.petrol_L != null && anchor.diesel_L != null) {
+    // === BACKWARD PASS: from anchor date going earlier ===
+    let backP = anchor.petrol_L;
+    let backD = anchor.diesel_L;
+    const anchorIdx = forwardLedger.findIndex(r => r.date === anchor.date);
+    const startIdx = anchorIdx >= 0 ? anchorIdx : forwardLedger.length - 1;
+
+    // Set anchor day's opening stock
+    for (let i = startIdx; i >= 0; i--) {
+      const row = forwardLedger[i];
+      const c = computeLedgerRow(row, wacMap);
+      const sales_p = c.totals.net_24h.petrol;
+      const sales_d = c.totals.net_24h.diesel;
+      const { p_supply, d_supply } = getDaySupply(row.date);
+      const phys_display = (typeof DSR_PHYSICAL_STOCK_DATA !== 'undefined') ? DSR_PHYSICAL_STOCK_DATA[row.date] : null;
+
+      // On anchor day itself: opening = backP (which is anchor stock at start of day)
+      // close = opening - sales + supply
+      const open_p = i === startIdx ? backP : (backP + sales_p - p_supply);
+      const open_d = i === startIdx ? backD : (backD + sales_d - d_supply);
+      const close_p = Math.max(0, open_p - sales_p + p_supply);
+      const close_d = Math.max(0, open_d - sales_d + d_supply);
+
+      stockTimeline[row.date] = {
+        start_p: Math.max(0, open_p),
+        supply_p: p_supply,
+        close_p,
+        physical_p: phys_display?.petrol_dip ?? null,
+        start_d: Math.max(0, open_d),
+        supply_d: d_supply,
+        close_d,
+        physical_d: phys_display?.diesel_dip ?? null
+      };
+
+      // Move backward: prev day closing = this day opening
+      backP = Math.max(0, open_p);
+      backD = Math.max(0, open_d);
+    }
+
+    // === FORWARD PASS: from anchor date going later ===
+    let fwdP = stockTimeline[forwardLedger[startIdx]?.date]?.close_p ?? anchor.petrol_L;
+    let fwdD = stockTimeline[forwardLedger[startIdx]?.date]?.close_d ?? anchor.diesel_L;
+    for (let i = startIdx + 1; i < forwardLedger.length; i++) {
+      const row = forwardLedger[i];
+      const c = computeLedgerRow(row, wacMap);
+      const sales_p = c.totals.net_24h.petrol;
+      const sales_d = c.totals.net_24h.diesel;
+      const { p_supply, d_supply } = getDaySupply(row.date);
+      const phys_display = (typeof DSR_PHYSICAL_STOCK_DATA !== 'undefined') ? DSR_PHYSICAL_STOCK_DATA[row.date] : null;
+      const close_p = Math.max(0, fwdP - sales_p + p_supply);
+      const close_d = Math.max(0, fwdD - sales_d + d_supply);
+      stockTimeline[row.date] = {
+        start_p: fwdP, supply_p: p_supply, close_p,
+        physical_p: phys_display?.petrol_dip ?? null,
+        start_d: fwdD, supply_d: d_supply, close_d,
+        physical_d: phys_display?.diesel_dip ?? null
+      };
+      fwdP = close_p;
+      fwdD = close_d;
+    }
+
+  } else {
+    // === FORWARD-ONLY PASS (no anchor set — use OCR dip for day-1 seed) ===
+    let runningPetrol = null;
+    let runningDiesel = null;
+
+
 
   forwardLedger.forEach(row => {
     let p_supply = 0;
@@ -3321,7 +3415,8 @@ function renderLedger() {
       close_d,
       physical_d: phys_d_display
     };
-  });
+  }); // end forwardLedger.forEach
+  } // end else (no anchor)
 
   if (ledgerViewMode === 'table') {
 
@@ -9618,6 +9713,63 @@ window.submitRowToLedger = function(date) {
 };
 
 window.renderDsrChecker = renderDsrChecker;
+
+// ====== STOCK ANCHOR FUNCTIONS ======
+
+window.applyStockAnchor = function() {
+  const dateEl = document.getElementById('anchor-date');
+  const petrolEl = document.getElementById('anchor-petrol');
+  const dieselEl = document.getElementById('anchor-diesel');
+  const statusEl = document.getElementById('anchor-status');
+
+  const date = dateEl?.value;
+  const petrol_L = parseFloat(petrolEl?.value);
+  const diesel_L = parseFloat(dieselEl?.value);
+
+  if (!date || isNaN(petrol_L) || isNaN(diesel_L)) {
+    if (statusEl) statusEl.textContent = '⚠️ Please fill in date, petrol L and diesel L.';
+    return;
+  }
+
+  if (!db.settings) db.settings = {};
+  db.settings.stock_anchor = { date, petrol_L, diesel_L };
+  saveDB();
+
+  if (statusEl) {
+    statusEl.textContent = `✅ Anchor set: ${date} | Petrol ${petrol_L.toFixed(0)} L | Diesel ${diesel_L.toFixed(0)} L`;
+    statusEl.style.color = '#10b981';
+  }
+
+  renderLedger();
+  showNotification(`⚓ Stock anchor set for ${date}. All historical inventory recalculated!`, 'success');
+};
+
+window.clearStockAnchor = function() {
+  if (db.settings) delete db.settings.stock_anchor;
+  saveDB();
+  const statusEl = document.getElementById('anchor-status');
+  if (statusEl) { statusEl.textContent = 'Anchor cleared.'; statusEl.style.color = 'var(--text-muted)'; }
+  renderLedger();
+};
+
+// Load saved anchor into UI fields on page render
+function loadAnchorUI() {
+  const anchor = db.settings?.stock_anchor;
+  if (!anchor) return;
+  const dateEl = document.getElementById('anchor-date');
+  const petrolEl = document.getElementById('anchor-petrol');
+  const dieselEl = document.getElementById('anchor-diesel');
+  const statusEl = document.getElementById('anchor-status');
+  if (dateEl) dateEl.value = anchor.date || '';
+  if (petrolEl) petrolEl.value = anchor.petrol_L != null ? anchor.petrol_L : '';
+  if (dieselEl) dieselEl.value = anchor.diesel_L != null ? anchor.diesel_L : '';
+  if (statusEl) {
+    statusEl.textContent = `✅ Active anchor: ${anchor.date} | P ${anchor.petrol_L?.toFixed(0)} L | D ${anchor.diesel_L?.toFixed(0)} L`;
+    statusEl.style.color = '#10b981';
+  }
+}
+window.loadAnchorUI = loadAnchorUI;
+
 
 // Plan 21: Toggle Expenses Details Popover
 function toggleExpensePopover(event, date) {

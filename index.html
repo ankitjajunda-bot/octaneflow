@@ -446,6 +446,26 @@
             </div>
           </div>
 
+          <!-- Stock Anchor Panel: Set today's verified stock to recalculate all history -->
+          <div id="stock-anchor-panel" style="background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(245,158,11,0.08)); border: 1px solid rgba(16,185,129,0.25); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); white-space: nowrap;">⚓ Stock Anchor</div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <label style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap;">Date:</label>
+              <input type="date" id="anchor-date" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 0.3rem 0.5rem; font-size: 0.78rem;" />
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <label style="font-size: 0.75rem; color: #10b981; white-space: nowrap;">⛽ Petrol (L):</label>
+              <input type="number" id="anchor-petrol" min="0" step="1" placeholder="e.g. 4200" style="width: 100px; background: var(--surface); border: 1px solid rgba(16,185,129,0.4); color: var(--text); border-radius: 6px; padding: 0.3rem 0.5rem; font-size: 0.78rem;" />
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <label style="font-size: 0.75rem; color: #f59e0b; white-space: nowrap;">🛢️ Diesel (L):</label>
+              <input type="number" id="anchor-diesel" min="0" step="1" placeholder="e.g. 6800" style="width: 100px; background: var(--surface); border: 1px solid rgba(245,158,11,0.4); color: var(--text); border-radius: 6px; padding: 0.3rem 0.5rem; font-size: 0.78rem;" />
+            </div>
+            <button onclick="applyStockAnchor()" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 6px; padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap;">🔄 Recalculate All Stock</button>
+            <button onclick="clearStockAnchor()" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.75rem; font-size: 0.78rem; cursor: pointer;">✕ Clear</button>
+            <span id="anchor-status" style="font-size: 0.75rem; color: var(--text-muted);"></span>
+          </div>
+
           <!-- Master Spreadsheet View Container -->
           <div id="ledger-table-container">
             <div class="spreadsheet-container">
