@@ -1852,6 +1852,16 @@ function loadDB() {
         alignTests(row.du2_d);
       });
 
+      if (db.daily_ledger.length > 0) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const origLen = db.daily_ledger.length;
+        db.daily_ledger = db.daily_ledger.filter(row => row.date <= todayStr);
+        if (db.daily_ledger.length !== origLen) {
+          dbModified = true;
+          SystemLogger.success('loadDB', `Pruned ${origLen - db.daily_ledger.length} future-date rows from production ledger.`);
+        }
+      }
+
       if (db.daily_ledger.length > 0 && db.prices) {
         const origLen = db.prices.length;
         db.prices = db.prices.filter(p => p.effective_date !== "2026-06-01T08:00");
