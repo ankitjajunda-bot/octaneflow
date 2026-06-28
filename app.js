@@ -8725,6 +8725,15 @@ function validateDsrData(data) {
     const prevRow = i > 0 ? data[i - 1] : null;
     const nextRow = i < data.length - 1 ? data[i + 1] : null;
 
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (row.date > todayStr) {
+      issues.push({
+        type: 'future_date',
+        date: row.date,
+        msg: `[${row.date}] ❌ Future Date Error: Record is dated in the future (today is ${todayStr}).`
+      });
+    }
+
     const p1_open = row.du1_p.open || 0;
     const p1_close = row.du1_p.close_day || 0;
     const p2_open = row.du2_p.open || 0;
@@ -8845,6 +8854,41 @@ function validateDsrData(data) {
       });
     }
   }
+
+  // Check for missing calendar dates in the month
+  if (data.length > 0) {
+    const meta = DSR_MONTH_MAP[currentDsrMonth];
+    if (meta) {
+      const year = meta.year;
+      const monthIdx = meta.index;
+
+      const today = new Date();
+      const isCurrentMonth = (today.getFullYear() === year && (today.getMonth() + 1) === monthIdx);
+      const maxDay = isCurrentMonth ? today.getDate() : new Date(year, monthIdx, 0).getDate();
+
+      const existingDates = new Set(data.map(row => row.date));
+
+      for (let day = 1; day <= maxDay; day++) {
+        const dateStr = `${year}-${String(monthIdx).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        // Skip dates before Nov 11, 2025 in November 2025 (since database starts on Nov 11)
+        if (year === 2025 && monthIdx === 11 && day < 11) {
+          continue;
+        }
+
+        if (!existingDates.has(dateStr)) {
+          issues.push({
+            type: 'missing_date',
+            date: dateStr,
+            msg: `[${dateStr}] ⚠️ Missing DSR Entry: No record found for this date in the ledger.`
+          });
+        }
+      }
+    }
+  }
+
+  // Sort issues chronologically by date
+  issues.sort((a, b) => a.date.localeCompare(b.date));
 
   return issues;
 }
