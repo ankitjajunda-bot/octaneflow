@@ -2906,14 +2906,25 @@ function renderKcDsrLive() {
 // VIEW-SPECIFIC RENDERERS
 // -------------------------------------------------------------
 function renderDashboard() {
-  const activePrice = db.prices[0] || { petrol: 103.50, diesel: 90.80 };
+  let activePrice = (db.prices && db.prices[0]) ? db.prices[0] : { petrol: 103.50, diesel: 90.80 };
+  let priceLastUpdatedStr = activePrice.effective_date ? `Effective: ${formatDateTime(activePrice.effective_date)}` : "No price logged";
+
+  if (db.daily_ledger && db.daily_ledger.length > 0) {
+    const latestRow = db.daily_ledger[0];
+    if (latestRow.prices) {
+      activePrice = {
+        petrol: latestRow.prices.petrol || activePrice.petrol,
+        diesel: latestRow.prices.diesel || activePrice.diesel
+      };
+      priceLastUpdatedStr = `From latest DSR (${formatDate(latestRow.date)})`;
+    }
+  }
 
   document.getElementById('current-date-span').textContent = formatDate(new Date().toISOString().split('T')[0]);
 
   document.getElementById('dash-selling-prices').textContent =
     `P: ${formatCurrency(activePrice.petrol)} | D: ${formatCurrency(activePrice.diesel)}`;
-  document.getElementById('dash-prices-last-updated').textContent =
-    activePrice.effective_date ? `Effective: ${formatDateTime(activePrice.effective_date)}` : "No price logged";
+  document.getElementById('dash-prices-last-updated').textContent = priceLastUpdatedStr;
 
   // Today's summary: try actual today first, fall back to most recently logged date
   const todayStr2 = new Date().toISOString().split('T')[0];
@@ -2944,11 +2955,22 @@ function renderDashboard() {
   document.getElementById('dash-outstanding-credit').textContent = formatCurrency(totalUnpaidCost);
   document.getElementById('dash-unpaid-tankers').textContent = `${unpaid.length} pending tanker invoice(s)`;
 
-  // Tanks Levels
-  const petrolVol = db.stock.petrol;
-  const dieselVol = db.stock.diesel;
-  const maxPetrol = db.settings.petrol_capacity;
-  const maxDiesel = db.settings.diesel_capacity;
+  // Tanks Levels (calculate dynamically from latest physical dip if possible)
+  const maxPetrol = db.settings.petrol_capacity || 20000;
+  const maxDiesel = db.settings.diesel_capacity || 20000;
+  const maxDipP = db.settings.petrol_tank_dia || 200;
+  const maxDipD = db.settings.diesel_tank_dia || 200;
+
+  const latestRowForStock = db.daily_ledger && db.daily_ledger.length > 0 ? db.daily_ledger[0] : null;
+  let petrolVol = db.stock.petrol;
+  let dieselVol = db.stock.diesel;
+
+  if (latestRowForStock) {
+    const latestPhysP = dipToLiters(latestRowForStock.dip_ms_cm || 0, maxPetrol, maxDipP);
+    const latestPhysD = dipToLiters(latestRowForStock.dip_hsd_cm || 0, maxDiesel, maxDipD);
+    if (latestPhysP > 0) petrolVol = latestPhysP;
+    if (latestPhysD > 0) dieselVol = latestPhysD;
+  }
 
   const deadPStock = db.settings.petrol_dead_stock || 0;
   const deadDStock = db.settings.diesel_dead_stock || 0;
@@ -9021,13 +9043,54 @@ async function renderDsrChecker() {
   const meta = DSR_MONTH_MAP[currentDsrMonth];
   if (!meta) return;
 
-  const prefix = `${meta.year}-${String(meta.index).padStart(2, '0')}`;
-  const monthData = data.filter(row => row.date.startsWith(prefix));
+  const year = meta.year;
+  const monthIdx = meta.index;
+  const prefix = `${year}-${String(monthIdx).padStart(2, '0')}`;
+
+  const existingMap = {};
+  data.forEach(row => {
+    if (row.date.startsWith(prefix)) {
+      existingMap[row.date] = row;
+    }
+  });
+
+  const today = new Date();
+  const isCurrentMonth = (today.getFullYear() === year && (today.getMonth() + 1) === monthIdx);
+  const maxDay = isCurrentMonth ? today.getDate() : new Date(year, monthIdx, 0).getDate();
+
+  const monthData = [];
+  for (let day = 1; day <= maxDay; day++) {
+    const dateStr = `${year}-${String(monthIdx).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+    // Skip dates before Nov 11, 2025 in November 2025 (since database starts on Nov 11)
+    if (year === 2025 && monthIdx === 11 && day < 11) {
+      continue;
+    }
+
+    if (existingMap[dateStr]) {
+      monthData.push(existingMap[dateStr]);
+    } else {
+      monthData.push({
+        date: dateStr,
+        prices: { petrol: 113.37, diesel: 98.41 },
+        du1_p: { open: 0.0, close_day: 0.0, close_night: 0.0, tests_day: 0, tests_night: 0 },
+        du2_p: { open: 0.0, close_day: 0.0, close_night: 0.0, tests_day: 0, tests_night: 0 },
+        du1_d: { open: 0.0, close_day: 0.0, close_night: 0.0, tests_day: 0, tests_night: 0 },
+        du2_d: { open: 0.0, close_day: 0.0, close_night: 0.0, tests_day: 0, tests_night: 0 },
+        recon: {},
+        actual_collection: 0,
+        dip_ms_cm: 0,
+        dip_hsd_cm: 0,
+        isPlaceholder: true
+      });
+    }
+  }
 
   monthData.sort((a, b) => a.date.localeCompare(b.date));
 
   document.getElementById('dsr-summary-month-name').textContent = meta.name;
-  document.getElementById('dsr-summary-total-days').textContent = `${monthData.length} days loaded`;
+  const realCount = data.filter(row => row.date.startsWith(prefix)).length;
+  document.getElementById('dsr-summary-total-days').textContent = `${realCount} days loaded`;
 
   const tbody = document.getElementById('dsr-review-table-body');
   if (!tbody) return;
@@ -9097,7 +9160,10 @@ async function renderDsrChecker() {
 
     const tr = document.createElement('tr');
     tr.id = `dsr-row-${row.date}`;
-    if (rowHasError) {
+    if (row.isPlaceholder) {
+      tr.style.background = 'rgba(255, 255, 255, 0.015)';
+      tr.style.opacity = '0.55';
+    } else if (rowHasError) {
       tr.style.background = 'rgba(239, 68, 68, 0.04)';
     }
 
@@ -9224,45 +9290,59 @@ window.updateDsrCell = function(date, unitKey, fieldKey, rawValue) {
     return;
   }
 
-  const row = window.dsrDraftData.find(r => r.date === date);
-  if (row) {
-    let changed = false;
-    if (unitKey === 'recon' && fieldKey === 'actual_collection') {
-      if (row.actual_collection !== num) {
-        row.actual_collection = num;
-        changed = true;
-      }
-    } else if (unitKey === 'recon' && fieldKey === 'dip_ms_cm') {
-      if (row.dip_ms_cm !== num) {
-        row.dip_ms_cm = num;
-        changed = true;
-      }
-    } else if (unitKey === 'recon' && fieldKey === 'dip_hsd_cm') {
-      if (row.dip_hsd_cm !== num) {
-        row.dip_hsd_cm = num;
-        changed = true;
-      }
-    } else if (row[unitKey]) {
-      const oldVal = row[unitKey][fieldKey];
-      if (oldVal !== num) {
-        row[unitKey][fieldKey] = num;
-        if (fieldKey === 'close_day') {
-          row[unitKey]['close_night'] = num;
-        }
-        propagateDsrOpeningTotalizers();
-        changed = true;
-      }
+  let row = window.dsrDraftData.find(r => r.date === date);
+  if (!row) {
+    row = {
+      date: date,
+      prices: { petrol: 113.37, diesel: 98.41 },
+      du1_p: { open: 0.0, close_day: 0.0, close_night: 0.0, tests_day: 0, tests_night: 0 },
+      du2_p: { open: 0.0, close_day: 0.0, close_night: 0.0, tests_day: 0, tests_night: 0 },
+      du1_d: { open: 0.0, close_day: 0.0, close_night: 0.0, tests_day: 0, tests_night: 0 },
+      du2_d: { open: 0.0, close_day: 0.0, close_night: 0.0, tests_day: 0, tests_night: 0 },
+      recon: {},
+      actual_collection: 0.0,
+      dip_ms_cm: 0.0,
+      dip_hsd_cm: 0.0
+    };
+    window.dsrDraftData.push(row);
+  }
+
+  let changed = false;
+  if (unitKey === 'recon' && fieldKey === 'actual_collection') {
+    if (row.actual_collection !== num) {
+      row.actual_collection = num;
+      changed = true;
     }
-    
-    if (changed) {
-      saveDsrDraftEdits();
-      renderDsrChecker();
-      
-      // Toast notification confirming saved draft and merge path
-      showNotification(`✏️ Value saved to local draft. Click 'Merge to Production' (top-right) to apply and sync changes to GitHub Gist.`, 'success');
-    } else {
-      renderDsrChecker();
+  } else if (unitKey === 'recon' && fieldKey === 'dip_ms_cm') {
+    if (row.dip_ms_cm !== num) {
+      row.dip_ms_cm = num;
+      changed = true;
     }
+  } else if (unitKey === 'recon' && fieldKey === 'dip_hsd_cm') {
+    if (row.dip_hsd_cm !== num) {
+      row.dip_hsd_cm = num;
+      changed = true;
+    }
+  } else if (row[unitKey]) {
+    const oldVal = row[unitKey][fieldKey];
+    if (oldVal !== num) {
+      row[unitKey][fieldKey] = num;
+      if (fieldKey === 'close_day') {
+        row[unitKey]['close_night'] = num;
+      }
+      propagateDsrOpeningTotalizers();
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    saveDsrDraftEdits();
+    renderDsrChecker();
+
+    // Toast notification confirming saved draft and merge path
+    showNotification(`✏️ Value saved to local draft. Click 'Merge to Production' (top-right) to apply and sync changes to GitHub Gist.`, 'success');
+  } else {
+    renderDsrChecker();
   }
 };
 
@@ -9278,14 +9358,19 @@ window.exportDsrJSON = function() {
 
 window.approveAndMergeDsr = function() {
   const issues = validateDsrData(window.dsrDraftData);
-  if (issues.length > 0) {
-    if (!confirm(`⚠️ Warning: There are still ${issues.length} validation errors in the logs. Are you sure you want to merge anyway?`)) {
-      return;
-    }
-  } else {
-    if (!confirm("Are you sure you want to merge all verified draft records to the production daily ledger?")) {
-      return;
-    }
+  const issueDates = new Set(issues.map(i => i.date));
+
+  // Clean rows are those with no validation issues, and are not placeholders
+  const cleanRows = window.dsrDraftData.filter(row => !issueDates.has(row.date) && !row.isPlaceholder);
+  const dirtyRows = window.dsrDraftData.filter(row => issueDates.has(row.date));
+
+  if (cleanRows.length === 0) {
+    showNotification("⚠️ No clean/verified entries found to merge. Please resolve issues first.", "warning");
+    return;
+  }
+
+  if (!confirm(`Are you sure you want to merge ${cleanRows.length} clean/verified DSR records to the production daily ledger? (The remaining ${dirtyRows.length} records with issues/gaps will stay in review).`)) {
+    return;
   }
 
   const session = getSession();
@@ -9293,7 +9378,7 @@ window.approveAndMergeDsr = function() {
   const approvedAt = new Date().toISOString();
 
   let mergeCount = 0;
-  window.dsrDraftData.forEach(row => {
+  cleanRows.forEach(row => {
     let existingRow = db.daily_ledger.find(r => r.date === row.date);
     let oldNetP = 0;
     let oldNetD = 0;
@@ -9341,8 +9426,16 @@ window.approveAndMergeDsr = function() {
 
   db.daily_ledger.sort((a, b) => b.date.localeCompare(a.date));
   saveDB();
-  showNotification(`🎉 Successfully merged ${mergeCount} verified DSR entries to the production database.`, 'success');
-  localStorage.removeItem('octaneflow_dsr_draft_edits');
+
+  // Keep remaining dirtyRows in draft, discard merged rows
+  window.dsrDraftData = dirtyRows;
+  if (dirtyRows.length === 0) {
+    localStorage.removeItem('octaneflow_dsr_draft_edits');
+  } else {
+    localStorage.setItem('octaneflow_dsr_draft_edits', JSON.stringify(dirtyRows));
+  }
+
+  showNotification(`🎉 Successfully merged ${mergeCount} clean DSR entries to the production database. ${dirtyRows.length} entries with issues remain in draft.`, 'success');
   initApp();
 };
 
