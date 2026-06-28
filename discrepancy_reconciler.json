@@ -1,0 +1,806 @@
+[
+  {
+    "date": "2026-03-10",
+    "rates": {
+      "ms": 105.43,
+      "hsd": 90.85
+    },
+    "source_file": "March 2026\\10 and 11 Mar 2026.pdf",
+    "detected_errors": [
+      "Nozzle 4 Shift continuity mismatch: Day Close 1149135.83 vs Night Open 1149135.43"
+    ],
+    "extracted_readings": {
+      "day_shift": {
+        "nozzle_1": {
+          "open": 1432288.53,
+          "close": 1432897.7,
+          "litres": 609.17
+        },
+        "nozzle_2": {
+          "open": 1175262.56,
+          "close": 1175779.79,
+          "litres": 517.23
+        },
+        "nozzle_3": {
+          "open": 33440.49,
+          "close": 33476.13,
+          "litres": 35.64
+        },
+        "nozzle_4": {
+          "open": 1148902.57,
+          "close": 1149135.83,
+          "litres": 233.26
+        }
+      },
+      "night_shift": {
+        "nozzle_1": {
+          "open": 1432897.7,
+          "close": 1432982.48,
+          "litres": 84.78
+        },
+        "nozzle_2": {
+          "open": 1175779.79,
+          "close": 1175868.08,
+          "litres": 88.29
+        },
+        "nozzle_3": {
+          "open": 33476.13,
+          "close": 33485.23,
+          "litres": 9.1
+        },
+        "nozzle_4": {
+          "open": 1149135.43,
+          "close": 1149241.81,
+          "litres": 106.38
+        }
+      }
+    },
+    "user_correction": {
+      "use_this_day": false,
+      "day_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "night_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "notes": "Type explanation of errors or manual corrections here."
+    }
+  },
+  {
+    "date": "2026-04-02",
+    "rates": {
+      "ms": 105.43,
+      "hsd": 90.85
+    },
+    "source_file": "April 2026\\01 and 02 Apr 2026.pdf",
+    "detected_errors": [
+      "Nozzle 1 Shift continuity mismatch: Day Close 145500.61 vs Night Open 144975.06"
+    ],
+    "extracted_readings": {
+      "day_shift": {
+        "nozzle_1": {
+          "open": 144916.37,
+          "close": 145500.61,
+          "litres": 584.24
+        },
+        "nozzle_2": {
+          "open": 118624.02,
+          "close": 118872.06,
+          "litres": 248.04
+        },
+        "nozzle_3": {
+          "open": 35783.58,
+          "close": 35861.5,
+          "litres": 77.92
+        },
+        "nozzle_4": {
+          "open": 1167168.98,
+          "close": 1167417.64,
+          "litres": 248.66
+        }
+      },
+      "night_shift": {
+        "nozzle_1": {
+          "open": 144975.06,
+          "close": 145073.89,
+          "litres": 98.83
+        },
+        "nozzle_2": {
+          "open": 118872.06,
+          "close": 119171.81,
+          "litres": 299.75
+        },
+        "nozzle_3": {
+          "open": 35861.5,
+          "close": 35870.99,
+          "litres": 9.49
+        },
+        "nozzle_4": {
+          "open": 1167417.64,
+          "close": 1167577.77,
+          "litres": 160.13
+        }
+      }
+    },
+    "user_correction": {
+      "use_this_day": false,
+      "day_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "night_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "notes": "Type explanation of errors or manual corrections here."
+    }
+  },
+  {
+    "date": "2026-04-03",
+    "rates": {
+      "ms": 105.43,
+      "hsd": 90.85
+    },
+    "source_file": "April 2026\\03 and 04 Apr 2026.pdf",
+    "detected_errors": [
+      "Nozzle 1 Shift continuity mismatch: Day Close 145510.15 vs Night Open 145037.15",
+      "Nozzle 2 Shift continuity mismatch: Day Close 119327.06 vs Night Open 118958.06"
+    ],
+    "extracted_readings": {
+      "day_shift": {
+        "nozzle_1": {
+          "open": 144984.44,
+          "close": 145510.15,
+          "litres": 525.71
+        },
+        "nozzle_2": {
+          "open": 118917.81,
+          "close": 119327.06,
+          "litres": 409.25
+        },
+        "nozzle_3": {
+          "open": 35870.99,
+          "close": 35887.37,
+          "litres": 16.38
+        },
+        "nozzle_4": {
+          "open": 1167577.77,
+          "close": 1167888.2,
+          "litres": 310.43
+        }
+      },
+      "night_shift": {
+        "nozzle_1": {
+          "open": 145037.15,
+          "close": 145162.24,
+          "litres": 125.09
+        },
+        "nozzle_2": {
+          "open": 118958.06,
+          "close": 119073.08,
+          "litres": 115.02
+        },
+        "nozzle_3": {
+          "open": 35887.37,
+          "close": 35923.4,
+          "litres": 36.03
+        },
+        "nozzle_4": {
+          "open": 1167888.2,
+          "close": 1167963.16,
+          "litres": 74.96
+        }
+      }
+    },
+    "user_correction": {
+      "use_this_day": false,
+      "day_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "night_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "notes": "Type explanation of errors or manual corrections here."
+    }
+  },
+  {
+    "date": "2026-04-04",
+    "rates": {
+      "ms": 105.43,
+      "hsd": 90.85
+    },
+    "source_file": "April 2026\\03 and 04 Apr 2026.pdf",
+    "detected_errors": [
+      "Nozzle 1 Shift continuity mismatch: Day Close 145636.54 vs Night Open 1451086.54"
+    ],
+    "extracted_readings": {
+      "day_shift": {
+        "nozzle_1": {
+          "open": 145050.24,
+          "close": 145636.54,
+          "litres": 586.3
+        },
+        "nozzle_2": {
+          "open": 1189696.08,
+          "close": 1190277.99,
+          "litres": 581.91
+        },
+        "nozzle_3": {
+          "open": 35923.4,
+          "close": 35983.51,
+          "litres": 60.11
+        },
+        "nozzle_4": {
+          "open": 1167963.16,
+          "close": 1168227.8,
+          "litres": 264.64
+        }
+      },
+      "night_shift": {
+        "nozzle_1": {
+          "open": 1451086.54,
+          "close": 1451183.89,
+          "litres": 97.35
+        },
+        "nozzle_2": {
+          "open": 1190277.99,
+          "close": 1190376.51,
+          "litres": 98.52
+        },
+        "nozzle_3": {
+          "open": 35983.51,
+          "close": 35983.51,
+          "litres": 0.0
+        },
+        "nozzle_4": {
+          "open": 1168227.8,
+          "close": 1168311.44,
+          "litres": 83.64
+        }
+      }
+    },
+    "user_correction": {
+      "use_this_day": false,
+      "day_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "night_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "notes": "Type explanation of errors or manual corrections here."
+    }
+  },
+  {
+    "date": "2026-04-05",
+    "rates": {
+      "ms": 105.43,
+      "hsd": 90.85
+    },
+    "source_file": "April 2026\\05 and 06 Apr 2026.pdf",
+    "detected_errors": [
+      "Nozzle 3 Shift continuity mismatch: Day Close 36020.57 vs Night Open 36020.51"
+    ],
+    "extracted_readings": {
+      "day_shift": {
+        "nozzle_1": {
+          "open": 1451183.89,
+          "close": 1451761.47,
+          "litres": 577.58
+        },
+        "nozzle_2": {
+          "open": 1190376.51,
+          "close": 1190763.66,
+          "litres": 387.15
+        },
+        "nozzle_3": {
+          "open": 35983.51,
+          "close": 36020.57,
+          "litres": 37.06
+        },
+        "nozzle_4": {
+          "open": 1168311.44,
+          "close": 1169114.27,
+          "litres": 802.83
+        }
+      },
+      "night_shift": {
+        "nozzle_1": {
+          "open": 1451761.47,
+          "close": 1451913.67,
+          "litres": 152.2
+        },
+        "nozzle_2": {
+          "open": 1190763.66,
+          "close": 1190892.9,
+          "litres": 129.24
+        },
+        "nozzle_3": {
+          "open": 36020.51,
+          "close": 36069.89,
+          "litres": 49.38
+        },
+        "nozzle_4": {
+          "open": 1169114.27,
+          "close": 1169213.34,
+          "litres": 99.07
+        }
+      }
+    },
+    "user_correction": {
+      "use_this_day": false,
+      "day_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "night_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "notes": "Type explanation of errors or manual corrections here."
+    }
+  },
+  {
+    "date": "2026-04-14",
+    "rates": {
+      "ms": 105.43,
+      "hsd": 90.85
+    },
+    "source_file": "April 2026\\13 and 14 Apr 2026.pdf",
+    "detected_errors": [
+      "Nozzle 4 Night shift math mismatch: 1173660.13 - 1173537.33 = 122.80 (extracted litres: 222.8)"
+    ],
+    "extracted_readings": {
+      "day_shift": {
+        "nozzle_1": {
+          "open": 1456879.45,
+          "close": 1457467.94,
+          "litres": 588.49
+        },
+        "nozzle_2": {
+          "open": 1195336.03,
+          "close": 1195916.69,
+          "litres": 580.66
+        },
+        "nozzle_3": {
+          "open": 36489.55,
+          "close": 36556.47,
+          "litres": 66.92
+        },
+        "nozzle_4": {
+          "open": 1173233.14,
+          "close": 1173537.33,
+          "litres": 304.19
+        }
+      },
+      "night_shift": {
+        "nozzle_1": {
+          "open": 1457467.94,
+          "close": 1457654.1,
+          "litres": 186.16
+        },
+        "nozzle_2": {
+          "open": 1195916.69,
+          "close": 1196212.8,
+          "litres": 296.11
+        },
+        "nozzle_3": {
+          "open": 36556.47,
+          "close": 36556.47,
+          "litres": 0.0
+        },
+        "nozzle_4": {
+          "open": 1173537.33,
+          "close": 1173660.13,
+          "litres": 222.8
+        }
+      }
+    },
+    "user_correction": {
+      "use_this_day": false,
+      "day_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "night_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "notes": "Type explanation of errors or manual corrections here."
+    }
+  },
+  {
+    "date": "2026-04-24",
+    "rates": {
+      "ms": 105.43,
+      "hsd": 90.85
+    },
+    "source_file": "April 2026\\23 and 24 Apr 2026.pdf",
+    "detected_errors": [
+      "Nozzle 2 Shift continuity mismatch: Day Close 1202024.6 vs Night Open 1202024.46"
+    ],
+    "extracted_readings": {
+      "day_shift": {
+        "nozzle_1": {
+          "open": 1465332.57,
+          "close": 1465671.81,
+          "litres": 339.24
+        },
+        "nozzle_2": {
+          "open": 1201779.31,
+          "close": 1202024.6,
+          "litres": 245.29
+        },
+        "nozzle_3": {
+          "open": 37653.31,
+          "close": 37805.24,
+          "litres": 151.93
+        },
+        "nozzle_4": {
+          "open": 1179125.83,
+          "close": 1179744.72,
+          "litres": 618.89
+        }
+      },
+      "night_shift": {
+        "nozzle_1": {
+          "open": 1465671.81,
+          "close": 1465905.89,
+          "litres": 234.08
+        },
+        "nozzle_2": {
+          "open": 1202024.46,
+          "close": 1202282.57,
+          "litres": 258.11
+        },
+        "nozzle_3": {
+          "open": 37805.24,
+          "close": 37810.24,
+          "litres": 5.0
+        },
+        "nozzle_4": {
+          "open": 1179744.72,
+          "close": 1180072.21,
+          "litres": 327.49
+        }
+      }
+    },
+    "user_correction": {
+      "use_this_day": false,
+      "day_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "night_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "notes": "Type explanation of errors or manual corrections here."
+    }
+  },
+  {
+    "date": "2026-05-09",
+    "rates": {
+      "ms": 105.43,
+      "hsd": 90.85
+    },
+    "source_file": "May 2026\\09 and 10 May 2026.pdf",
+    "detected_errors": [
+      "Nozzle 2 Night shift math mismatch: 1212373.58 - 1212104.2 = 269.38 (extracted litres: 269.3)"
+    ],
+    "extracted_readings": {
+      "day_shift": {
+        "nozzle_1": {
+          "open": 1477004.15,
+          "close": 1477504.57,
+          "litres": 500.42
+        },
+        "nozzle_2": {
+          "open": 1211729.18,
+          "close": 1212104.2,
+          "litres": 375.02
+        },
+        "nozzle_3": {
+          "open": 39671.45,
+          "close": 39721.63,
+          "litres": 50.18
+        },
+        "nozzle_4": {
+          "open": 1190551.61,
+          "close": 1190876.58,
+          "litres": 324.97
+        }
+      },
+      "night_shift": {
+        "nozzle_1": {
+          "open": 1477504.57,
+          "close": 1477737.73,
+          "litres": 233.16
+        },
+        "nozzle_2": {
+          "open": 1212104.2,
+          "close": 1212373.58,
+          "litres": 269.3
+        },
+        "nozzle_3": {
+          "open": 39721.63,
+          "close": 39721.63,
+          "litres": 0.0
+        },
+        "nozzle_4": {
+          "open": 1190876.58,
+          "close": 1191079.1,
+          "litres": 202.52
+        }
+      }
+    },
+    "user_correction": {
+      "use_this_day": false,
+      "day_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "night_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "notes": "Type explanation of errors or manual corrections here."
+    }
+  },
+  {
+    "date": "2026-05-10",
+    "rates": {
+      "ms": 105.43,
+      "hsd": 90.85
+    },
+    "source_file": "May 2026\\09 and 10 May 2026.pdf",
+    "detected_errors": [
+      "Nozzle 1 Day shift math mismatch: 1478208.01 - 1477737.33 = 470.68 (extracted litres: 470.28)"
+    ],
+    "extracted_readings": {
+      "day_shift": {
+        "nozzle_1": {
+          "open": 1477737.33,
+          "close": 1478208.01,
+          "litres": 470.28
+        },
+        "nozzle_2": {
+          "open": 1212373.58,
+          "close": 1212682.68,
+          "litres": 309.1
+        },
+        "nozzle_3": {
+          "open": 39721.63,
+          "close": 39811.65,
+          "litres": 90.02
+        },
+        "nozzle_4": {
+          "open": 1191079.1,
+          "close": 1191390.12,
+          "litres": 311.02
+        }
+      },
+      "night_shift": {
+        "nozzle_1": {
+          "open": 1478208.01,
+          "close": 1478379.46,
+          "litres": 171.45
+        },
+        "nozzle_2": {
+          "open": 1212682.68,
+          "close": 1212802.8,
+          "litres": 120.12
+        },
+        "nozzle_3": {
+          "open": 39811.65,
+          "close": 39834.48,
+          "litres": 22.83
+        },
+        "nozzle_4": {
+          "open": 1191390.12,
+          "close": 1191450.65,
+          "litres": 60.53
+        }
+      }
+    },
+    "user_correction": {
+      "use_this_day": false,
+      "day_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "night_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "notes": "Type explanation of errors or manual corrections here."
+    }
+  },
+  {
+    "date": "2026-05-12",
+    "rates": {
+      "ms": 105.43,
+      "hsd": 90.85
+    },
+    "source_file": "May 2026\\11 and 12 May 2026.pdf",
+    "detected_errors": [
+      "Nozzle 1 Day shift math mismatch: 1479434.98 - 1478948.98 = 486.00 (extracted litres: 487.0)"
+    ],
+    "extracted_readings": {
+      "day_shift": {
+        "nozzle_1": {
+          "open": 1478948.98,
+          "close": 1479434.98,
+          "litres": 487.0
+        },
+        "nozzle_2": {
+          "open": 1213875.69,
+          "close": 1214172.46,
+          "litres": 296.77
+        },
+        "nozzle_3": {
+          "open": 40042.17,
+          "close": 40188.58,
+          "litres": 146.41
+        },
+        "nozzle_4": {
+          "open": 1192021.54,
+          "close": 1192432.37,
+          "litres": 410.83
+        }
+      },
+      "night_shift": {
+        "nozzle_1": {
+          "open": 1479434.98,
+          "close": 1479641.67,
+          "litres": 206.69
+        },
+        "nozzle_2": {
+          "open": 1214172.46,
+          "close": 1214234.2,
+          "litres": 61.74
+        },
+        "nozzle_3": {
+          "open": 40188.58,
+          "close": 40226.52,
+          "litres": 37.94
+        },
+        "nozzle_4": {
+          "open": 1192432.37,
+          "close": 1192576.57,
+          "litres": 144.2
+        }
+      }
+    },
+    "user_correction": {
+      "use_this_day": false,
+      "day_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "night_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "notes": "Type explanation of errors or manual corrections here."
+    }
+  },
+  {
+    "date": "2026-06-05",
+    "rates": {
+      "ms": 113.37,
+      "hsd": 98.41
+    },
+    "source_file": "June 2026\\04 and 05 Jun 2026.pdf",
+    "detected_errors": [
+      "Nozzle 4 Day shift math mismatch: 1234196.47 - 1233689.79 = 506.68 (extracted litres: 501.68)"
+    ],
+    "extracted_readings": {
+      "day_shift": {
+        "nozzle_1": {
+          "open": 1494192.74,
+          "close": 1494452.07,
+          "litres": 259.33
+        },
+        "nozzle_2": {
+          "open": 1236857.59,
+          "close": 1237532.16,
+          "litres": 674.57
+        },
+        "nozzle_3": {
+          "open": 43356.19,
+          "close": 43396.98,
+          "litres": 40.79
+        },
+        "nozzle_4": {
+          "open": 1233689.79,
+          "close": 1234196.47,
+          "litres": 501.68
+        }
+      },
+      "night_shift": {
+        "nozzle_1": {
+          "open": 1494452.07,
+          "close": 1494550.38,
+          "litres": 98.31
+        },
+        "nozzle_2": {
+          "open": 1237532.16,
+          "close": 1237815.17,
+          "litres": 283.01
+        },
+        "nozzle_3": {
+          "open": 43396.98,
+          "close": 43396.98,
+          "litres": 0.0
+        },
+        "nozzle_4": {
+          "open": 1234196.47,
+          "close": 1234471.88,
+          "litres": 275.41
+        }
+      }
+    },
+    "user_correction": {
+      "use_this_day": false,
+      "day_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "night_shift": {
+        "nozzle_1_close": null,
+        "nozzle_2_close": null,
+        "nozzle_3_close": null,
+        "nozzle_4_close": null
+      },
+      "notes": "Type explanation of errors or manual corrections here."
+    }
+  }
+]

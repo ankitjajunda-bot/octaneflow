@@ -1,0 +1,61 @@
+INDEX	DATE	PRODUCT	QTY_KL	COST_INR	INVOICE_NO	TRUCK_NO	OCR_DISCREPANCY_FLAGS
+------------------------------------------------------------------------------------------------------------------------
+1	2024-11-09	Diesel	12	1062012.27	202513238060340	RJ19GF3914	invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+2	2024-11-10	Petrol	8	813244.6	202513298050647	RJ19GF3914	invoice total unclear; original OCR note: missing rate_per_kl; bill total calculated from item totals; bottom total OCR unclear
+3	2024-11-20	Diesel	8	708008.18	202513238053031	RJ19GF3914	invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+4	2024-11-20	Petrol	4	406620.8	202513238053031	RJ19GF3914	item total from ocr_total_line; invoice total unclear; original OCR note: missing quantity_kl; bill total calculated from item totals; bottom total OCR unclear
+5	2024-11-27	Diesel				RJ19GF3914	quantity unclear; allowed values are 4/8/12 KL; material total unclear; invoice total unclear; original OCR note: missing quantity_kl; missing rate_per_kl; missing material_total
+6	2024-11-30	Diesel	4	354004.09		RJ19GF3914	bill total from ocr_column
+7	2024-11-30	Petrol		613241.6		RJ19GF3914	quantity unclear; allowed values are 4/8/12 KL; item total from ocr_total_line; bill total from ocr_column; original OCR note: missing rate_per_kl
+8	2024-11-30	Petrol	8	354004.09		RJ19GF3914	item total from ocr_total_line; bill total from ocr_column; original OCR note: missing quantity_kl; missing material_total
+9	2024-12-12	Diesel	8		202513238058775	RJ19GF3914	material total unclear; invoice total unclear; original OCR note: missing material_total
+10	2024-12-12	Petrol	4	406020.67	202513238058775	RJ19GF3914	invoice total unclear
+11	2024-12-24	Diesel	8	700967.53	20251323061059	FS09ASS829	time unclear; TT/truck number unclear; invoice total unclear; original OCR note: missing time; bill total calculated from item totals; bottom total OCR unclear
+12	2024-12-24	Petrol	4	406020.67	20251323061059	FS09ASS829	time unclear; TT/truck number unclear; invoice total unclear; original OCR note: missing time; bill total calculated from item totals; bottom total OCR unclear
+13	2024-12-31	Diesel	4	353483.76	202513238063505	RJ19GF3914	invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+14	2024-12-31	Petrol	8	812041.33	202513238063505	RJ19GF3914	invoice total unclear; original OCR note: missing rate_per_kl; bill total calculated from item totals; bottom total OCR unclear
+15	2025-01-11	Diesel			20251323066241	RJ19GF3914	quantity unclear; allowed values are 4/8/12 KL; material total unclear; original OCR note: missing quantity_kl; missing rate_per_kl; missing material_total
+16	2025-01-11	Petrol	8		20251323066241	RJ19GF3914	quantity 8 KL corrected from OCR; material total unclear; original OCR note: missing rate_per_kl; missing material_total
+17	2025-01-22	Diesel	8		202513238067151	RJ19GF3914	material total unclear; invoice total unclear; original OCR note: missing material_total
+18	2025-01-22	Petrol	8		202513238067151	RJ19GF3914	quantity 8 KL corrected from OCR; material total unclear; invoice total unclear; original OCR note: missing material_total
+19	2025-01-30	Diesel	4		20261323060577	RJ19GF3914	material total unclear; invoice total unclear; original OCR note: missing material_total
+20	2025-01-30	Petrol	8	812041.33	20261323060577	RJ19GF3914	quantity 8 KL corrected from OCR; invoice total unclear
+21	2025-02-05	Diesel	12	1060451.29	20251323070616	AJ19GF3014	TT/truck number unclear; item total from ocr_total_line; original OCR note: missing rate_per_kl
+22	2025-02-15	Diesel	8	706967.53	20251323072546	RJ19GF3914	invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+23	2025-02-15	Petrol	4	406020.67	20251323072546	RJ19GF3914	item total from ocr_total_line; invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+24	2025-02-21	Petrol	8	812041.34	202513238073704	RJ19GF3014	item total from ocr_total_line; invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+25	2025-02-28	Diesel	4	953483.76	20251323076091	RJ19GF3914	invoice total unclear; original OCR note: missing rate_per_kl; bill total calculated from item totals; bottom total OCR unclear
+26	2025-02-28	Petrol	8	953483.76	20251323076091	RJ19GF3914	item total from ocr_total_line; invoice total unclear; original OCR note: missing rate_per_kl; missing material_total; bill total calculated from item totals; bottom total OCR unclear
+27	2025-03-08	Diesel	12	625800.29	202519238077449	RJ19GF3914	item total from ocr_total_line; invoice total unclear; original OCR note: missing rate_per_kl; bill total calculated from item totals; bottom total OCR unclear
+28	2025-03-15	Diesel	8		20251329078685	RJ19GF3014	material total unclear; invoice total unclear; original OCR note: missing material_total
+29	2025-03-22	Petrol		1204133.0	202513238079019	RJ19GF3014	quantity unclear; allowed values are 4/8/12 KL; invoice total unclear; original OCR note: missing rate_per_kl; bill total calculated from item totals; bottom total OCR unclear
+30	2025-03-31	Diesel	4			RJ19GF3944	SAP entry no unclear; material total unclear; invoice total unclear; original OCR note: missing sap_entry_no; missing rate_per_kl; missing material_total
+31	2025-03-31	Petrol	8			RJ19GF3944	SAP entry no unclear; material total unclear; invoice total unclear; original OCR note: missing sap_entry_no; missing material_total
+32	2026-04-02	Diesel	8		202713238000270	RJ19GF3914	material total unclear; invoice total unclear; original OCR note: missing material_total
+33	2026-04-02	Petrol	4	406615.06	202713238000270	RJ19GF3914	invoice total unclear
+34	2026-04-09	Diesel	8		202713238002018	RJ19GF3914	material total unclear; invoice total unclear; original OCR note: missing material_total
+35	2026-04-09	Petrol	4	405615.05	202713238002018	RJ19GF3914	invoice total unclear
+36	2026-04-17	Diesel	8		202713238004058	RJ19GF3914	time unclear; material total unclear; invoice total unclear; original OCR note: missing date; missing time; missing material_total
+37	2026-04-17	Petrol	4		202713238004058	RJ19GF3914	time unclear; material total unclear; invoice total unclear; original OCR note: missing date; missing time; missing material_total
+38	2026-04-21	Diesel	4		20271323008235	RJ19GF3914	material total unclear; invoice total unclear; original OCR note: missing quantity_kl; missing rate_per_kl; missing material_total
+39	2026-04-21	Petrol	8		20271323008235	RJ19GF3914	material total unclear; invoice total unclear; original OCR note: missing material_total
+40	2026-04-27	Diesel	8		202713238007911	RJ01SGF3914	TT/truck number unclear; material total unclear; invoice total unclear; original OCR note: missing material_total
+41	2026-04-27	Petrol	4	406616.05	202713238007911	RJ01SGF3914	TT/truck number unclear; invoice total unclear
+42	2026-04-30	Petrol	4	405615.05	20271323009014	RJ19GF3014	invoice total unclear; original OCR note: missing rate_per_kl; bill total calculated from item totals; bottom total OCR unclear
+43	2026-05-07	Diesel	8	706261.27	20271329801	RJ19GF3914	invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+44	2026-05-07	Petrol	4	405615.05	20271329801	RJ19GF3914	invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+45	2026-05-14	Diesel			20271323013088	RJ19GF3914	quantity unclear; allowed values are 4/8/12 KL; material total unclear; invoice total unclear; original OCR note: missing rate_per_kl
+46	2026-05-14	Petrol	4	408615.05	20271323013088	RJ19GF3914	invoice total unclear
+47	2026-05-19	Diesel			20271328014621	RJ19GF3914	quantity unclear; allowed values are 4/8/12 KL; material total unclear; invoice total unclear; original OCR note: missing quantity_kl; missing rate_per_kl
+48	2026-05-19	Petrol	8	368769.0	20271328014621	RJ19GF3914	item total from ocr_total_line; invoice total unclear; original OCR note: missing quantity_kl; missing rate_per_kl; missing material_total
+49	2026-05-21	Diesel	12	1106307.01	20271323015219		time unclear; TT/truck number unclear; invoice total unclear; original OCR note: missing time; missing tt_number; bill total calculated from item totals; bottom total OCR unclear
+50	2026-05-23	Diesel	12	1147347.8	202753238018072	RJ19GF3914	invoice total unclear; original OCR note: missing sap_entry_no; bill total calculated from item totals; bottom total OCR unclear
+51	2026-05-26	Diesel	12	1149871.16	202713238017921	RJ19GF3914	item total from ocr_total_line; bill total from ocr_column; original OCR note: missing material_total
+52	2026-05-29	Diesel	8			RJ19GF3914	material total unclear; invoice total unclear; original OCR note: missing material_total
+53	2026-05-29	Petrol	4	437101.09		RJ19GF3914	invoice total unclear
+54	2026-06-02	Diesel	12	1149871.16	20271323019819	RJ19GF3914	
+55	2026-06-05	Petrol	12	1311303.27	20271323020642	RJ19GF3914	quantity 12 KL corrected from OCR; item total from visual_verified; bill total from visual_verified; original OCR note: No EBMS/HSD material row found by OCR
+56	2026-06-11	Diesel	12	1149871.16	20271323022121	AJ19GF3914	TT/truck number unclear; invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+57	2026-06-18	Diesel	8		20271323023907	RJ19GF3914	material total unclear; invoice total unclear; original OCR note: missing material_total
+58	2026-06-18	Petrol	4	437107.09	20271323023907	RJ19GF3914	invoice total unclear
+59	2026-06-24	Petrol	4	437101.09	20271323025482	RJ19GF3914	invoice total unclear; bill total calculated from item totals; bottom total OCR unclear

@@ -1,4 +1,5 @@
-{
+// Clean validated DSR daily ledger database
+const DSR_DRAFT_DATA = {
   "daily_ledger": [
     {
       "date": "2026-06-30",
@@ -22015,4 +22016,4 @@
       "dip_hsd_cm": 127.5
     }
   ]
-}
+};
