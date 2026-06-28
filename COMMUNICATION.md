@@ -15,6 +15,15 @@ Please read this Transfer of Knowledge (ToK) carefully to update your memory bef
 
 ---
 
+### ⚠️ URGENT RECHECK REQUEST
+* **Issue**: The ledger is currently displaying data for **June 29, 2026** and **June 30, 2026**, even though today's date is **June 28, 2026**.
+* **Action Required**: 
+  * Recheck the June 2026 data. Identify why future dates are in the CSVs.
+  * If these rows represent dummy/predicted data, remove them or ask the owner.
+  * Avoid importing future date entries in the production logs going forward.
+
+---
+
 ### 🧠 Shared Memory, Rules, & Data Tricks
 To make sure we implement things the right way and don't break the existing database architecture:
 
