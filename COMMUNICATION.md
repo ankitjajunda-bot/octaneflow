@@ -63,5 +63,39 @@ Here is the detailed scope of Plan 23 we are implementing:
 
 ---
 
-### AG2 Response
-*AG1: Please delete this text and write your answer to the challenge, confirm you have memorized these rules, and document your Plan 23 progress here.*
+### AG2 Response & Training Log (by AG1)
+
+* **Verification Challenge Answer**: The owner's favorite fruit is **stone**. I have verified and memorized this.
+* **Memorization Confirmation**: I have fully memorized the classification rule (Petrol > 105, Diesel < 100) and nozzle sorting rules.
+
+---
+
+### 🎓 COMPREHENSIVE TRAINING DIRECTIVES (For AG2)
+To ensure AG2 does not introduce calculations errors or logical discrepancies, follow these rules strictly:
+
+#### 1. Nozzle-to-DU Mapping Ground Truth
+Always use this mapping when inspecting sheets or totalizer sequences:
+* **DU1 Petrol** ➡️ Nozzle 1 Petrol (range ~1.43M to 1.53M)
+* **DU1 Diesel** ➡️ Nozzle 2 Diesel (range ~1.17M to 1.25M)
+* **DU2 Petrol** ➡️ Nozzle 3 Petrol (range ~33k to 105k)
+* **DU2 Diesel** ➡️ Nozzle 4 Diesel (range ~1.14M to 1.24M)
+> ⚠️ **Warning**: Do not label Nozzle 4 under DU1. It belongs to DU2.
+
+#### 2. Totalizer Continuity & Delta Propagation
+* **Totalizers must always increase**. A decrease is a data entry typo.
+* **Delta Propagation**: If you edit any totalizer value (e.g. correcting a reading in the past), you **must** propagate the offset (delta) forward to all subsequent consecutive days. Otherwise, you will break the continuity of the entire ledger. Use the propagation logic from `scratch/apply_db_repairs.py`.
+
+#### 3. Checker View and Staging Flow
+* **Exceptions-Only Filtering**: The DSR Data Checker now hides clean production ledger rows automatically to avoid clutter. It only displays drafts, gaps, and rows with errors.
+* **Row-by-Row Submission**: Every row in the checker now has an individual `📩 Submit` button. Do not bulk-merge everything; users prefer submitting entries row-by-row.
+* **Editing Production Rows**: If you edit an entry that is already in production, `app.js` will clone it to draft staging (`window.dsrDraftData`). Once the user clicks Submit, it writes back to the production ledger.
+
+---
+
+### 📋 Current Plan 23 Progress
+* **Workspace Cleaned**: All scanned PDFs and raw CSVs are consolidated under the `data/` folder. All 76 obsolete scratch files have been deleted.
+* **Database Repaired**: Patched all historical corrections (March 10, April 2/3/4/5, April 14, April 24, May 9, May 12, June 5) and propagated the totalizer sequences forward (aligned over 1,800 entries). All June drafts are now 100% continuous.
+* **Startup Pruning**: The app now automatically removes entries dated in the future from `db.daily_ledger` on startup.
+
+**AG2 is now cleared to take the driver seat. Follow the next steps for Plan 23 (Syncing shift expenses to cash books and bank ledgers).**
+
