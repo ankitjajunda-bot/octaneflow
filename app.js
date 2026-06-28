@@ -3216,6 +3216,13 @@ function renderLedger() {
   const wacMap = buildWACTimeline();
 
   // 1. Build forward running stock reconciliation timeline (oldest to newest)
+  // PRIORITY ORDER:
+  //   a) Running calculated chain (prev_close + supply - sales) — most reliable
+  //   b) OCR/dip reading ONLY used for Day-1 seed if no prior data exists
+  //   c) Supply is always read from supply bills first, then OCR receipts
+  //
+  // OCR dip readings are NOT used to override the running chain mid-stream.
+  // They are only used as a large-gap sanity check (>3000L diff = real event).
   const stockTimeline = {};
   let runningPetrol = null;
   let runningDiesel = null;
@@ -3228,8 +3235,8 @@ function renderLedger() {
 
     const dateStr = row.date;
     const phys = (typeof DSR_PHYSICAL_STOCK_DATA !== 'undefined') ? DSR_PHYSICAL_STOCK_DATA[dateStr] : null;
-    
-    // Prioritize bank-verified supply invoices
+
+    // Step 1: Get supply from bank-verified invoices first, then OCR receipts
     let p_bill_supply = 0;
     let d_bill_supply = 0;
     if (typeof SUPPLY_BILLS_DATA !== 'undefined') {
@@ -3249,8 +3256,7 @@ function renderLedger() {
       d_supply = phys.diesel_receipt || 0;
     }
 
-    // Plan 21: Truck capacity safeguard. Total supply cannot exceed 12,000 L (12 KL).
-    // Snaps to standard 4 KL compartments if there is an OCR typo or duplicate entry.
+    // Truck capacity safeguard — max 12 KL per day, snaps to 4KL compartments
     if (p_supply > 12000) p_supply = 12000;
     if (d_supply > 12000) d_supply = 12000;
     if (p_supply + d_supply > 12000) {
@@ -3259,23 +3265,34 @@ function renderLedger() {
       d_supply = 12000 - p_supply;
     }
 
-    let p_dip_raw = (row.p_dip_override !== undefined) ? row.p_dip_override : ((phys && phys.petrol_dip !== undefined) ? phys.petrol_dip : null);
-    let d_dip_raw = (row.d_dip_override !== undefined) ? row.d_dip_override : ((phys && phys.diesel_dip !== undefined) ? phys.diesel_dip : null);
+    // Step 2: Determine opening stock
+    // Always prefer the running calculated chain.
+    // Only use OCR dip for seeding the very first day (runningPetrol is null)
+    // or if user has manually overridden (p_dip_override).
+    const p_dip_raw = (row.p_dip_override !== undefined) ? row.p_dip_override : null;
+    const d_dip_raw = (row.d_dip_override !== undefined) ? row.d_dip_override : null;
 
-    let start_p = 0;
+    let start_p;
     if (p_dip_raw !== null) {
+      // Manual override always wins
       start_p = p_dip_raw;
     } else if (runningPetrol !== null) {
+      // Calculated chain is the primary source
       start_p = runningPetrol;
+    } else if (phys && phys.petrol_dip !== undefined) {
+      // First-day seed only — use OCR dip to bootstrap the chain
+      start_p = phys.petrol_dip;
     } else {
       start_p = row.opening_stock?.ms ?? 8000;
     }
 
-    let start_d = 0;
+    let start_d;
     if (d_dip_raw !== null) {
       start_d = d_dip_raw;
     } else if (runningDiesel !== null) {
       start_d = runningDiesel;
+    } else if (phys && phys.diesel_dip !== undefined) {
+      start_d = phys.diesel_dip;
     } else {
       start_d = row.opening_stock?.hsd ?? 12000;
     }
@@ -3284,21 +3301,25 @@ function renderLedger() {
     const sales_p = c.totals.net_24h.petrol;
     const sales_d = c.totals.net_24h.diesel;
 
-    const close_p = start_p - sales_p + p_supply;
-    const close_d = start_d - sales_d + d_supply;
+    const close_p = Math.max(0, start_p - sales_p + p_supply);
+    const close_d = Math.max(0, start_d - sales_d + d_supply);
 
     runningPetrol = close_p;
     runningDiesel = close_d;
+
+    // Store physical dip for display/sanity check only (not for chain calculation)
+    const phys_p_display = phys && phys.petrol_dip !== undefined ? phys.petrol_dip : null;
+    const phys_d_display = phys && phys.diesel_dip !== undefined ? phys.diesel_dip : null;
 
     stockTimeline[dateStr] = {
       start_p,
       supply_p: p_supply,
       close_p,
-      physical_p: p_dip_raw,
+      physical_p: phys_p_display,
       start_d,
       supply_d: d_supply,
       close_d,
-      physical_d: d_dip_raw
+      physical_d: phys_d_display
     };
   });
 
@@ -8911,8 +8932,10 @@ function validateDsrData(data) {
       });
     }
 
+    // Wetstock variance: only flag truly large discrepancies (>3% of sales AND >100L)
+    // Most small variances are just dip reading rounding — not real fuel loss.
     const var_ms_pct = p_sales > 0 ? (Math.abs(var_ms) / p_sales) * 100 : 0;
-    if (Math.abs(var_ms) > 10 && var_ms_pct > 0.5) {
+    if (Math.abs(var_ms) > 100 && var_ms_pct > 3.0) {
       issues.push({
         type: 'wetstock',
         date: row.date,
@@ -8921,7 +8944,7 @@ function validateDsrData(data) {
     }
 
     const var_hsd_pct = d_sales > 0 ? (Math.abs(var_hsd) / d_sales) * 100 : 0;
-    if (Math.abs(var_hsd) > 10 && var_hsd_pct > 0.5) {
+    if (Math.abs(var_hsd) > 100 && var_hsd_pct > 3.0) {
       issues.push({
         type: 'wetstock',
         date: row.date,
