@@ -3561,7 +3561,46 @@ function renderLedger() {
         </thead>
       `;
 
-      db.daily_ledger.forEach((row, index) => {
+
+      // Build full date list from first entry to today, inserting placeholders for missing dates
+      const ledgerDateMap = {};
+      db.daily_ledger.forEach(r => { ledgerDateMap[r.date] = r; });
+      const todayDateStr = new Date().toISOString().split('T')[0];
+      const firstLedgerDate = forwardLedger[0]?.date || todayDateStr;
+      const fullLedgerRows = [];
+      let iterDate = new Date(firstLedgerDate + 'T12:00:00Z');
+      const endIterDate = new Date(todayDateStr + 'T12:00:00Z');
+      while (iterDate <= endIterDate) {
+        const ds = iterDate.toISOString().split('T')[0];
+        fullLedgerRows.push(ledgerDateMap[ds] ? { ...ledgerDateMap[ds], _isPending: false } : { date: ds, _isPending: true });
+        iterDate.setDate(iterDate.getDate() + 1);
+      }
+      fullLedgerRows.reverse(); // newest first
+
+      fullLedgerRows.forEach((row) => {
+        if (row._isPending) {
+          const stkEst = stockTimeline[row.date];
+          const stkEstHtml = stkEst
+            ? `<span style="color:#10b981; font-size:0.72rem; margin-left:0.5rem;">≈ P: ${stkEst.start_p.toFixed(0)} L | D: ${stkEst.start_d.toFixed(0)} L</span>`
+            : '';
+          rowsHtml += `
+            <tr style="background: rgba(239,68,68,0.05); border-left: 3px solid #ef4444;">
+              <td class="sticky-col-left" style="color: #ef4444;">
+                <strong>${formatDate(row.date)}</strong>
+                <span style="display:block; font-size:0.68rem; color:#ef4444; margin-top:2px;">⏳ Pending</span>
+              </td>
+              <td colspan="18" style="text-align:center; color: var(--text-muted); font-size:0.78rem; font-style:italic; padding: 0.6rem 0;">
+                No readings entered yet${stkEstHtml}
+              </td>
+              <td class="sticky-col-right">
+                <button class="btn btn-primary btn-sm" onclick="switchView('dsr')" style="padding: 0.25rem 0.5rem; font-size:0.72rem;">Enter Data</button>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        const index = db.daily_ledger.findIndex(r => r.date === row.date);
         const anomaly = getAnomalyStats(row, index);
         const c = anomaly.c;
         const testsP = anomaly.testsP;
