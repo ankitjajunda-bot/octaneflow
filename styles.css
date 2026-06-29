@@ -1994,6 +1994,181 @@ tr:hover td {
   margin-left: 4px !important;
 }
 
+/* ============================================================
+   MOBILE RESPONSIVENESS — Employee Shell & Forms
+   Targets iPhone Safari and Android Chrome
+   ============================================================ */
+
+/* --- Employee Shell: Full-width mobile layout --- */
+#employee-shell {
+  width: 100%;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+#employee-shell header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#employee-shell > div {
+  box-sizing: border-box;
+}
+
+/* --- Login Overlay: iPhone safe-area and mobile padding --- */
+#login-overlay {
+  padding: env(safe-area-inset-top, 1rem) env(safe-area-inset-right, 1rem)
+           env(safe-area-inset-bottom, 1rem) env(safe-area-inset-left, 1rem);
+}
+
+#login-overlay > div {
+  padding: 1.5rem !important;
+  max-width: 100% !important;
+}
+
+/* --- All inputs/selects: minimum 44px tap target (Apple HIG) --- */
+input, select, textarea, button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+#employee-shell input,
+#employee-shell select,
+#employee-shell textarea,
+#login-overlay input,
+#login-overlay select,
+#device-request-form input,
+#device-request-form select {
+  min-height: 44px;
+  font-size: 16px !important; /* Prevents iOS auto-zoom on focus */
+  border-radius: 0.6rem;
+}
+
+/* Prevent iOS input zoom globally */
+input[type="text"],
+input[type="number"],
+input[type="password"],
+input[type="email"],
+input[type="tel"],
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* --- Employee Nozzle Reading Grid: stack on mobile --- */
+@media (max-width: 500px) {
+  /* Nozzle reading grids: 2-column on small phones (Opening + Closing),
+     Testing input full-width below */
+  .emp-nozzle-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Testing field: full width below the two totalizer inputs */
+  .emp-nozzle-grid .form-group:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  /* Date/Shift form-row: stack vertically */
+  .form-row {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Employee header: smaller padding */
+  #employee-shell header {
+    padding: 0.75rem 1rem !important;
+  }
+
+  /* Employee body: tighter padding */
+  #employee-shell > div[style*="padding"] {
+    padding: 0.85rem !important;
+  }
+
+  /* DU card padding: reduce on mobile */
+  #employee-shell div[style*="padding:1.25rem"] {
+    padding: 0.9rem !important;
+  }
+
+  /* Submit button: make it easier to tap */
+  #emp-submit-btn {
+    padding: 1rem !important;
+    font-size: 1rem !important;
+    border-radius: 0.75rem !important;
+  }
+
+  /* Nozzle label text size: slightly larger for readability */
+  #employee-shell label {
+    font-size: 0.75rem !important;
+  }
+
+  /* Login overlay: full width on phone */
+  #login-overlay > div {
+    padding: 1.25rem !important;
+  }
+}
+
+/* --- Medium phones (375px–480px): 2-column nozzle grid still fits --- */
+@media (max-width: 480px) {
+  /* Date selects in a row but shorter */
+  #emp-date-day, #emp-date-month, #emp-date-year {
+    padding: 0.55rem 0.35rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* Cash/Card row: stack vertically */
+  .form-row {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Employee panel content area */
+  #employee-shell .panel {
+    border-radius: 0.75rem;
+  }
+
+  /* Dispensing unit header */
+  #employee-shell h3 {
+    font-size: 0.9rem !important;
+  }
+
+  /* Name/status line in header */
+  #emp-user-name {
+    font-size: 0.9rem !important;
+  }
+}
+
+/* --- Tablet range (481px–767px): 3-column nozzle grid is fine --- */
+@media (min-width: 481px) and (max-width: 767px) {
+  .emp-nozzle-grid {
+    grid-template-columns: 1fr 1fr 1fr !important; /* fine at this size */
+    gap: 0.5rem !important;
+  }
+}
+
+/* --- Landscape phone fix: don't let header overflow --- */
+@media (max-height: 500px) and (orientation: landscape) {
+  #employee-shell header {
+    padding: 0.5rem 1rem !important;
+  }
+  #employee-shell > div {
+    padding: 0.75rem !important;
+  }
+}
+
+/* --- iOS Safari bottom safe area padding --- */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  #employee-shell {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  #login-overlay {
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+  }
+}
+
+/* ============================================================ */
 /* Print CSS Media Queries */
 @media print {
   .sidebar,
