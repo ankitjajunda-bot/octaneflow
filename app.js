@@ -11,6 +11,17 @@ const SYNC_CFG_KEY  = 'octaneflow_sync_cfg';
 const GIST_API_BASE = 'https://api.github.com/gists';
 const GIST_FILENAME = 'octaneflow_data.json';
 
+let supabase = null;
+
+function initSupabaseClient() {
+  const cfg = getSyncCfg();
+  if (cfg.gistId && cfg.gistToken && typeof window.supabase !== 'undefined') {
+    supabase = window.supabase.createClient(cfg.gistId, cfg.gistToken);
+  } else {
+    supabase = null;
+  }
+}
+
 function getSyncCfg() {
   let cfg = {};
   try {
@@ -114,43 +125,99 @@ async function syncPull() {
   const cfg = getSyncCfg();
   if (!cfg.gistId || !cfg.gistToken) {
     setSyncStatus('off');
-    SystemLogger.warning('syncPull', 'Sync skipped: GitHub Gist credentials are not configured.');
+    SystemLogger.warning('syncPull', 'Sync skipped: Supabase credentials are not configured.');
     return null;
   }
-  SystemLogger.info('syncPull', 'Starting cloud pull from GitHub Gist...');
+  if (!supabase) {
+    initSupabaseClient();
+  }
+  if (!supabase) {
+    setSyncStatus('error');
+    SystemLogger.error('syncPull', 'Supabase client failed to initialize.');
+    return null;
+  }
+  
+  SystemLogger.info('syncPull', 'Starting cloud pull from Supabase...');
   try {
     setSyncStatus('syncing');
-    const res = await fetch(`${GIST_API_BASE}/${cfg.gistId}`, {
-      headers: {
-        'Authorization': `token ${cfg.gistToken}`,
-        'Accept': 'application/vnd.github+json'
-      }
+    
+    // 1. Fetch app_state key-values
+    const { data: stateData, error: stateErr } = await supabase.from('app_state').select('*');
+    if (stateErr) throw stateErr;
+    
+    // 2. Fetch pending_entries
+    const { data: pendingData, error: pendingErr } = await supabase.from('pending_entries').select('*');
+    if (pendingErr) throw pendingErr;
+    
+    // 3. Fetch daily_ledger
+    const { data: ledgerData, error: ledgerErr } = await supabase.from('daily_ledger').select('*');
+    if (ledgerErr) throw ledgerErr;
+    
+    // Construct unified db payload
+    const record = {
+      pending_entries: pendingData.map(e => ({
+        id: e.id,
+        submittedBy: e.submitted_by,
+        submittedByName: e.submitted_by_name,
+        submittedAt: e.submitted_at,
+        submission_type: e.submission_type,
+        status: e.status,
+        entryData: e.entry_data,
+        rejectionReason: e.rejection_reason,
+        reviewedBy: e.reviewed_by,
+        reviewedAt: e.reviewed_at
+      })),
+      daily_ledger: ledgerData.map(e => ({
+        date: e.date,
+        prices: e.prices,
+        du1_p: e.du1_p,
+        du1_d: e.du1_d,
+        du2_p: e.du2_p,
+        du2_d: e.du2_d,
+        recon: e.recon,
+        approved_by: e.approved_by,
+        approved_at: e.approved_at,
+        submitted_by: e.submitted_by
+      })),
+      settings: {},
+      stock: {},
+      price_history: [],
+      purchases: [],
+      holidays: [],
+      users: {}
+    };
+    
+    stateData.forEach(row => {
+      if (row.key === 'settings') record.settings = row.value;
+      else if (row.key === 'stock') record.stock = row.value;
+      else if (row.key === 'price_history') record.price_history = row.value;
+      else if (row.key === 'purchases') record.purchases = row.value;
+      else if (row.key === 'holidays') record.holidays = row.value;
+      else if (row.key === 'users') record.users = row.value;
     });
-    const rateLimitRemaining = res.headers.get('x-ratelimit-remaining');
-    if (rateLimitRemaining !== null) {
-      localStorage.setItem('github_rate_limit_remaining', rateLimitRemaining);
-    }
-    if (!res.ok) {
-      setSyncStatus('error');
-      SystemLogger.error('syncPull', `GitHub API returned error status: ${res.status} ${res.statusText}`);
-      return null;
-    }
-    const gist   = await res.json();
-    const file   = gist.files && gist.files[GIST_FILENAME];
-    if (!file)   {
-      setSyncStatus('error');
-      SystemLogger.error('syncPull', `Gist does not contain files or target file '${GIST_FILENAME}' is missing.`);
-      return null;
-    }
-    const record = JSON.parse(file.content);
+    
+    let maxTime = new Date(0);
+    pendingData.forEach(e => {
+      const t1 = e.submitted_at ? new Date(e.submitted_at) : new Date(0);
+      const t2 = e.reviewed_at ? new Date(e.reviewed_at) : new Date(0);
+      if (t1 > maxTime) maxTime = t1;
+      if (t2 > maxTime) maxTime = t2;
+    });
+    ledgerData.forEach(e => {
+      const t = e.approved_at ? new Date(e.approved_at) : new Date(0);
+      if (t > maxTime) maxTime = t;
+    });
+    
+    record._synced_at = maxTime.toISOString();
+    
     localStorage.setItem('octaneflow_last_sync', new Date().toISOString());
     setSyncStatus('synced');
-    SystemLogger.success('syncPull', `Cloud pull succeeded. Retrieved database synced at ${record._synced_at || 'unknown'}`);
+    SystemLogger.success('syncPull', `Supabase pull succeeded. Retrieved ${ledgerData.length} ledger and ${pendingData.length} pending records.`);
     return record;
   } catch (err) {
     const isOnline = navigator.onLine;
     setSyncStatus(isOnline ? 'error' : 'offline');
-    SystemLogger.error('syncPull', `Cloud pull failed due to network exception. Device is ${isOnline ? 'Online' : 'Offline'}.`, err);
+    SystemLogger.error('syncPull', 'Supabase pull failed', err);
     return null;
   }
 }
@@ -159,102 +226,82 @@ async function syncPull() {
 async function syncPush() {
   const cfg = getSyncCfg();
   if (!cfg.gistId || !cfg.gistToken) {
-    SystemLogger.warning('syncPush', 'Sync push skipped: GitHub Gist credentials are not configured.');
+    SystemLogger.warning('syncPush', 'Sync push skipped: Supabase credentials are not configured.');
     return false;
   }
-  SystemLogger.info('syncPush', 'Starting cloud push & synchronization...');
+  if (!supabase) {
+    initSupabaseClient();
+  }
+  if (!supabase) {
+    setSyncStatus('error');
+    SystemLogger.error('syncPush', 'Supabase client failed to initialize.');
+    return false;
+  }
+  
+  SystemLogger.info('syncPush', 'Starting Supabase database sync & push...');
   try {
     setSyncStatus('syncing');
-
-    // Pull and merge latest cloud changes before pushing to prevent overwrites
-    const cloudData = await syncPull();
-    if (cloudData && cloudData._synced_at) {
-      const cloudAt = new Date(cloudData._synced_at);
-      const localAt = cfg.last_push ? new Date(cfg.last_push) : new Date(0);
-
-      if (cloudAt > localAt) {
-        SystemLogger.info('syncPush', 'Cloud database is newer. Merging datasets before pushing...', { cloudAt, localAt });
-
-        // 1. Merge pending/processed employee submissions
-        const localPending = db.pending_entries || [];
-        const cloudPending = cloudData.pending_entries || [];
-        const mergedPending = [...cloudPending];
-
-        localPending.forEach(lp => {
-          if (!mergedPending.some(cp => cp.id === lp.id)) {
-            mergedPending.push(lp);
-          }
-        });
-
-        // 2. Merge consolidated daily ledger entries
-        const localLedger = db.daily_ledger || [];
-        const cloudLedger = cloudData.daily_ledger || [];
-        const mergedLedger = [...cloudLedger];
-
-        localLedger.forEach(ll => {
-          const matchIdx = mergedLedger.findIndex(cl => cl.date === ll.date);
-          if (matchIdx === -1) {
-            mergedLedger.push(ll);
-          } else {
-            // Keep the version with the newer approved timestamp
-            const cl = mergedLedger[matchIdx];
-            const clTime = cl._approved_at ? new Date(cl._approved_at) : new Date(0);
-            const llTime = ll._approved_at ? new Date(ll._approved_at) : new Date(0);
-            if (llTime > clTime) {
-              mergedLedger[matchIdx] = ll;
-            }
-          }
-        });
-
-        // 3. Merge user accounts
-        const localUsers = db.users || {};
-        const cloudUsers = cloudData.users || {};
-        const mergedUsers = { ...cloudUsers, ...localUsers };
-
-        db.pending_entries = mergedPending;
-        db.daily_ledger = mergedLedger;
-        db.users = mergedUsers;
-
-        localStorage.setItem('octaneflow_db', JSON.stringify(db));
-        SystemLogger.info('syncPush', 'Merging complete. Saved merged database locally.');
-      }
+    
+    const appStateRows = [
+      { key: 'settings', value: db.settings || {} },
+      { key: 'stock', value: db.stock || {} },
+      { key: 'price_history', value: db.price_history || [] },
+      { key: 'purchases', value: db.purchases || [] },
+      { key: 'holidays', value: db.holidays || [] },
+      { key: 'users', value: db.users || {} }
+    ];
+    
+    const { error: stateErr } = await supabase.from('app_state').upsert(appStateRows);
+    if (stateErr) throw stateErr;
+    
+    if (db.pending_entries && db.pending_entries.length > 0) {
+      const pendingRows = db.pending_entries.map(e => ({
+        id: e.id,
+        submitted_by: e.submittedBy,
+        submitted_by_name: e.submittedByName,
+        submitted_at: e.submittedAt,
+        submission_type: e.submission_type,
+        status: e.status,
+        entry_data: e.entryData,
+        rejection_reason: e.rejectionReason || '',
+        reviewed_by: e.reviewedBy || '',
+        reviewed_at: e.reviewedAt || null
+      }));
+      const { error: pendingErr } = await supabase.from('pending_entries').upsert(pendingRows);
+      if (pendingErr) throw pendingErr;
     }
-
-    const payload = { ...db, _synced_at: new Date().toISOString() };
-    const res = await fetch(`${GIST_API_BASE}/${cfg.gistId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `token ${cfg.gistToken}`,
-        'Accept': 'application/vnd.github+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        files: { [GIST_FILENAME]: { content: JSON.stringify(payload) } }
-      })
-    });
-    const rateLimitRemaining = res.headers.get('x-ratelimit-remaining');
-    if (rateLimitRemaining !== null) {
-      localStorage.setItem('github_rate_limit_remaining', rateLimitRemaining);
+    
+    if (db.daily_ledger && db.daily_ledger.length > 0) {
+      const ledgerRows = db.daily_ledger.map(e => ({
+        date: e.date,
+        prices: e.prices,
+        du1_p: e.du1_p,
+        du1_d: e.du1_d,
+        du2_p: e.du2_p,
+        du2_d: e.du2_d,
+        recon: e.recon,
+        approved_by: e.approved_by || 'owner',
+        approved_at: e.approved_at || new Date().toISOString(),
+        submitted_by: e.submitted_by || 'system'
+      }));
+      const { error: ledgerErr } = await supabase.from('daily_ledger').upsert(ledgerRows);
+      if (ledgerErr) throw ledgerErr;
     }
-    if (res.ok) {
-      const cfg2 = getSyncCfg();
-      cfg2.last_push = new Date().toISOString();
-      saveSyncCfg(cfg2);
-      localStorage.setItem('octaneflow_last_sync', cfg2.last_push);
-      setSyncStatus('synced');
-      SystemLogger.success('syncPush', 'Cloud push completed successfully. Cloud database updated.');
-      return true;
-    } else {
-      setSyncStatus('error');
-      SystemLogger.error('syncPush', `Cloud push failed: GitHub API returned status ${res.status} ${res.statusText}`);
-      return false;
-    }
+    
+    const cfg2 = getSyncCfg();
+    cfg2.last_push = new Date().toISOString();
+    saveSyncCfg(cfg2);
+    localStorage.setItem('octaneflow_last_sync', cfg2.last_push);
+    setSyncStatus('synced');
+    SystemLogger.success('syncPush', 'Supabase database push completed successfully.');
+    return true;
   } catch (err) {
     const isOnline = navigator.onLine;
     setSyncStatus(isOnline ? 'error' : 'offline');
-    SystemLogger.error('syncPush', `Cloud push failed due to network exception. Device is ${isOnline ? 'Online' : 'Offline'}.`, err);
+    SystemLogger.error('syncPush', 'Supabase push failed due to exception.', err);
     return false;
   }
+}
 }
 
 // On app start — pull cloud data if it's newer than local
@@ -5346,11 +5393,12 @@ function renderSettings() {
     saveSyncBtn.addEventListener('click', async () => {
       const tok  = (syncTokenEl ? syncTokenEl.value : '').trim();
       const gid  = (syncGistEl  ? syncGistEl.value  : '').trim();
-      if (!tok || !gid) { showNotification('Enter both GitHub Token and Gist ID.', 'danger'); return; }
+      if (!tok || !gid) { showNotification('Enter both Supabase API URL and Anon Key.', 'danger'); return; }
       saveSyncCfg({ gistToken: tok, gistId: gid });
+      initSupabaseClient();
       showNotification('Sync settings saved. Pushing data to cloud…', 'success');
       await syncPush();
-      showNotification('✅ Data pushed to Gist successfully!', 'success');
+      showNotification('✅ Data pushed to Supabase successfully!', 'success');
     });
   }
 
@@ -6544,6 +6592,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // 2. Unconditionally load database so 'db' is always defined
   loadDB();
+  initSupabaseClient();
 
   // Wire up Manual Refresh button
   const refreshBtn = document.getElementById('manual-refresh-btn');
