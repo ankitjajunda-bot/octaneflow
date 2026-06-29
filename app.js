@@ -1184,19 +1184,28 @@ async function submitEmployeeReading(session) {
   const date = `${yearStr}-${monthStr.padStart(2, '0')}-${dayStr.padStart(2, '0')}`;
   const shift = document.getElementById('emp-shift')?.value || 'day';
 
-  // 1. Math Validations (Strict Errors)
+  // 1. Math Validations (Strict Errors, only run validation checks on fields that are filled)
   const checkNozzle = (prefix, label) => {
-    const open = val(`${prefix}-open`);
-    const close = val(`${prefix}-close`);
-    const tests = val(`${prefix}-tests`);
-    if (open < 0 || close < 0 || tests < 0) {
+    const openInput = document.getElementById(`${prefix}-open`)?.value;
+    const closeInput = document.getElementById(`${prefix}-close`)?.value;
+    const testsInput = document.getElementById(`${prefix}-tests`)?.value;
+
+    const open = parseFloat(openInput) || 0;
+    const close = parseFloat(closeInput) || 0;
+    const tests = parseFloat(testsInput) || 0;
+
+    if ((openInput && open < 0) || (closeInput && close < 0) || (testsInput && tests < 0)) {
       return `${label} readings cannot be negative.`;
     }
-    if (close < open) {
-      return `${label} closing reading (${close}) is less than opening reading (${open}).`;
-    }
-    if ((close - open) < tests) {
-      return `${label} tests (${tests} L) cannot be greater than the totalizer difference (${(close - open).toFixed(2)} L).`;
+    
+    // Only check close vs open validation if both fields are actually entered
+    if (openInput && closeInput && close > 0 && open > 0) {
+      if (close < open) {
+        return `${label} closing reading (${close}) is less than opening reading (${open}).`;
+      }
+      if ((close - open) < tests) {
+        return `${label} tests (${tests} L) cannot be greater than the totalizer difference (${(close - open).toFixed(2)} L).`;
+      }
     }
     return null;
   };
