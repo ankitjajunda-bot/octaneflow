@@ -9,24 +9,24 @@
 
 const SYNC_CFG_KEY  = 'octaneflow_sync_cfg';
 
-let supabase = null;
+let supabaseClient = null;
 
 function initSupabaseClient() {
   const cfg = getSyncCfg();
   if (cfg.supabaseUrl && cfg.supabaseKey && typeof window.supabase !== 'undefined') {
     try {
       if (cfg.supabaseUrl.startsWith('http://') || cfg.supabaseUrl.startsWith('https://')) {
-        supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
+        supabaseClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
       } else {
         SystemLogger.warning('initSupabaseClient', 'Supabase URL is not valid. Skipping initialization.');
-        supabase = null;
+        supabaseClient = null;
       }
     } catch (e) {
       console.error('Failed to initialize Supabase client:', e);
-      supabase = null;
+      supabaseClient = null;
     }
   } else {
-    supabase = null;
+    supabaseClient = null;
   }
 }
 
@@ -136,10 +136,10 @@ async function syncPull() {
     SystemLogger.warning('syncPull', 'Sync skipped: Supabase credentials are not configured.');
     return null;
   }
-  if (!supabase) {
+  if (!supabaseClient) {
     initSupabaseClient();
   }
-  if (!supabase) {
+  if (!supabaseClient) {
     setSyncStatus('error');
     SystemLogger.error('syncPull', 'Supabase client failed to initialize.');
     return null;
@@ -150,15 +150,15 @@ async function syncPull() {
     setSyncStatus('syncing');
     
     // 1. Fetch app_state key-values
-    const { data: stateData, error: stateErr } = await supabase.from('app_state').select('*');
+    const { data: stateData, error: stateErr } = await supabaseClient.from('app_state').select('*');
     if (stateErr) throw stateErr;
     
     // 2. Fetch pending_entries
-    const { data: pendingData, error: pendingErr } = await supabase.from('pending_entries').select('*');
+    const { data: pendingData, error: pendingErr } = await supabaseClient.from('pending_entries').select('*');
     if (pendingErr) throw pendingErr;
     
     // 3. Fetch daily_ledger
-    const { data: ledgerData, error: ledgerErr } = await supabase.from('daily_ledger').select('*');
+    const { data: ledgerData, error: ledgerErr } = await supabaseClient.from('daily_ledger').select('*');
     if (ledgerErr) throw ledgerErr;
     
     // Construct unified db payload
@@ -237,10 +237,10 @@ async function syncPush() {
     SystemLogger.warning('syncPush', 'Sync push skipped: Supabase credentials are not configured.');
     return false;
   }
-  if (!supabase) {
+  if (!supabaseClient) {
     initSupabaseClient();
   }
-  if (!supabase) {
+  if (!supabaseClient) {
     setSyncStatus('error');
     SystemLogger.error('syncPush', 'Supabase client failed to initialize.');
     return false;
@@ -259,7 +259,7 @@ async function syncPush() {
       { key: 'users', value: db.users || {} }
     ];
     
-    const { error: stateErr } = await supabase.from('app_state').upsert(appStateRows);
+    const { error: stateErr } = await supabaseClient.from('app_state').upsert(appStateRows);
     if (stateErr) throw stateErr;
     
     if (db.pending_entries && db.pending_entries.length > 0) {
@@ -275,7 +275,7 @@ async function syncPush() {
         reviewed_by: e.reviewedBy || '',
         reviewed_at: e.reviewedAt || null
       }));
-      const { error: pendingErr } = await supabase.from('pending_entries').upsert(pendingRows);
+      const { error: pendingErr } = await supabaseClient.from('pending_entries').upsert(pendingRows);
       if (pendingErr) throw pendingErr;
     }
     
@@ -292,7 +292,7 @@ async function syncPush() {
         approved_at: e.approved_at || new Date().toISOString(),
         submitted_by: e.submitted_by || 'system'
       }));
-      const { error: ledgerErr } = await supabase.from('daily_ledger').upsert(ledgerRows);
+      const { error: ledgerErr } = await supabaseClient.from('daily_ledger').upsert(ledgerRows);
       if (ledgerErr) throw ledgerErr;
     }
     
