@@ -310,8 +310,6 @@ async function syncPush() {
     setSyncStatus(isOnline ? 'error' : 'offline');
     SystemLogger.error('syncPush', 'Supabase push failed due to exception.', err);
     return false;
-  }
-}
 }
 
 // On app start — pull cloud data if it's newer than local
