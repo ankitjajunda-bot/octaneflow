@@ -37,6 +37,13 @@ function getSyncCfg() {
   } catch {
     cfg = {};
   }
+  // Default fallback credentials
+  if (!cfg.supabaseUrl) {
+    cfg.supabaseUrl = 'https://tgaunkmbzzrlvdwyuykm.supabase.co';
+  }
+  if (!cfg.supabaseKey) {
+    cfg.supabaseKey = 'sb_publishable_YJgYf4bM6Kh5AfqybtbH4g_H5hQN2Sf';
+  }
   return cfg;
 }
 
@@ -528,7 +535,7 @@ function renderDiagnostics() {
 
   const ledgerCount = (db && db.daily_ledger) ? db.daily_ledger.length : 0;
   const purchaseCount = (db && db.purchases) ? db.purchases.length : 0;
-  const pendingCount = (db && db.pending_entries) ? db.pending_entries.length : 0;
+  const pendingCount = (db && db.pending_entries) ? db.pending_entries.filter(e => e.submission_type !== 'device_registration').length : 0;
 
   const dbRecordsEl = document.getElementById('diag-db-records');
   if (dbRecordsEl) dbRecordsEl.textContent = `${ledgerCount} Ledger Days`;
@@ -928,7 +935,7 @@ function initLoginForm() {
 
 // ── Update approvals badge count ───────────────────────────
 function updateApprovalsBadge() {
-  const pending = (db.pending_entries || []).filter(e => e.status === 'pending').length;
+  const pending = (db.pending_entries || []).filter(e => e.status === 'pending' && e.submission_type !== 'device_registration').length;
   const badge   = document.getElementById('approvals-badge');
   if (badge) {
     badge.textContent    = pending || '';
@@ -1203,7 +1210,7 @@ function renderEmployeeView(session) {
   updateEmpShiftMode();
 
   const subs = (db.pending_entries || [])
-    .filter(e => e.submittedBy === session.username)
+    .filter(e => e.submittedBy === session.username && e.submission_type !== 'device_registration')
     .sort((a,b) => b.submittedAt.localeCompare(a.submittedAt));
 
   const listEl = document.getElementById('emp-submissions-list');
@@ -2044,7 +2051,6 @@ function renderUserManagement() {
             · <span style="font-size:0.72rem;color:${u.active?'#22c55e':'#ef4444'};">${u.active?'Active':'Inactive'}</span>
           </div>
           <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-            ${u.deviceId ? `<button onclick="copyEmployeeSetupLink('${u.username}')" style="background:#0f172a;color:#f97316;border:1px solid #f97316;border-radius:0.4rem;padding:0.3rem 0.6rem;font-size:0.72rem;cursor:pointer;">📋 Copy Setup Link</button>` : ''}
             <button onclick="resetEmployeeDevice('${u.username}')" style="background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:0.4rem;padding:0.3rem 0.6rem;font-size:0.72rem;cursor:pointer;">📱 Reset Device</button>
             <button onclick="toggleEmployee('${u.username}')" style="background:${u.active?'rgba(239,68,68,0.1)':'rgba(34,197,94,0.1)'};color:${u.active?'#ef4444':'#22c55e'};border:1px solid ${u.active?'#ef4444':'#22c55e'};border-radius:0.4rem;padding:0.3rem 0.6rem;font-size:0.72rem;cursor:pointer;">${u.active?'Deactivate':'Activate'}</button>
             <button id="del-btn-${u.username}" onclick="deleteEmployeeAccount('${u.username}')" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid #ef4444;border-radius:0.4rem;padding:0.3rem 0.6rem;font-size:0.72rem;cursor:pointer;">🗑️ Delete</button>
@@ -2057,6 +2063,9 @@ function renderUserManagement() {
     addBtn._wired = true;
     addBtn.addEventListener('click', addUserAccount);
   }
+
+  // Render the pending approvals dynamically from Supabase
+  renderPendingDeviceApprovals();
 }
 
 async function addUserAccount() {
@@ -2166,43 +2175,119 @@ function copyEmployeeSetupLink(username) {
 }
 window.copyEmployeeSetupLink = copyEmployeeSetupLink;
 
-function approveDeviceCode() {
-  const input = document.getElementById('paste-device-code-input');
-  if (!input) return;
-  const val = input.value.trim();
-  if (!val) {
-    showNotification('⚠️ Please paste a valid registration code.', 'danger');
+async function renderPendingDeviceApprovals() {
+  const container = document.getElementById('pending-device-approvals-list');
+  if (!container) return;
+
+  if (!supabaseClient) {
+    container.innerHTML = '<p style="color:#ef4444;font-size:0.75rem;text-align:center;">Sync not configured or offline.</p>';
     return;
   }
 
   try {
-    const raw = atob(val);
-    const data = JSON.parse(raw);
-    if (!data.username || !data.deviceId || !data.name) {
-      throw new Error('Missing fields in code');
-    }
+    const { data, error } = await supabaseClient
+      .from('pending_entries')
+      .select('*')
+      .eq('submission_type', 'device_registration');
+    if (error) throw error;
 
-    const users = getUsers();
-    if (!users[data.username]) {
-      showNotification(`⚠️ Username @${data.username} does not exist in the Directory. Please add them first!`, 'danger');
+    if (!data || data.length === 0) {
+      container.innerHTML = '<p style="color:#64748b;font-size:0.75rem;text-align:center;padding:0.5rem;">No pending device approvals.</p>';
       return;
     }
 
-    users[data.username].deviceId = data.deviceId;
-    users[data.username].deviceRegisteredAt = new Date().toISOString();
-    users[data.username].displayName = data.name; // Keep name aligned
-    if (data.phone) users[data.username].phone = data.phone;
-    
-    saveUsers(users);
-    input.value = '';
-    showNotification(`✅ Device approved successfully for ${data.name}!`, 'success');
-    renderUserManagement();
-  } catch (e) {
-    console.error('[Device Approval] Failed:', e);
-    showNotification('❌ Invalid registration code. Please make sure you copied the entire code.', 'danger');
+    const users = getUsers();
+    const unapprovedEmployees = Object.values(users).filter(u => u.role === 'employee' && !u.deviceId);
+
+    container.innerHTML = data.map(req => {
+      const info = req.entry_data || {};
+      const dropdownHtml = unapprovedEmployees.length === 0
+        ? '<span style="color:#ef4444;font-size:0.72rem;">Add employee profile first</span>'
+        : `
+          <select id="approve-user-select-${req.id}" style="padding:0.3rem;background:var(--bg-input);color:#fff;border:1px solid var(--border);border-radius:0.3rem;font-size:0.72rem;">
+            ${unapprovedEmployees.map(u => `<option value="${u.username}">${u.displayName} (@${u.username})</option>`).join('')}
+          </select>
+        `;
+
+      const approveBtnHtml = unapprovedEmployees.length === 0
+        ? ''
+        : `<button onclick="approveDeviceFromRequest('${req.id}', '${info.deviceId}')" style="background:#22c55e;color:#fff;border:none;border-radius:0.4rem;padding:0.3rem 0.6rem;font-size:0.72rem;cursor:pointer;font-weight:600;">Approve</button>`;
+
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem;background:#0f1117;border-radius:0.4rem;gap:0.5rem;flex-wrap:wrap;border:1px solid #334155;">
+          <div>
+            <span style="font-weight:700;color:#f8fafc;font-size:0.78rem;">${info.name || req.submitted_by_name}</span>
+            <span style="color:#64748b;font-size:0.72rem;">(${info.phone || 'No phone'})</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            ${dropdownHtml}
+            ${approveBtnHtml}
+            <button onclick="rejectDeviceRequest('${req.id}')" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid #ef4444;border-radius:0.4rem;padding:0.3rem 0.6rem;font-size:0.72rem;cursor:pointer;">Reject</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = '<p style="color:#ef4444;font-size:0.75rem;text-align:center;">Failed to load requests.</p>';
   }
 }
-window.approveDeviceCode = approveDeviceCode;
+window.renderPendingDeviceApprovals = renderPendingDeviceApprovals;
+
+async function approveDeviceFromRequest(reqId, deviceId) {
+  const selectEl = document.getElementById(`approve-user-select-${reqId}`);
+  if (!selectEl) return;
+  const username = selectEl.value;
+  if (!username) return;
+
+  if (!confirm(`Are you sure you want to approve this device for employee @${username}?`)) {
+    return;
+  }
+
+  try {
+    const users = getUsers();
+    if (!users[username]) {
+      showNotification('Username not found.', 'danger');
+      return;
+    }
+
+    users[username].deviceId = deviceId;
+    users[username].deviceRegisteredAt = new Date().toISOString();
+
+    // 1. Delete request in Supabase
+    const { error: delErr } = await supabaseClient.from('pending_entries').delete().eq('id', reqId);
+    if (delErr) throw delErr;
+
+    // 2. Save users (which pushes to cloud app_state)
+    saveUsers(users);
+
+    showNotification('Device approved successfully!', 'success');
+    renderUserManagement();
+    renderPendingDeviceApprovals();
+  } catch (err) {
+    console.error(err);
+    showNotification('Error approving device. Try again.', 'danger');
+  }
+}
+window.approveDeviceFromRequest = approveDeviceFromRequest;
+
+async function rejectDeviceRequest(reqId) {
+  if (!confirm('Are you sure you want to reject and delete this request?')) {
+    return;
+  }
+
+  try {
+    const { error } = await supabaseClient.from('pending_entries').delete().eq('id', reqId);
+    if (error) throw error;
+
+    showNotification('Request rejected.', 'info');
+    renderPendingDeviceApprovals();
+  } catch (err) {
+    console.error(err);
+    showNotification('Error rejecting request.', 'danger');
+  }
+}
+window.rejectDeviceRequest = rejectDeviceRequest;
 
 // Device Registration Helpers for Employee Form
 function showDeviceRequestForm(event) {
@@ -2241,61 +2326,70 @@ window.showLoginForm = showLoginForm;
 window.addEventListener('DOMContentLoaded', () => {
   const reqForm = document.getElementById('device-request-form');
   if (reqForm) {
-    reqForm.addEventListener('submit', (e) => {
+    reqForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('req-emp-name').value.trim();
       const username = document.getElementById('req-emp-username').value.trim().toLowerCase().replace(/\s+/g,'');
       const phone = document.getElementById('req-emp-phone').value.trim();
       const deviceId = getDeviceId();
 
-      const payload = {
-        name,
-        username,
-        phone,
-        deviceId,
-        requestedAt: new Date().toISOString()
-      };
+      if (!name || !username) {
+        showNotification('⚠️ Name and Username are required.', 'danger');
+        return;
+      }
 
-      const code = btoa(JSON.stringify(payload));
-      localStorage.setItem('octaneflow_temp_req_code', code);
-      localStorage.setItem('octaneflow_temp_req_name', name);
+      const submitBtn = reqForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting request...';
+      }
 
-      // Display success view
-      reqForm.style.display = 'none';
-      const successPanel = document.getElementById('registration-success-panel');
-      if (successPanel) successPanel.style.display = 'flex';
+      if (!supabaseClient) initSupabaseClient();
+      if (!supabaseClient) {
+        showNotification('❌ Cloud connection not ready. Try again.', 'danger');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Request Device Approval'; }
+        return;
+      }
 
-      const displayBox = document.getElementById('req-code-display-box');
-      if (displayBox) displayBox.textContent = code;
+      try {
+        const payload = {
+          id: 'dev_req_' + deviceId + '_' + Date.now(),
+          submitted_by: username,
+          submitted_by_name: name,
+          submitted_at: new Date().toISOString(),
+          submission_type: 'device_registration',
+          status: 'pending',
+          entry_data: { name, username, phone, deviceId }
+        };
 
-      // Copy code to clipboard automatically
-      navigator.clipboard.writeText(code)
-        .then(() => showNotification('📋 Code copied to clipboard!', 'success'))
-        .catch(() => console.warn('Auto copy failed'));
+        const { error } = await supabaseClient.from('pending_entries').insert([payload]);
+        if (error) throw error;
+
+        reqForm.style.display = 'none';
+        const successPanel = document.getElementById('registration-success-panel');
+        if (successPanel) {
+          successPanel.style.display = 'flex';
+          successPanel.innerHTML = `
+            <div style="text-align:center; padding: 2rem; color: #fff; width: 100%;">
+              <h3 style="color:#22c55e; margin-bottom:1rem;">✅ Request Submitted!</h3>
+              <p style="color:var(--text-dim); font-size:0.85rem; line-height:1.5; margin-bottom: 1.5rem;">
+                Your device access request for <b>${name} (@${username})</b> has been submitted to the database.
+                <br><br>
+                Please ask the owner to click <b>Approve</b> under settings. Once approved, you can refresh this page and log in.
+              </p>
+              <button onclick="location.reload()" class="btn btn-primary" style="width: 100%;">🔄 Refresh &amp; Try Login</button>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error(err);
+        showNotification('❌ Submission failed. Check connection.', 'danger');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Request Device Approval'; }
+      }
     });
   }
 });
 
-function shareRequestOnWhatsApp() {
-  const code = localStorage.getItem('octaneflow_temp_req_code') || '';
-  const name = localStorage.getItem('octaneflow_temp_req_name') || 'Employee';
-  if (!code) {
-    showNotification('⚠️ No registration code found. Please generate one first.', 'danger');
-    return;
-  }
-  const text = `Hello Owner, please approve my device for OctaneFlow.\n\nEmployee: ${name}\nCode:\n${code}`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-}
-window.shareRequestOnWhatsApp = shareRequestOnWhatsApp;
-
-function copyReqCodeAgain() {
-  const code = localStorage.getItem('octaneflow_temp_req_code') || '';
-  if (!code) return;
-  navigator.clipboard.writeText(code)
-    .then(() => showNotification('📋 Code copied to clipboard!', 'success'))
-    .catch(() => alert('Copy failed. Please manually select and copy the text inside the box.'));
-}
-window.copyReqCodeAgain = copyReqCodeAgain;
 
 // ── Format datetime helper ─────────────────────────────────
 function formatDateTime(iso) {

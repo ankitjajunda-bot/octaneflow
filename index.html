@@ -1684,20 +1684,18 @@
               <button id="add-employee-btn" class="btn btn-primary" style="margin-top:0.5rem;">➕ Add Employee</button>
             </div>
 
-            <!-- Paste Device Registration Code -->
+            <!-- Approve Employee Device Requests -->
             <div style="border-top:1px solid #334155;padding-top:1rem;margin-top:0.5rem;">
-              <div style="font-weight:700;color:#f8fafc;margin-bottom:0.4rem;font-size:0.85rem;">🔌 Approve Employee Device</div>
-              <p style="color:#64748b;font-size:0.75rem;margin:0 0 0.75rem 0;line-height:1.3;">Paste the registration code sent by the employee via WhatsApp here to authorize their device ID.</p>
-              <div style="display:flex;gap:0.5rem;align-items:center;">
-                <input type="text" id="paste-device-code-input" placeholder="Paste registration code here..." 
-                  style="flex:1;padding:0.5rem;background:var(--bg-input);border:1px solid var(--border);color:#fff;border-radius:var(--radius-sm);font-size:0.85rem;height:38px;box-sizing:border-box;">
-                <button onclick="approveDeviceCode()" class="btn btn-primary" style="height:38px;padding:0 1rem;font-size:0.8rem;white-space:nowrap;">Approve Device</button>
+              <div style="font-weight:700;color:#f8fafc;margin-bottom:0.4rem;font-size:0.85rem;">🔌 Pending Device Approvals</div>
+              <p style="color:#64748b;font-size:0.75rem;margin:0 0 0.75rem 0;line-height:1.3;">Devices requesting access will appear below. Choose an employee from the dropdown and click Approve to authorize their access.</p>
+              <div id="pending-device-approvals-list" style="margin-top:0.5rem;display:flex;flex-direction:column;gap:0.5rem;">
+                <p style="color:#64748b;font-size:0.75rem;text-align:center;padding:0.5rem;">Loading pending approvals...</p>
               </div>
             </div>
 
             <div style="border-top:1px solid #334155;padding-top:1rem;margin-top:0.5rem;">
               <div style="font-weight:700;color:#f8fafc;margin-bottom:0.4rem;font-size:0.85rem;">Device Setup Instructions</div>
-              <p style="color:#64748b;font-size:0.75rem;margin:0 0 0.75rem 0;line-height:1.3;">Employees must register their device first. After you approve their code, click the <b>📋 Copy Setup Link</b> button next to their name in the list above and send it to them. They must open this link once to configure Supabase credentials and log in.</p>
+              <p style="color:#64748b;font-size:0.75rem;margin:0 0 0.75rem 0;line-height:1.3;">Employees should simply open this website on their phone. If their device is unrecognized, they will be prompted to enter their Name. Once they submit their request, it will appear here for you to approve with a single click. No copy-pasting required!</p>
             </div>
           </div>
         </div>
@@ -2517,7 +2515,7 @@
   <script src="extracted_kc_expenses.js"></script>
   <script src="ocr_stock_data.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=38"></script>
+  <script src="app.js?v=39"></script>
 
 
   <!-- PWA: Offline banner -->
