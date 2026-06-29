@@ -9,7 +9,50 @@
 
 const SYNC_CFG_KEY  = 'octaneflow_sync_cfg';
 
-let supabaseClient = null;
+let realtimeChannel = null;
+
+function subscribeToRealtime() {
+  if (!supabaseClient) return;
+  if (realtimeChannel) {
+    try {
+      supabaseClient.removeChannel(realtimeChannel);
+    } catch (e) {
+      console.warn('Failed to remove channel:', e);
+    }
+  }
+
+  SystemLogger.info('Realtime', 'Subscribing to Supabase Realtime WebSocket...');
+
+  realtimeChannel = supabaseClient
+    .channel('octaneflow-realtime-changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'pending_entries' },
+      async (payload) => {
+        SystemLogger.success('Realtime', 'Detected table update: pending_entries');
+        await initSync();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'daily_ledger' },
+      async (payload) => {
+        SystemLogger.success('Realtime', 'Detected table update: daily_ledger');
+        await initSync();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'app_state' },
+      async (payload) => {
+        SystemLogger.success('Realtime', 'Detected table update: app_state');
+        await initSync();
+      }
+    )
+    .subscribe((status) => {
+      SystemLogger.info('Realtime', `WebSocket status: ${status}`);
+    });
+}
 
 function initSupabaseClient() {
   const cfg = getSyncCfg();
@@ -17,6 +60,7 @@ function initSupabaseClient() {
     try {
       if (cfg.supabaseUrl.startsWith('http://') || cfg.supabaseUrl.startsWith('https://')) {
         supabaseClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
+        subscribeToRealtime();
       } else {
         SystemLogger.warning('initSupabaseClient', 'Supabase URL is not valid. Skipping initialization.');
         supabaseClient = null;
@@ -320,7 +364,6 @@ async function syncPush() {
   }
 }
 
-// On app start — pull cloud data if it's newer than local
 async function initSync() {
   const cfg = getSyncCfg();
   if (!cfg.supabaseUrl || !cfg.supabaseKey) {
@@ -328,28 +371,59 @@ async function initSync() {
     SystemLogger.info('initSync', 'Auto-sync is disabled (no credentials).');
     return;
   }
-  SystemLogger.info('initSync', 'Initializing cloud sync checks on app start...');
+  SystemLogger.info('initSync', 'Initializing cloud sync checks...');
   const cloudData = await syncPull();
   if (!cloudData || !cloudData.daily_ledger) {
-    SystemLogger.warning('initSync', 'Could not sync cloud data on initialization.');
+    SystemLogger.warning('initSync', 'Could not fetch cloud data.');
     return;
   }
 
-  const cloudAt   = cloudData._synced_at ? new Date(cloudData._synced_at) : new Date(0);
-  const localAt   = cfg.last_push        ? new Date(cfg.last_push)        : new Date(0);
-
-  if (cloudAt > localAt || !db || !db.daily_ledger || (db.daily_ledger.length === 0 && cloudData.daily_ledger.length > 0)) {
+  if (!db) {
     db = cloudData;
-    localStorage.setItem('octaneflow_db', JSON.stringify(db));
-    if (db.users) {
-      localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(db.users));
-    }
-    cfg.last_push = cloudData._synced_at || new Date().toISOString();
-    saveSyncCfg(cfg);
-    SystemLogger.success('initSync', `Loaded newer cloud database successfully (records: ${db.daily_ledger.length}).`);
   } else {
-    SystemLogger.success('initSync', `Local database is up to date (records: ${db.daily_ledger.length}).`);
+    // 1. Merge settings, stock, price_history, purchases, holidays, users from cloud (cloud is source of truth)
+    db.settings = cloudData.settings || db.settings || {};
+    db.stock = cloudData.stock || db.stock || {};
+    db.price_history = cloudData.price_history || db.price_history || [];
+    db.purchases = cloudData.purchases || db.purchases || [];
+    db.holidays = cloudData.holidays || db.holidays || [];
+    db.users = cloudData.users || db.users || {};
+
+    // 2. Merge pending_entries by ID
+    const localPendingMap = new Map((db.pending_entries || []).map(e => [e.id, e]));
+    (cloudData.pending_entries || []).forEach(cloudEntry => {
+      localPendingMap.set(cloudEntry.id, cloudEntry);
+    });
+    db.pending_entries = Array.from(localPendingMap.values());
+
+    // 3. Merge daily_ledger by date
+    const localLedgerMap = new Map((db.daily_ledger || []).map(e => [e.date, e]));
+    (cloudData.daily_ledger || []).forEach(cloudEntry => {
+      localLedgerMap.set(cloudEntry.date, cloudEntry);
+    });
+    db.daily_ledger = Array.from(localLedgerMap.values());
   }
+
+  // Save the merged database locally
+  localStorage.setItem('octaneflow_db', JSON.stringify(db));
+  if (db.users) {
+    localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(db.users));
+  }
+
+  cfg.last_push = cloudData._synced_at || new Date().toISOString();
+  saveSyncCfg(cfg);
+
+  buildIndexes();
+  
+  // Re-draw current view if settings or ledger changes
+  const activeView = document.querySelector('.view-panel.active')?.id || '';
+  if (activeView === 'view-dashboard') {
+    if (typeof initApp === 'function') initApp();
+  } else if (activeView === 'view-approvals') {
+    if (typeof renderApprovalsPanel === 'function') renderApprovalsPanel();
+  }
+
+  SystemLogger.success('initSync', `Sync complete. Merged ${db.daily_ledger.length} ledger days and ${db.pending_entries.length} pending items.`);
 }
 
 
