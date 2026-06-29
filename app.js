@@ -5410,8 +5410,12 @@ function renderSettings() {
       saveSyncCfg({ supabaseUrl: urlVal, supabaseKey: keyVal });
       initSupabaseClient();
       showNotification('Sync settings saved. Pushing data to cloud…', 'success');
-      await syncPush();
-      showNotification('✅ Data pushed to Supabase successfully!', 'success');
+      const success = await syncPush();
+      if (success) {
+        showNotification('✅ Data pushed to Supabase successfully!', 'success');
+      } else {
+        showNotification('❌ Push failed. Did you run supabase_schema.sql?', 'danger');
+      }
     });
   }
 
@@ -5420,8 +5424,9 @@ function renderSettings() {
     forcePushBtn._wired = true;
     forcePushBtn.addEventListener('click', async () => {
       showNotification('Pushing all data to cloud…', 'info');
-      await syncPush();
-      showNotification('✅ All data pushed to cloud.', 'success');
+      const success = await syncPush();
+      if (success) showNotification('✅ All data pushed to cloud.', 'success');
+      else showNotification('❌ Push failed. Did you create the tables in Supabase?', 'danger');
     });
   }
 
