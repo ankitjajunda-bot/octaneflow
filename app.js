@@ -1874,7 +1874,7 @@ function loadDB() {
       }
       if (!db.purchases) db.purchases = [];
       if (!db.expenses) db.expenses = [];
-      if (!db.employees || db.employees.length === 0) {
+      if (!db.employees) {
         db.employees = JSON.parse(JSON.stringify(DEFAULT_DB.employees));
       }
     } catch (e) {
