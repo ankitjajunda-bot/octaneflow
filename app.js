@@ -107,10 +107,16 @@ function updateGlobalAlertBanner() {
     banner.style.borderColor = 'rgba(234, 179, 8, 0.3)';
     banner.style.background = 'rgba(234, 179, 8, 0.1)';
     banner.style.color = '#fef08a';
-    text.textContent = 'Cloud Sync is not configured. Go to Settings to enter GitHub Token & Supabase ID.';
+    text.textContent = 'Cloud Sync is not configured. Go to Settings to enter Supabase API URL & Anon Key.';
     actionBtn.style.display = 'inline-block';
     actionBtn.textContent = 'Configure';
-    actionBtn.onclick = () => switchView('settings');
+    actionBtn.onclick = () => {
+      switchView('settings');
+      setTimeout(() => {
+        const el = document.getElementById('cfg-sync-master-key');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    };
   } else {
     const rateLimit = Number(localStorage.getItem('github_rate_limit_remaining') || '60');
     if (rateLimit < 10) {
@@ -5389,19 +5395,19 @@ function renderSettings() {
 
   // ── Cloud Sync Settings ──────────────────────────────────
   const syncCfg      = getSyncCfg();
-  const syncTokenEl  = document.getElementById('cfg-sync-master-key');
-  const syncSupabaseEl   = document.getElementById('cfg-sync-bin-id');
-  if (syncTokenEl) syncTokenEl.value = syncCfg.supabaseKey || '';
-  if (syncSupabaseEl)  syncSupabaseEl.value  = syncCfg.supabaseUrl    || '';
+  const urlEl  = document.getElementById('cfg-sync-master-key');
+  const keyEl   = document.getElementById('cfg-sync-bin-id');
+  if (urlEl) urlEl.value = syncCfg.supabaseUrl || '';
+  if (keyEl)  keyEl.value  = syncCfg.supabaseKey || '';
 
   const saveSyncBtn = document.getElementById('cfg-save-sync-btn');
   if (saveSyncBtn && !saveSyncBtn._wired) {
     saveSyncBtn._wired = true;
     saveSyncBtn.addEventListener('click', async () => {
-      const tok  = (syncTokenEl ? syncTokenEl.value : '').trim();
-      const gid  = (syncSupabaseEl  ? syncSupabaseEl.value  : '').trim();
-      if (!tok || !gid) { showNotification('Enter both Supabase API URL and Anon Key.', 'danger'); return; }
-      saveSyncCfg({ supabaseKey: tok, supabaseUrl: gid });
+      const urlVal  = (urlEl ? urlEl.value : '').trim();
+      const keyVal  = (keyEl  ? keyEl.value  : '').trim();
+      if (!urlVal || !keyVal) { showNotification('Enter both Supabase API URL and Anon Key.', 'danger'); return; }
+      saveSyncCfg({ supabaseUrl: urlVal, supabaseKey: keyVal });
       initSupabaseClient();
       showNotification('Sync settings saved. Pushing data to cloud…', 'success');
       await syncPush();
