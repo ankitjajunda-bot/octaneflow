@@ -1182,6 +1182,14 @@ async function submitEmployeeReading(session) {
   if (!dayStr || !monthStr || !yearStr) { showNotification('Please select a date.', 'danger'); return; }
 
   const date = `${yearStr}-${monthStr.padStart(2, '0')}-${dayStr.padStart(2, '0')}`;
+  
+  // Date Rule: Cannot submit data for future dates
+  const todayStr = new Date().toLocaleDateString('en-CA'); 
+  if (date > todayStr) {
+    showNotification('⚠️ Validation Error: Cannot submit readings for future dates!', 'danger');
+    return;
+  }
+
   const shift = document.getElementById('emp-shift')?.value || 'day';
 
   // 1. Math Validations (Strict Errors, only run validation checks on fields that are filled)
@@ -1339,17 +1347,7 @@ async function submitEmployeeReading(session) {
     rejectionReason: '', reviewedBy: '', reviewedAt: ''
   };
 
-  // Deduplication: block identical submission (same person + date + shift + type within 60s)
-  const isDuplicate = (db.pending_entries || []).some(e =>
-    e.submittedBy === session.username &&
-    e.entryData?.date === date &&
-    e.entryData?.shift === shift &&
-    e.submission_type === submissionType &&
-    (Date.now() - new Date(e.submittedAt).getTime()) < 60000
-  );
-  if (isDuplicate) {
-    if (!confirm('⚠️ It looks like you already submitted a similar entry less than 60 seconds ago. Submit again anyway?')) return;
-  }
+
 
   if (!db.pending_entries) db.pending_entries = [];
   db.pending_entries.push(entry);
