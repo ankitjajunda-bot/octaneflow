@@ -917,30 +917,181 @@ function initEmployeeDatePicker() {
 }
 
 // ── Employee: Submit Reading form ──────────────────────────
-function updateEmpOpenings() {
-  const dayVal = document.getElementById('emp-date-day')?.value;
+// Shows hint text under each opening field instead of pre-filling the value
+function updateEmpOpeningHints() {
+  const dayVal   = document.getElementById('emp-date-day')?.value;
   const monthVal = document.getElementById('emp-date-month')?.value;
-  const yearVal = document.getElementById('emp-date-year')?.value;
+  const yearVal  = document.getElementById('emp-date-year')?.value;
   const shiftVal = document.getElementById('emp-shift')?.value || 'day';
-  
+
+  const nozzles = [
+    { key: 'du1_p', hintId: 'hint-du1p', inputId: 'emp-du1p-open' },
+    { key: 'du1_d', hintId: 'hint-du1d', inputId: 'emp-du1d-open' },
+    { key: 'du2_p', hintId: 'hint-du2p', inputId: 'emp-du2p-open' },
+    { key: 'du2_d', hintId: 'hint-du2d', inputId: 'emp-du2d-open' },
+  ];
+
+  nozzles.forEach(({ key, hintId, inputId }) => {
+    const hintEl = document.getElementById(hintId);
+    const inputEl = document.getElementById(inputId);
+    if (!hintEl || !inputEl) return;
+    if (dayVal && monthVal && yearVal) {
+      const dateStr = `${yearVal}-${monthVal.padStart(2,'0')}-${dayVal.padStart(2,'0')}`;
+      const val = getNozzleOpeningReading(key, dateStr, shiftVal);
+      if (val > 0) {
+        hintEl.textContent = `Expected: ${val.toFixed(2)}`;
+        hintEl.style.display = 'block';
+        inputEl.placeholder = val.toFixed(2);
+      } else {
+        hintEl.style.display = 'none';
+        inputEl.placeholder = '0.00';
+      }
+    } else {
+      hintEl.style.display = 'none';
+    }
+    // Never set inputEl.value from history — employee must type it
+  });
+
+  // Also update the live calculation preview
+  updateEmpLiveCalc();
+}
+
+// Live litres + revenue calculation preview for employee form
+function updateEmpLiveCalc() {
+  const shift = document.getElementById('emp-shift')?.value || 'day';
+  const dayVal   = document.getElementById('emp-date-day')?.value;
+  const monthVal = document.getElementById('emp-date-month')?.value;
+  const yearVal  = document.getElementById('emp-date-year')?.value;
+  let dateStr = '';
   if (dayVal && monthVal && yearVal) {
-    const dateStr = `${yearVal}-${monthVal.padStart(2, '0')}-${dayVal.padStart(2, '0')}`;
-    
-    const p1 = getNozzleOpeningReading('du1_p', dateStr, shiftVal);
-    const d1 = getNozzleOpeningReading('du1_d', dateStr, shiftVal);
-    const p2 = getNozzleOpeningReading('du2_p', dateStr, shiftVal);
-    const d2 = getNozzleOpeningReading('du2_d', dateStr, shiftVal);
-    
-    const el1 = document.getElementById('emp-du1p-open');
-    const el2 = document.getElementById('emp-du1d-open');
-    const el3 = document.getElementById('emp-du2p-open');
-    const el4 = document.getElementById('emp-du2d-open');
-    
-    if (el1) el1.value = p1.toFixed(2);
-    if (el2) el2.value = d1.toFixed(2);
-    if (el3) el3.value = p2.toFixed(2);
-    if (el4) el4.value = d2.toFixed(2);
+    dateStr = `${yearVal}-${monthVal.padStart(2,'0')}-${dayVal.padStart(2,'0')}`;
   }
+  const prices = dateStr ? getPricesAt(dateStr) : { petrol: 0, diesel: 0 };
+
+  const nozzles = [
+    { openId:'emp-du1p-open', closeId:'emp-du1p-close', testsId:'emp-du1p-tests', previewId:'calc-du1p', fuel:'petrol' },
+    { openId:'emp-du1d-open', closeId:'emp-du1d-close', testsId:'emp-du1d-tests', previewId:'calc-du1d', fuel:'diesel' },
+    { openId:'emp-du2p-open', closeId:'emp-du2p-close', testsId:'emp-du2p-tests', previewId:'calc-du2p', fuel:'petrol' },
+    { openId:'emp-du2d-open', closeId:'emp-du2d-close', testsId:'emp-du2d-tests', previewId:'calc-du2d', fuel:'diesel' },
+  ];
+
+  let totalLitres = 0;
+  let totalRevenue = 0;
+
+  nozzles.forEach(({ openId, closeId, testsId, previewId, fuel }) => {
+    const open  = parseFloat(document.getElementById(openId)?.value)  || 0;
+    const close = parseFloat(document.getElementById(closeId)?.value) || 0;
+    const tests = parseFloat(document.getElementById(testsId)?.value) || 0;
+    const previewEl = document.getElementById(previewId);
+    if (!previewEl) return;
+
+    if (open <= 0 && close <= 0) {
+      previewEl.style.display = 'none';
+      return;
+    }
+
+    const litres = Math.max(0, close - open - tests);
+    const price  = prices[fuel] || 0;
+    const revenue = litres * price;
+    totalLitres  += litres;
+    totalRevenue += revenue;
+
+    const manualPriceEl = document.getElementById(previewId + '-manual-price');
+    const effectivePrice = (manualPriceEl && parseFloat(manualPriceEl.value) > 0)
+      ? parseFloat(manualPriceEl.value)
+      : price;
+    const effectiveRevenue = litres * effectivePrice;
+    const isManual = manualPriceEl && parseFloat(manualPriceEl.value) > 0;
+
+    previewEl.style.display = 'flex';
+    previewEl.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.35rem;">
+        <span style="font-size:0.75rem;color:#94a3b8;">Litres sold</span>
+        <strong style="color:#fff;font-size:0.85rem;">${litres.toFixed(2)} L</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.35rem;">
+        <span style="font-size:0.75rem;color:#94a3b8;">Price/L ${isManual ? '<span style="color:#f97316;font-size:0.65rem;">⚠️ Manual</span>' : '<span style="color:#22c55e;font-size:0.65rem;">System ✓</span>'}</span>
+        <span style="font-size:0.75rem;color:#f8fafc;">₹ ${effectivePrice.toFixed(2)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.35rem;border-top:1px solid rgba(255,255,255,0.06);padding-top:0.35rem;">
+        <span style="font-size:0.75rem;color:#94a3b8;">Est. Revenue</span>
+        <strong style="color:#22c55e;font-size:0.9rem;">₹ ${effectiveRevenue.toLocaleString('en-IN',{maximumFractionDigits:0})}</strong>
+      </div>
+    `;
+  });
+
+  // Update PhonePe delta preview
+  updatePhonePeDeltaPreview();
+
+  // Totals footer
+  const totalsEl = document.getElementById('emp-live-totals');
+  if (totalsEl) {
+    if (totalLitres > 0) {
+      totalsEl.style.display = 'flex';
+      totalsEl.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:0.8rem;color:#94a3b8;font-weight:600;">Total Shift Sale</span>
+          <span style="font-size:0.95rem;font-weight:800;color:#fff;">${totalLitres.toFixed(2)} L</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:0.8rem;color:#94a3b8;font-weight:600;">Est. Total Revenue</span>
+          <span style="font-size:0.95rem;font-weight:800;color:#22c55e;">₹ ${totalRevenue.toLocaleString('en-IN',{maximumFractionDigits:0})}</span>
+        </div>
+      `;
+    } else {
+      totalsEl.style.display = 'none';
+    }
+  }
+}
+
+// PhonePe delta calculation preview
+function updatePhonePeDeltaPreview() {
+  const shift = document.getElementById('emp-shift')?.value || 'day';
+  const ppOpen  = parseFloat(document.getElementById('emp-pp-open')?.value)    || 0;
+  const ppMid   = parseFloat(document.getElementById('emp-pp-midnight')?.value) || 0;
+  const ppClose = parseFloat(document.getElementById('emp-pp-close')?.value)   || 0;
+  const previewEl = document.getElementById('pp-delta-preview');
+  if (!previewEl) return;
+
+  if (ppOpen <= 0 && ppClose <= 0) { previewEl.style.display = 'none'; return; }
+
+  let delta = 0;
+  let formula = '';
+  let warning = '';
+
+  if (shift === 'night' && ppMid > 0) {
+    delta = (ppMid - ppOpen) + ppClose;
+    formula = `(₹${ppMid.toLocaleString('en-IN')} − ₹${ppOpen.toLocaleString('en-IN')}) + ₹${ppClose.toLocaleString('en-IN')}`;
+  } else {
+    delta = ppClose - ppOpen;
+    formula = `₹${ppClose.toLocaleString('en-IN')} − ₹${ppOpen.toLocaleString('en-IN')}`;
+    if (shift === 'night' && delta < 0) {
+      warning = '⚠️ Negative result — did you forget to enter the midnight reading?';
+    }
+  }
+
+  previewEl.style.display = 'flex';
+  previewEl.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+      <span style="font-size:0.75rem;color:#94a3b8;">PhonePe this shift</span>
+      <span style="font-size:0.75rem;color:#64748b;font-style:italic;">${formula}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:0.8rem;color:#94a3b8;font-weight:600;">= PhonePe Collected</span>
+      <strong style="font-size:1rem;color:${delta < 0 ? '#ef4444' : '#38bdf8'}">₹ ${delta.toLocaleString('en-IN')}</strong>
+    </div>
+    ${warning ? `<div style="font-size:0.72rem;color:#f97316;margin-top:0.2rem;">${warning}</div>` : ''}
+  `;
+}
+
+// Toggle midnight PhonePe field visibility based on shift selection
+function updateEmpShiftMode() {
+  const shift = document.getElementById('emp-shift')?.value || 'day';
+  const midnightRow = document.getElementById('pp-midnight-row');
+  if (midnightRow) {
+    midnightRow.style.display = shift === 'night' ? 'flex' : 'none';
+  }
+  updateEmpOpeningHints();
 }
 
 function renderEmployeeView(session) {
@@ -949,31 +1100,44 @@ function renderEmployeeView(session) {
 
   initEmployeeDatePicker(); // Populates D/M/Y dropdown selects if empty
 
-  // Wire up listeners for opening readings pre-fill
-  const dayEl = document.getElementById('emp-date-day');
+  // Wire up listeners for hint updates and live calc
+  const dayEl   = document.getElementById('emp-date-day');
   const monthEl = document.getElementById('emp-date-month');
-  const yearEl = document.getElementById('emp-date-year');
+  const yearEl  = document.getElementById('emp-date-year');
   const shiftEl = document.getElementById('emp-shift');
 
-  if (dayEl && !dayEl._listened) {
-    dayEl._listened = true;
-    dayEl.addEventListener('change', updateEmpOpenings);
-  }
-  if (monthEl && !monthEl._listened) {
-    monthEl._listened = true;
-    monthEl.addEventListener('change', updateEmpOpenings);
-  }
-  if (yearEl && !yearEl._listened) {
-    yearEl._listened = true;
-    yearEl.addEventListener('change', updateEmpOpenings);
-  }
+  const hintTriggers = [dayEl, monthEl, yearEl];
+  hintTriggers.forEach(el => {
+    if (el && !el._listened) {
+      el._listened = true;
+      el.addEventListener('change', updateEmpOpeningHints);
+    }
+  });
+
   if (shiftEl && !shiftEl._listened) {
     shiftEl._listened = true;
-    shiftEl.addEventListener('change', updateEmpOpenings);
+    shiftEl.addEventListener('change', updateEmpShiftMode);
   }
 
-  // Pre-fill immediately on render
-  updateEmpOpenings();
+  // Wire live calc listeners on all nozzle input fields
+  const calcFields = [
+    'emp-du1p-open','emp-du1p-close','emp-du1p-tests',
+    'emp-du1d-open','emp-du1d-close','emp-du1d-tests',
+    'emp-du2p-open','emp-du2p-close','emp-du2p-tests',
+    'emp-du2d-open','emp-du2d-close','emp-du2d-tests',
+    'emp-pp-open','emp-pp-midnight','emp-pp-close'
+  ];
+  calcFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el._calcListened) {
+      el._calcListened = true;
+      el.addEventListener('input', updateEmpLiveCalc);
+    }
+  });
+
+  // Show hints (not pre-fill) immediately on render
+  updateEmpOpeningHints();
+  updateEmpShiftMode();
 
   const subs = (db.pending_entries || [])
     .filter(e => e.submittedBy === session.username)
@@ -1106,12 +1270,40 @@ async function submitEmployeeReading(session) {
     }
   }
 
-  const mkNozzle = (prefix, s) => ({
-    open:        val(`${prefix}-open`),
-    close_day:   s === 'day'   ? val(`${prefix}-close`) : 0,
-    close_night: s === 'night' ? val(`${prefix}-close`) : 0,
-    tests_day:   s === 'day'   ? int(`${prefix}-tests`) : 0,
-    tests_night: s === 'night' ? int(`${prefix}-tests`) : 0,
+  const submissionType = document.getElementById('emp-submission-type')?.value || 'closing';
+
+  const mkNozzle = (prefix, s) => {
+    const openVal  = val(`${prefix}-open`);
+    const closeVal = val(`${prefix}-close`);
+    const testsVal = int(`${prefix}-tests`);
+    // Only store fields that were actually entered
+    return {
+      open:        openVal,
+      close_day:   s === 'day'   ? closeVal : 0,
+      close_night: s === 'night' ? closeVal : 0,
+      tests_day:   s === 'day'   ? testsVal : 0,
+      tests_night: s === 'night' ? testsVal : 0,
+    };
+  };
+
+  // PhonePe delta model
+  const ppOpen     = val('emp-pp-open');
+  const ppMidnight = shift === 'night' ? val('emp-pp-midnight') : 0;
+  const ppClose    = val('emp-pp-close');
+  let ppCollection = 0;
+  if (shift === 'night' && ppMidnight > 0) {
+    ppCollection = (ppMidnight - ppOpen) + ppClose;
+  } else {
+    ppCollection = ppClose - ppOpen;
+  }
+
+  // Manual price flag
+  const manualPrices = {};
+  ['du1p','du1d','du2p','du2d'].forEach(nozzle => {
+    const el = document.getElementById(`calc-${nozzle}-manual-price`);
+    if (el && parseFloat(el.value) > 0) {
+      manualPrices[nozzle] = parseFloat(el.value);
+    }
   });
 
   const entry = {
@@ -1119,31 +1311,57 @@ async function submitEmployeeReading(session) {
     submittedBy: session.username, submittedByName: session.displayName,
     submittedAt: new Date().toISOString(), deviceId: getDeviceId(),
     status: 'pending',
+    submission_type: submissionType, // 'opening' | 'snapshot' | 'closing'
     entryData: {
       date, shift,
       du1_p: mkNozzle('emp-du1p', shift),
       du1_d: mkNozzle('emp-du1d', shift),
       du2_p: mkNozzle('emp-du2p', shift),
       du2_d: mkNozzle('emp-du2d', shift),
-      cash_sales: val('emp-cash'),
-      card_sales: val('emp-card'),
-      remarks:    document.getElementById('emp-remarks')?.value?.trim() || ''
+      cash_sales:        val('emp-cash'),
+      card_sales:        val('emp-card'),
+      phonepe_opening:   ppOpen,
+      phonepe_midnight:  ppMidnight,
+      phonepe_closing:   ppClose,
+      phonepe_collection: ppCollection,
+      manual_prices:     Object.keys(manualPrices).length > 0 ? manualPrices : null,
+      remarks:           document.getElementById('emp-remarks')?.value?.trim() || ''
     },
     rejectionReason: '', reviewedBy: '', reviewedAt: ''
   };
 
+  // Deduplication: block identical submission (same person + date + shift + type within 60s)
+  const isDuplicate = (db.pending_entries || []).some(e =>
+    e.submittedBy === session.username &&
+    e.entryData?.date === date &&
+    e.entryData?.shift === shift &&
+    e.submission_type === submissionType &&
+    (Date.now() - new Date(e.submittedAt).getTime()) < 60000
+  );
+  if (isDuplicate) {
+    if (!confirm('⚠️ It looks like you already submitted a similar entry less than 60 seconds ago. Submit again anyway?')) return;
+  }
+
   if (!db.pending_entries) db.pending_entries = [];
   db.pending_entries.push(entry);
+  buildIndexes(); // Keep in-memory index current
   saveDB();
-  showNotification('✅ Reading submitted to Operator Draft Log! Review and merge under Operations -> Approve Shifts.', 'success');
+
+  const typeLabel = submissionType === 'opening' ? 'Opening Reading' : submissionType === 'snapshot' ? 'Mid-Shift Snapshot' : 'Closing Reading';
+  showNotification(`✅ ${typeLabel} submitted! Owner can see it under Operations → Approve Shifts.`, 'success');
 
   // Clear numeric form inputs
   ['emp-du1p-open','emp-du1p-close','emp-du1p-tests',
    'emp-du1d-open','emp-du1d-close','emp-du1d-tests',
    'emp-du2p-open','emp-du2p-close','emp-du2p-tests',
    'emp-du2d-open','emp-du2d-close','emp-du2d-tests',
-   'emp-cash','emp-card','emp-remarks']
+   'emp-cash','emp-card','emp-remarks',
+   'emp-pp-open','emp-pp-midnight','emp-pp-close']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+
+  // Hide live calc previews after submit
+  ['calc-du1p','calc-du1d','calc-du2p','calc-du2d','emp-live-totals','pp-delta-preview']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 
   // Reset date selectors to today
   const today = new Date();
@@ -1253,6 +1471,74 @@ function bulkApproveEntries(groupId) {
   renderApprovalsPanel();
 }
 
+function refreshApprovalsPanel() {
+  // Pull latest from cloud then re-render
+  const cfg = getSyncCfg();
+  if (cfg.gistId && cfg.gistToken) {
+    const refreshBtn = document.getElementById('approvals-refresh-btn');
+    if (refreshBtn) { refreshBtn.textContent = '🔄 Refreshing...'; refreshBtn.disabled = true; }
+    syncPull().then(cloudData => {
+      if (cloudData) {
+        // Merge pending entries from cloud
+        const localPending = db.pending_entries || [];
+        const cloudPending = cloudData.pending_entries || [];
+        const merged = [...cloudPending];
+        localPending.forEach(lp => { if (!merged.some(cp => cp.id === lp.id)) merged.push(lp); });
+        db.pending_entries = merged;
+        buildIndexes();
+        localStorage.setItem('octaneflow_db', JSON.stringify(db));
+      }
+      renderApprovalsPanel();
+    }).catch(() => renderApprovalsPanel());
+  } else {
+    renderApprovalsPanel();
+  }
+}
+
+function buildLiveShiftStatus() {
+  // Builds per-employee live status from today's pending_entries
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayEntries = (db.pending_entries || []).filter(e =>
+    e.entryData?.date === todayStr
+  );
+
+  const byEmployee = {};
+  todayEntries.forEach(e => {
+    const emp = e.submittedBy;
+    if (!byEmployee[emp]) byEmployee[emp] = { name: e.submittedByName, entries: [] };
+    byEmployee[emp].entries.push(e);
+  });
+
+  const rows = Object.values(byEmployee).map(({ name, entries }) => {
+    // Sort by submission time
+    entries.sort((a, b) => a.submittedAt.localeCompare(b.submittedAt));
+    const first = entries[0];
+    const last  = entries[entries.length - 1];
+    const lastTime = new Date(last.submittedAt).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+
+    // Calculate litres from opening to latest reading
+    let totalLitres = 0;
+    const firstEd = first.entryData;
+    const lastEd  = last.entryData;
+    const shift   = lastEd.shift || 'day';
+
+    ['du1_p','du1_d','du2_p','du2_d'].forEach(key => {
+      const openVal  = firstEd[key]?.open || 0;
+      const closeVal = shift === 'day' ? (lastEd[key]?.close_day || 0) : (lastEd[key]?.close_night || 0);
+      const testVal  = shift === 'day' ? (lastEd[key]?.tests_day || 0) : (lastEd[key]?.tests_night || 0);
+      if (closeVal > openVal) totalLitres += Math.max(0, closeVal - openVal - testVal);
+    });
+
+    // Sum PhonePe collections across all entries
+    const totalPP   = entries.reduce((s, e) => s + (e.entryData?.phonepe_collection || 0), 0);
+    const totalCash = entries.reduce((s, e) => s + (e.entryData?.cash_sales || 0), 0);
+
+    return { name, lastTime, totalLitres, totalPP, totalCash };
+  });
+
+  return rows;
+}
+
 function renderApprovalsPanel() {
   updateApprovalsBadge();
   const container = document.getElementById('approvals-list');
@@ -1294,8 +1580,6 @@ function renderApprovalsPanel() {
 
   // Sort groups chronologically descending (latest group first)
   const sortedGroupKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
-
-  let html = '';
 
   // Render Pending Batches
   if (pending.length > 0) {
@@ -1385,8 +1669,20 @@ function renderApprovalsPanel() {
               const varianceTextColor = variance < -100 ? '#ef4444' : variance > 100 ? '#60a5fa' : '#22c55e';
               const varianceSign = variance > 0 ? '+' : '';
 
+              const typeLabel = entry.submission_type === 'opening' ? '🌅 Opening' : entry.submission_type === 'snapshot' ? '📸 Snapshot' : '🏁 Closing';
+              const isSnapshot = entry.submission_type === 'snapshot';
+
+              // PhonePe display
+              const ppOpen = ed.phonepe_opening || 0;
+              const ppMid  = ed.phonepe_midnight || 0;
+              const ppClose= ed.phonepe_closing  || 0;
+              const ppColl = ed.phonepe_collection || 0;
+              const ppFormula = (shift==='night' && ppMid>0)
+                ? `(₹${ppMid.toLocaleString('en-IN')}−₹${ppOpen.toLocaleString('en-IN')})+₹${ppClose.toLocaleString('en-IN')}`
+                : `₹${ppClose.toLocaleString('en-IN')}−₹${ppOpen.toLocaleString('en-IN')}`;
+
               return `
-                <div style="background:#0f111a; border:1px solid #1e293b; border-radius:0.75rem; padding:1rem; display:flex; gap:0.75rem;">
+                <div style="background:#0f111a; border:1px solid ${isSnapshot ? '#1d4ed8' : '#1e293b'}; border-left: 3px solid ${isSnapshot ? '#3b82f6' : '#334155'}; border-radius:0.75rem; padding:1rem; display:flex; gap:0.75rem;">
                   <!-- Checkbox Column -->
                   <div style="display:flex; align-items:flex-start; padding-top:0.25rem;">
                     <input type="checkbox" class="bulk-select-${groupId}" value="${entry.id}" onchange="updateGroupCalculations('${groupId}')" style="transform: scale(1.15); cursor:pointer;">
@@ -1398,6 +1694,7 @@ function renderApprovalsPanel() {
                       <div>
                         <strong style="font-size:0.88rem; color:#fff;">${ed.date} · ${shift === 'day' ? '☀️ Day Shift' : '🌙 Night Shift'}</strong>
                         <span style="font-size:0.72rem; color:#64748b; margin-left:0.5rem;">by ${entry.submittedByName}</span>
+                        <span style="font-size:0.68rem; background:rgba(59,130,246,0.15); color:#93c5fd; border:1px solid rgba(59,130,246,0.3); border-radius:3px; padding:0.05rem 0.3rem; margin-left:0.25rem;">${typeLabel}</span>
                       </div>
                       <span style="font-size:0.7rem; color:#94a3b8; font-family:monospace;">${entry.submittedAt.replace('T',' ').slice(11,16)}</span>
                     </div>
@@ -1452,12 +1749,12 @@ function renderApprovalsPanel() {
                         <div style="font-weight:700; color:#f8fafc; font-size:0.78rem;">${formatCurrency(estimatedRevenue)}</div>
                       </div>
                       <div style="background:#090a10; border-radius:0.4rem; padding:0.4rem; text-align:center;">
-                        <div style="font-size:0.6rem; color:#64748b;">Cash Coll.</div>
+                        <div style="font-size:0.6rem; color:#64748b;">Cash</div>
                         <div style="font-weight:700; color:#f8fafc; font-size:0.78rem;">${formatCurrency(ed.cash_sales||0)}</div>
                       </div>
                       <div style="background:#090a10; border-radius:0.4rem; padding:0.4rem; text-align:center;">
-                        <div style="font-size:0.6rem; color:#64748b;">Card / UPI</div>
-                        <div style="font-weight:700; color:#f8fafc; font-size:0.78rem;">${formatCurrency(ed.card_sales||0)}</div>
+                        <div style="font-size:0.6rem; color:#64748b;">PhonePe (Δ)</div>
+                        <div style="font-weight:700; color:#38bdf8; font-size:0.78rem;">${formatCurrency(ppColl)}</div>
                       </div>
                       <div style="background:#090a10; border-radius:0.4rem; padding:0.4rem; text-align:center; border:1px solid ${varianceColor};">
                         <div style="font-size:0.6rem; color:#64748b;">Variance</div>
@@ -1465,12 +1762,18 @@ function renderApprovalsPanel() {
                       </div>
                     </div>
 
-                    ${ed.remarks ? `<div style="font-size:0.75rem; color:#94a3b8; background:rgba(255,255,255,0.02); border-left:2px solid var(--primary); padding:0.25rem 0.5rem; border-radius:2px;">📝 ${ed.remarks}</div>` : ''}
+                    ${ppColl > 0 || ppOpen > 0 ? `
+                    <div style="font-size:0.72rem;color:#64748b;background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.1);border-radius:4px;padding:0.3rem 0.5rem;">
+                      📱 PhonePe: ${ppFormula} = <strong style="color:#38bdf8;">₹${ppColl.toLocaleString('en-IN')}</strong>
+                      ${ed.manual_prices ? ' <span style="color:#f97316;font-size:0.65rem;">⚠️ Manual prices used</span>' : ''}
+                    </div>` : ''}
+
+                    ${ed.remarks ? `<div style="font-size:0.75rem; color:#94a3b8; background:rgba(255,255,255,0.02); border-left:2px solid var(--primary); padding:0.35rem 0.6rem; border-radius:4px;">📝 <strong style="color:#f8fafc;">Note:</strong> ${ed.remarks}</div>` : ''}
 
                     <!-- Actions -->
-                    <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.25rem;">
-                      <button onclick="approveEntry('${entry.id}')" style="background:#22c55e; color:#fff; border:none; border-radius:0.4rem; padding:0.4rem 0.8rem; font-size:0.75rem; font-weight:700; cursor:pointer;">Approve</button>
-                      <button onclick="promptRejectEntry('${entry.id}')" style="background:#ef4444; color:#fff; border:none; border-radius:0.4rem; padding:0.4rem 0.8rem; font-size:0.75rem; font-weight:700; cursor:pointer;">Reject</button>
+                    <div style="display:flex; gap:0.5rem; justify-content:flex-end; flex-wrap:wrap; margin-top:0.25rem;">
+                      ${isSnapshot ? `<button onclick="approveEntry('${entry.id}')" style="background:#3b82f6; color:#fff; border:none; border-radius:0.4rem; padding:0.4rem 0.8rem; font-size:0.75rem; font-weight:700; cursor:pointer;">📊 Post to Ledger</button>` : `<button onclick="approveEntry('${entry.id}')" style="background:#22c55e; color:#fff; border:none; border-radius:0.4rem; padding:0.4rem 0.8rem; font-size:0.75rem; font-weight:700; cursor:pointer;">✅ Approve</button>`}
+                      <button onclick="promptRejectEntry('${entry.id}')" style="background:#ef4444; color:#fff; border:none; border-radius:0.4rem; padding:0.4rem 0.8rem; font-size:0.75rem; font-weight:700; cursor:pointer;">❌ Reject</button>
                     </div>
                   </div>
                 </div>
@@ -2077,6 +2380,7 @@ function loadDB() {
       if (!db.employees) {
         db.employees = JSON.parse(JSON.stringify(DEFAULT_DB.employees));
       }
+      buildIndexes();
     } catch (e) {
       console.error("Failed to parse local storage, loading defaults", e);
       db = JSON.parse(JSON.stringify(DEFAULT_DB));
@@ -2128,18 +2432,34 @@ function prunePendingEntries() {
   });
 }
 
+// ── In-memory index for O(1) lookups (not stored, rebuilt from arrays) ──────
+function buildIndexes() {
+  db._idx = {
+    pendingById:  Object.fromEntries((db.pending_entries || []).map(e => [e.id, e])),
+    ledgerByDate: Object.fromEntries((db.daily_ledger   || []).map(e => [e.date, e])),
+    priceByDate:  Object.fromEntries((db.prices         || []).map(p => [p.effective_date, p]))
+  };
+}
+
 function saveDB() {
   prunePendingEntries();
   try {
-    const dbStr = JSON.stringify(db);
+    // Exclude runtime index from serialization
+    const { _idx, ...dbToSave } = db;
+    const dbStr = JSON.stringify(dbToSave);
     localStorage.setItem('octaneflow_db', dbStr);
     const bytes = new Blob([dbStr]).size;
     const kb = (bytes / 1024).toFixed(2);
     SystemLogger.success('saveDB', `Database saved locally successfully (${kb} KB).`);
+    // Warn if DB is getting large (>3MB = 60% of typical 5MB quota)
+    if (bytes > 3 * 1024 * 1024) {
+      showNotification(`⚠️ Database is large (${(bytes/1024/1024).toFixed(1)} MB). Consider archiving old data.`, 'warning');
+    }
   } catch (e) {
     SystemLogger.error('saveDB', 'Failed to save database locally. Storage quota may be exceeded!', e);
     showNotification('⚠️ Database write failed! Storage may be full.', 'danger');
   }
+  buildIndexes(); // Rebuild index after every save
   // Auto-push to cloud on every save (debounced 2s to avoid hammering API)
   clearTimeout(saveDB._pushTimer);
   saveDB._pushTimer = setTimeout(() => syncPush(), 2000);
@@ -3026,8 +3346,13 @@ function switchSubview(mainView, subviewId) {
   const headerTitle = document.getElementById('view-title');
   if (headerTitle) headerTitle.textContent = titles[subviewId] || "Ram Kisan Sewa Kendra";
 
-  // Render content
-  renderActiveView(subviewId);
+  // Force pull if approvals is selected
+  if (subviewId === 'approvals') {
+    refreshApprovalsPanel();
+  } else {
+    // Render content
+    renderActiveView(subviewId);
+  }
 }
 
 function renderSubtabsBar(mainView) {
@@ -6328,12 +6653,13 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 3. Background Auto-Sync: Check for cloud updates every 30 seconds
+  // 3. Background Auto-Sync: Check for cloud updates every 15 seconds
   setInterval(() => {
     const currentCfg = getSyncCfg();
     const session = getSession();
     if (currentCfg.gistId && currentCfg.gistToken && session && document.visibilityState === 'visible') {
       initSync().then(() => {
+        buildIndexes();
         if (session.role === 'owner') {
           renderCurrentView();
         } else {
@@ -6341,7 +6667,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
       }).catch(() => {});
     }
-  }, 30000);
+  }, 15000);
 });
 
 
