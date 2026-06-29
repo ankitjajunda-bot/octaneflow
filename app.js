@@ -1627,6 +1627,7 @@ function renderUserManagement() {
           <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
             <button onclick="resetEmployeeDevice('${u.username}')" style="background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:0.4rem;padding:0.3rem 0.6rem;font-size:0.72rem;cursor:pointer;">📱 Reset Device</button>
             <button onclick="toggleEmployee('${u.username}')" style="background:${u.active?'rgba(239,68,68,0.1)':'rgba(34,197,94,0.1)'};color:${u.active?'#ef4444':'#22c55e'};border:1px solid ${u.active?'#ef4444':'#22c55e'};border-radius:0.4rem;padding:0.3rem 0.6rem;font-size:0.72rem;cursor:pointer;">${u.active?'Deactivate':'Activate'}</button>
+            <button onclick="deleteEmployeeAccount('${u.username}')" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid #ef4444;border-radius:0.4rem;padding:0.3rem 0.6rem;font-size:0.72rem;cursor:pointer;">🗑️ Delete</button>
           </div>
         </div>`).join('');
 
@@ -1692,6 +1693,27 @@ function toggleEmployee(username) {
   saveUsers(users);
   renderUserManagement();
 }
+
+function deleteEmployeeAccount(username) {
+  if (username === 'owner') {
+    showNotification('⚠️ Cannot delete the primary administrator account!', 'danger');
+    return;
+  }
+  const session = getSession();
+  if (session && session.username === username) {
+    showNotification('⚠️ Cannot delete the account you are currently logged in with!', 'danger');
+    return;
+  }
+  if (!confirm(`Are you sure you want to permanently delete user account @${username}?`)) return;
+  
+  const users = getUsers();
+  if (!users[username]) return;
+  delete users[username];
+  saveUsers(users);
+  showNotification(`Account @${username} deleted permanently.`, 'info');
+  renderUserManagement();
+}
+window.deleteEmployeeAccount = deleteEmployeeAccount;
 
 function copyEmployeeSetupLink() {
   const cfg = getSyncCfg();
