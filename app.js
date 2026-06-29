@@ -374,6 +374,17 @@ async function syncPush(forceAll = false) {
       }
     }
     
+    // Clear dirty flags upon successful push
+    if (db.pending_entries) {
+      db.pending_entries.forEach(e => { e._dirty = false; });
+    }
+    if (db.daily_ledger) {
+      db.daily_ledger.forEach(e => { e._dirty = false; });
+    }
+    // Save DB to update cleaned flags in local storage
+    const { _idx, ...dbToSave } = db;
+    localStorage.setItem('octaneflow_db', JSON.stringify(dbToSave));
+
     const cfg2 = getSyncCfg();
     cfg2.last_push = new Date().toISOString();
     saveSyncCfg(cfg2);
@@ -414,19 +425,29 @@ async function initSync() {
     db.holidays = cloudData.holidays || db.holidays || [];
     db.users = cloudData.users || db.users || {};
 
-    // 2. Merge pending_entries by ID
-    const localPendingMap = new Map((db.pending_entries || []).map(e => [e.id, e]));
+    // 2. Merge pending_entries: Keep unsynced local entries, overlay cloud entries (deleting resolved ones)
+    const unsyncedPending = (db.pending_entries || []).filter(e => e._dirty);
+    const mergedPendingMap = new Map();
     (cloudData.pending_entries || []).forEach(cloudEntry => {
-      localPendingMap.set(cloudEntry.id, cloudEntry);
+      cloudEntry._dirty = false;
+      mergedPendingMap.set(cloudEntry.id, cloudEntry);
     });
-    db.pending_entries = Array.from(localPendingMap.values());
+    unsyncedPending.forEach(localEntry => {
+      mergedPendingMap.set(localEntry.id, localEntry);
+    });
+    db.pending_entries = Array.from(mergedPendingMap.values());
 
-    // 3. Merge daily_ledger by date
-    const localLedgerMap = new Map((db.daily_ledger || []).map(e => [e.date, e]));
+    // 3. Merge daily_ledger: Keep unsynced local entries, overlay cloud entries
+    const unsyncedLedger = (db.daily_ledger || []).filter(e => e._dirty);
+    const mergedLedgerMap = new Map();
     (cloudData.daily_ledger || []).forEach(cloudEntry => {
-      localLedgerMap.set(cloudEntry.date, cloudEntry);
+      cloudEntry._dirty = false;
+      mergedLedgerMap.set(cloudEntry.date, cloudEntry);
     });
-    db.daily_ledger = Array.from(localLedgerMap.values());
+    unsyncedLedger.forEach(localEntry => {
+      mergedLedgerMap.set(localEntry.date, localEntry);
+    });
+    db.daily_ledger = Array.from(mergedLedgerMap.values());
   }
 
   // Save the merged database locally
@@ -1509,7 +1530,8 @@ async function submitEmployeeReading(session) {
       manual_prices:     Object.keys(manualPrices).length > 0 ? manualPrices : null,
       remarks:           document.getElementById('emp-remarks')?.value?.trim() || ''
     },
-    rejectionReason: '', reviewedBy: '', reviewedAt: ''
+    rejectionReason: '', reviewedBy: '', reviewedAt: '',
+    _dirty: true
   };
 
 
@@ -2020,6 +2042,7 @@ function approveEntry(entryId, skipRender = false) {
   let oldNetD = 0;
 
   if (row) {
+    row._dirty = true;
     // Record old sales values for stock reconciliation
     try {
       const oldCalc = computeLedgerRow(row);
@@ -2038,7 +2061,8 @@ function approveEntry(entryId, skipRender = false) {
       du1_d: { open: 0, close_day: 0, close_night: 0, tests_day: 0, tests_night: 0 },
       du2_p: { open: 0, close_day: 0, close_night: 0, tests_day: 0, tests_night: 0 },
       du2_d: { open: 0, close_day: 0, close_night: 0, tests_day: 0, tests_night: 0 },
-      recon: { cash: 0, phonepe: 0, credit: 0, total_collection: 0, remarks: '' }
+      recon: { cash: 0, phonepe: 0, credit: 0, total_collection: 0, remarks: '' },
+      _dirty: true
     };
     db.daily_ledger.push(row);
   }
@@ -2102,6 +2126,7 @@ function approveEntry(entryId, skipRender = false) {
   db.pending_entries[idx].status     = 'approved';
   db.pending_entries[idx].reviewedBy = session.username;
   db.pending_entries[idx].reviewedAt = new Date().toISOString();
+  db.pending_entries[idx]._dirty     = true;
 
   if (!skipRender) {
     saveDB(true);
@@ -2120,6 +2145,7 @@ function promptRejectEntry(entryId) {
   db.pending_entries[idx].rejectionReason = reason || 'No reason given';
   db.pending_entries[idx].reviewedBy      = session.username;
   db.pending_entries[idx].reviewedAt      = new Date().toISOString();
+  db.pending_entries[idx]._dirty          = true;
   saveDB(true);
   showNotification('Entry rejected.', 'info');
   renderApprovalsPanel();
