@@ -37,13 +37,9 @@ function getSyncCfg() {
   } catch {
     cfg = {};
   }
-  // Default fallback credentials
-  if (!cfg.supabaseUrl) {
-    cfg.supabaseUrl = 'https://tgaunkmbzzrlvdwyuykm.supabase.co';
-  }
-  if (!cfg.supabaseKey) {
-    cfg.supabaseKey = 'sb_publishable_YJgYf4bM6Kh5AfqybtbH4g_H5hQN2Sf';
-  }
+  // Force pre-configured credentials always
+  cfg.supabaseUrl = 'https://tgaunkmbzzrlvdwyuykm.supabase.co';
+  cfg.supabaseKey = 'sb_publishable_YJgYf4bM6Kh5AfqybtbH4g_H5hQN2Sf';
   return cfg;
 }
 
