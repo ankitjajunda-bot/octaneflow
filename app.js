@@ -3418,25 +3418,22 @@ function renderLedger() {
   }); // end forwardLedger.forEach
   } // end else (no anchor)
 
-  // Build full date list — from first entry to END OF NEXT MONTH (IST)
+  // Build full date list — from first entry to TODAY (IST)
   // OUTSIDE if/else so ALL ledger views share the same data
   const ledgerDateMap = {};
   db.daily_ledger.forEach(r => { ledgerDateMap[r.date] = r; });
   const nowIST = new Date(Date.now() + (5.5 * 60 * 60 * 1000));
   const todayDateStr = nowIST.toISOString().split('T')[0];
-  const nextMonthDate = new Date(nowIST);
-  nextMonthDate.setMonth(nextMonthDate.getMonth() + 2, 0);
-  const endDateStr = nextMonthDate.toISOString().split('T')[0];
   const firstLedgerDate = forwardLedger[0]?.date || todayDateStr;
   const fullLedgerRows = [];
   let iterDate = new Date(firstLedgerDate + 'T12:00:00Z');
-  const endIterDate = new Date(endDateStr + 'T12:00:00Z');
+  const endIterDate = new Date(todayDateStr + 'T12:00:00Z');
   while (iterDate <= endIterDate) {
     const ds = iterDate.toISOString().split('T')[0];
     fullLedgerRows.push(ledgerDateMap[ds] ? { ...ledgerDateMap[ds], _isPending: false } : { date: ds, _isPending: true });
     iterDate.setDate(iterDate.getDate() + 1);
   }
-  fullLedgerRows.reverse(); // newest first — today + future pending at top
+  fullLedgerRows.reverse(); // newest first — today at top
 
   if (ledgerViewMode === 'table') {
 
