@@ -16,7 +16,17 @@ let supabase = null;
 function initSupabaseClient() {
   const cfg = getSyncCfg();
   if (cfg.gistId && cfg.gistToken && typeof window.supabase !== 'undefined') {
-    supabase = window.supabase.createClient(cfg.gistId, cfg.gistToken);
+    try {
+      if (cfg.gistId.startsWith('http://') || cfg.gistId.startsWith('https://')) {
+        supabase = window.supabase.createClient(cfg.gistId, cfg.gistToken);
+      } else {
+        SystemLogger.warning('initSupabaseClient', 'Supabase URL is not valid. Skipping initialization.');
+        supabase = null;
+      }
+    } catch (e) {
+      console.error('Failed to initialize Supabase client:', e);
+      supabase = null;
+    }
   } else {
     supabase = null;
   }
