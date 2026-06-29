@@ -1550,18 +1550,28 @@ function buildLiveShiftStatus() {
 
 function renderApprovalsPanel() {
   updateApprovalsBadge();
+  
+  // Reset the refresh button state if it exists
+  const refreshBtn = document.getElementById('approvals-refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.textContent = '🔄 Refresh Now';
+    refreshBtn.disabled = false;
+  }
+
   const container = document.getElementById('approvals-list');
   if (!container) return;
 
-  const pending = (db.pending_entries || []).filter(e => e.status === 'pending');
-  const reviewed = (db.pending_entries || []).filter(e => e.status !== 'pending')
-                     .sort((a, b) => b.reviewedAt.localeCompare(a.reviewedAt))
+  const pending = (db.pending_entries || []).filter(e => e.status === 'pending' && e.entryData && e.entryData.date);
+  const reviewed = (db.pending_entries || []).filter(e => e.status !== 'pending' && e.entryData && e.entryData.date)
+                     .sort((a, b) => (b.reviewedAt || '').localeCompare(a.reviewedAt || ''))
                      .slice(0, 20); // show last 20 reviewed items
 
   if (pending.length === 0 && reviewed.length === 0) {
     container.innerHTML = '<div style="text-align:center;color:#64748b;padding:3rem;font-size:1rem;">No submissions yet. Employees submit readings from their phones.</div>';
     return;
   }
+
+  let html = '';
 
   // Group pending entries by Month-Year and 10-day period
   const groups = {};
