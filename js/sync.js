@@ -287,6 +287,203 @@ async function syncPull() {
   }
 }
 
+function rebuildSyncQueue() {
+  if (!db) return;
+  db.sync_queue = db.sync_queue || [];
+  
+  const session = typeof getSession === 'function' ? getSession() : null;
+  const isOwner = session && session.role === 'owner';
+
+  // 1. Stage dirty app_state
+  if (isOwner && db.dirty_app_state_keys && db.dirty_app_state_keys.length > 0) {
+    const keys = [...new Set(db.dirty_app_state_keys)];
+    keys.forEach(k => {
+      let val = null;
+      if (k === 'settings') val = db.settings || {};
+      else if (k === 'stock') val = db.stock || {};
+      else if (k === 'price_history') val = db.price_history || [];
+      else if (k === 'purchases') val = db.purchases || [];
+      else if (k === 'holidays') val = db.holidays || [];
+      else if (k === 'users') val = db.users || {};
+      else if (k === 'cashflow') val = db.cashflow || {};
+      else if (k === 'audit_trail') val = db.audit_trail || [];
+
+      const existing = db.sync_queue.find(q => q.action === 'upsert_app_state' && q.payload.key === k && q.status === 'pending');
+      if (existing) {
+        existing.payload.value = val;
+      } else {
+        db.sync_queue.push({
+          tx_id: 'tx_state_' + k + '_' + Date.now(),
+          action: 'upsert_app_state',
+          payload: { key: k, value: val },
+          retry_count: 0,
+          status: 'pending',
+          error_details: '',
+          created_at: new Date().toISOString()
+        });
+      }
+    });
+    db.dirty_app_state_keys = []; // Clear local staging marker
+  }
+
+  // 2. Stage dirty pending_entries
+  if (db.pending_entries) {
+    db.pending_entries.forEach(e => {
+      if (e._dirty) {
+        const existing = db.sync_queue.find(q => q.action === 'upsert_pending' && q.payload.id === e.id && q.status === 'pending');
+        if (existing) {
+          existing.payload = e;
+        } else {
+          db.sync_queue.push({
+            tx_id: 'tx_pending_' + e.id + '_' + Date.now(),
+            action: 'upsert_pending',
+            payload: JSON.parse(JSON.stringify(e)),
+            retry_count: 0,
+            status: 'pending',
+            error_details: '',
+            created_at: new Date().toISOString()
+          });
+        }
+        e._dirty = false;
+      }
+    });
+  }
+
+  // 3. Stage deleted daily_ledger dates
+  if (isOwner && db.deleted_ledger_dates && db.deleted_ledger_dates.length > 0) {
+    db.deleted_ledger_dates.forEach(d => {
+      const existing = db.sync_queue.find(q => q.action === 'delete_ledger' && q.payload.date === d && q.status === 'pending');
+      if (!existing) {
+        db.sync_queue.push({
+          tx_id: 'tx_delete_' + d + '_' + Date.now(),
+          action: 'delete_ledger',
+          payload: { date: d },
+          retry_count: 0,
+          status: 'pending',
+          error_details: '',
+          created_at: new Date().toISOString()
+        });
+      }
+    });
+    db.deleted_ledger_dates = [];
+  }
+
+  // 4. Stage dirty daily_ledger
+  if (isOwner && db.daily_ledger) {
+    db.daily_ledger.forEach(e => {
+      if (e._dirty) {
+        const existing = db.sync_queue.find(q => q.action === 'upsert_ledger' && q.payload.date === e.date && q.status === 'pending');
+        if (existing) {
+          existing.payload = e;
+        } else {
+          db.sync_queue.push({
+            tx_id: 'tx_ledger_' + e.date + '_' + Date.now(),
+            action: 'upsert_ledger',
+            payload: JSON.parse(JSON.stringify(e)),
+            retry_count: 0,
+            status: 'pending',
+            error_details: '',
+            created_at: new Date().toISOString()
+          });
+        }
+        e._dirty = false;
+      }
+    });
+  }
+}
+
+async function processSyncQueue() {
+  if (!db || !db.sync_queue || db.sync_queue.length === 0) return;
+  
+  if (!supabaseClient) {
+    initSupabaseClient();
+  }
+  if (!supabaseClient) {
+    setSyncStatus('error');
+    return;
+  }
+
+  db.sync_queue = db.sync_queue.filter(q => q.status !== 'success');
+  const pendingItems = db.sync_queue.filter(q => q.status === 'pending' || q.status === 'failed');
+  if (pendingItems.length === 0) return;
+
+  setSyncStatus('syncing');
+
+  for (const tx of pendingItems) {
+    tx.status = 'processing';
+    tx.retry_count = (tx.retry_count || 0) + 1;
+
+    try {
+      if (tx.action === 'upsert_app_state') {
+        const { error } = await supabaseClient.from('app_state').upsert([tx.payload]);
+        if (error) throw error;
+      }
+      else if (tx.action === 'upsert_pending') {
+        const cleanPayload = { ...tx.payload };
+        delete cleanPayload._dirty;
+        const { error } = await supabaseClient.from('pending_entries').upsert([cleanPayload]);
+        if (error) throw error;
+      }
+      else if (tx.action === 'delete_ledger') {
+        const { error } = await supabaseClient.from('daily_ledger').delete().eq('date', tx.payload.date);
+        if (error) throw error;
+      }
+      else if (tx.action === 'upsert_ledger') {
+        const cleanPayload = { ...tx.payload };
+        delete cleanPayload._dirty;
+        const { error } = await supabaseClient.from('daily_ledger').upsert([cleanPayload]);
+        if (error) throw error;
+      }
+
+      tx.status = 'success';
+      tx.error_details = '';
+      
+      db.sync_history = db.sync_history || [];
+      db.sync_history.unshift({
+        tx_id: tx.tx_id,
+        timestamp: new Date().toISOString(),
+        action: tx.action,
+        retry_count: tx.retry_count,
+        status: tx.status,
+        error_details: ''
+      });
+      if (db.sync_history.length > 50) db.sync_history = db.sync_history.slice(0, 50);
+
+      SystemLogger.success('syncQueue', `Success TX: ${tx.tx_id} (${tx.action})`);
+    } catch (err) {
+      tx.status = 'failed';
+      tx.error_details = err.message || String(err);
+      
+      db.sync_history = db.sync_history || [];
+      db.sync_history.unshift({
+        tx_id: tx.tx_id,
+        timestamp: new Date().toISOString(),
+        action: tx.action,
+        retry_count: tx.retry_count,
+        status: tx.status,
+        error_details: tx.error_details
+      });
+      if (db.sync_history.length > 50) db.sync_history = db.sync_history.slice(0, 50);
+
+      SystemLogger.error('syncQueue', `Failed TX: ${tx.tx_id} (${tx.action})`, err);
+      setSyncStatus('error');
+      
+      const { _idx, ...dbToSave } = db;
+      localStorage.setItem('octaneflow_db', JSON.stringify(dbToSave));
+      return;
+    }
+  }
+
+  setSyncStatus('synced');
+  db.sync_queue = db.sync_queue.filter(q => q.status !== 'success');
+  const { _idx, ...dbToSave } = db;
+  localStorage.setItem('octaneflow_db', JSON.stringify(dbToSave));
+
+  const cfg = getSyncCfg();
+  cfg.last_push = new Date().toISOString();
+  saveSyncCfg(cfg);
+}
+
 async function syncPush(forceAll = false) {
   const cfg = getSyncCfg();
   if (!cfg.supabaseUrl || !cfg.supabaseKey) {
@@ -301,138 +498,11 @@ async function syncPush(forceAll = false) {
     SystemLogger.error('syncPush', 'Supabase client failed to initialize.');
     return false;
   }
-  
-  const session = getSession();
-  const isOwner = session && session.role === 'owner';
-  
-  SystemLogger.info('syncPush', `Starting Supabase database sync & push (forceAll: ${forceAll})...`);
-  try {
-    setSyncStatus('syncing');
-    
-    // 1. Push app_state (Only the owner is permitted to overwrite the master app_state)
-    if (isOwner) {
-      let keysToPush = db.dirty_app_state_keys || [];
-      if (forceAll) {
-        keysToPush = ['settings', 'stock', 'price_history', 'purchases', 'holidays', 'users', 'cashflow', 'audit_trail'];
-      }
-      
-      if (keysToPush.length > 0) {
-        const uniqueKeys = [...new Set(keysToPush)];
-        const appStateRows = [];
-        uniqueKeys.forEach(k => {
-          if (k === 'settings') appStateRows.push({ key: 'settings', value: db.settings || {} });
-          else if (k === 'stock') appStateRows.push({ key: 'stock', value: db.stock || {} });
-          else if (k === 'price_history') appStateRows.push({ key: 'price_history', value: db.price_history || [] });
-          else if (k === 'purchases') appStateRows.push({ key: 'purchases', value: db.purchases || [] });
-          else if (k === 'holidays') appStateRows.push({ key: 'holidays', value: db.holidays || [] });
-          else if (k === 'users') appStateRows.push({ key: 'users', value: db.users || {} });
-          else if (k === 'cashflow') appStateRows.push({ key: 'cashflow', value: db.cashflow || {} });
-          else if (k === 'audit_trail') appStateRows.push({ key: 'audit_trail', value: db.audit_trail || [] });
-        });
-        
-        if (appStateRows.length > 0) {
-          const { error: stateErr } = await supabaseClient.from('app_state').upsert(appStateRows);
-          if (stateErr) throw stateErr;
-        }
-        db.dirty_app_state_keys = []; // Clear dirty keys upon success
-      }
-    } else {
-      SystemLogger.info('syncPush', 'Skipped app_state push (employee devices cannot push app_state)');
-    }
-    
-    // 2. Push pending_entries (filter to pending or recent if not forceAll)
-    if (db.pending_entries && db.pending_entries.length > 0) {
-      let entriesToPush = db.pending_entries;
-      if (!forceAll) {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const cutoff = sevenDaysAgo.toISOString();
-        entriesToPush = db.pending_entries.filter(e => e.status === 'pending' || e.submittedAt >= cutoff || (e.reviewedAt && e.reviewedAt >= cutoff));
-      }
-      
-      if (entriesToPush.length > 0) {
-        const pendingRows = entriesToPush.map(e => ({
-          id: e.id,
-          submitted_by: e.submittedBy,
-          submitted_by_name: e.submittedByName,
-          submitted_at: e.submittedAt,
-          submission_type: e.submission_type,
-          status: e.status,
-          entry_data: e.entryData,
-          rejection_reason: e.rejectionReason || '',
-          reviewed_by: e.reviewedBy || '',
-          reviewed_at: e.reviewedAt || null
-        }));
-        const { error: pendingErr } = await supabaseClient.from('pending_entries').upsert(pendingRows);
-        if (pendingErr) throw pendingErr;
-      }
-    }
-    
-    // 3. Process daily_ledger deletions if any
-    if (isOwner && db.deleted_ledger_dates && db.deleted_ledger_dates.length > 0) {
-      SystemLogger.info('syncPush', `Attempting to delete ${db.deleted_ledger_dates.length} daily_ledger rows from cloud...`);
-      for (const d of db.deleted_ledger_dates) {
-        const { error: delErr } = await supabaseClient.from('daily_ledger').delete().eq('date', d);
-        if (delErr) {
-          SystemLogger.error('syncPush', `Failed to delete row for ${d} from cloud`, delErr);
-          throw delErr;
-        }
-      }
-      db.deleted_ledger_dates = [];
-    }
 
-    // 4. Push daily_ledger (Only push if owner, and only push recent 14 days unless forceAll)
-    if (isOwner && db.daily_ledger && db.daily_ledger.length > 0) {
-      let ledgerToPush = db.daily_ledger;
-      if (!forceAll) {
-        const fourteenDaysAgo = new Date();
-        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-        const dateCutoff = fourteenDaysAgo.toISOString().split('T')[0];
-        ledgerToPush = db.daily_ledger.filter(e => e.date >= dateCutoff);
-      }
-      
-      if (ledgerToPush.length > 0) {
-        const ledgerRows = ledgerToPush.map(e => ({
-          date: e.date,
-          prices: e.prices,
-          du1_p: e.du1_p,
-          du1_d: e.du1_d,
-          du2_p: e.du2_p,
-          du2_d: e.du2_d,
-          recon: e.recon,
-          approved_by: e.approved_by || 'owner',
-          approved_at: e.approved_at || new Date().toISOString(),
-          submitted_by: e.submitted_by || 'system'
-        }));
-        const { error: ledgerErr } = await supabaseClient.from('daily_ledger').upsert(ledgerRows);
-        if (ledgerErr) throw ledgerErr;
-      }
-    }
-    
-    // Clear dirty flags upon successful push
-    if (db.pending_entries) {
-      db.pending_entries.forEach(e => { e._dirty = false; });
-    }
-    if (db.daily_ledger) {
-      db.daily_ledger.forEach(e => { e._dirty = false; });
-    }
-    // Save DB to update cleaned flags in local storage
-    const { _idx, ...dbToSave } = db;
-    localStorage.setItem('octaneflow_db', JSON.stringify(dbToSave));
-
-    const cfg2 = getSyncCfg();
-    cfg2.last_push = new Date().toISOString();
-    saveSyncCfg(cfg2);
-    localStorage.setItem('octaneflow_last_sync', cfg2.last_push);
-    setSyncStatus('synced');
-    SystemLogger.success('syncPush', 'Supabase database push completed successfully.');
-    return true;
-  } catch (err) {
-    const isOnline = navigator.onLine;
-    setSyncStatus(isOnline ? 'error' : 'offline');
-    SystemLogger.error('syncPush', 'Supabase push failed due to exception.', err);
-    return false;
-  }
+  SystemLogger.info('syncPush', `Staging modifications to sync queue (forceAll: ${forceAll})...`);
+  rebuildSyncQueue();
+  await processSyncQueue();
+  return true;
 }
 
 async function initSync() {
@@ -452,6 +522,29 @@ async function initSync() {
   if (!db) {
     db = cloudData;
   } else {
+    // Conflict Detection during cloud merge
+    const keysToCheck = ['settings', 'stock', 'price_history', 'purchases', 'holidays', 'users', 'cashflow'];
+    db.conflicts = db.conflicts || {};
+    
+    keysToCheck.forEach(k => {
+      const localVal = db[k];
+      const cloudVal = cloudData[k];
+      const isDirty = db.dirty_app_state_keys && db.dirty_app_state_keys.includes(k);
+      const isQueued = db.sync_queue && db.sync_queue.some(q => q.action === 'upsert_app_state' && q.payload.key === k && q.status === 'pending');
+      
+      if ((isDirty || isQueued) && cloudVal) {
+        if (JSON.stringify(localVal) !== JSON.stringify(cloudVal)) {
+          db.conflicts[k] = {
+            cloud: JSON.parse(JSON.stringify(cloudVal)),
+            local: JSON.parse(JSON.stringify(localVal)),
+            timestamp: new Date().toISOString()
+          };
+          SystemLogger.warning('initSync', `Sync Conflict detected on settings key: ${k}. Cloud changes preserved in db.conflicts.`);
+          showNotification(`⚠️ Sync Conflict: Concurrent edits found on ${k}. Cloud data saved in conflicts.`, 'warning');
+        }
+      }
+    });
+
     // 1. Merge settings, stock, price_history, purchases, holidays, users from cloud (cloud is source of truth)
     db.settings = cloudData.settings || db.settings || {};
     db.stock = cloudData.stock || db.stock || {};
