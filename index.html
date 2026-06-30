@@ -326,7 +326,7 @@
               <div class="form-row" id="pp-midnight-row" style="margin: 0; display: none;">
                 <div class="form-group" style="flex:1;margin:0;">
                   <label for="emp-pp-midnight" style="font-size:0.7rem;color:#eab308;margin-bottom:0.25rem;">Balance at Midnight</label>
-                  <input type="number" id="emp-pp-midnight" placeholder="0" inputmode="decimal" style="padding:0.6rem;font-size:0.85rem;width:100%;box-sizing:border-box;">
+                  <input type="number" class="emp-mobile-input" id="emp-pp-midnight" placeholder="0" inputmode="decimal">
                   <span style="font-size:0.6rem;color:#64748b;margin-top:0.15rem;display:block;">Required for Night shift crossing 12 AM reset</span>
                 </div>
               </div>
@@ -336,7 +336,7 @@
           </div>
 
           <div class="form-row" id="emp-cash-section">
-            <div class="form-group"><label for="emp-cash">Cash Collected (₹)</label><input type="number" id="emp-cash" step="1" placeholder="0" inputmode="decimal"></div>
+            <div class="form-group"><label for="emp-cash">Cash Collected (₹)</label><input type="number" class="emp-mobile-input" id="emp-cash" step="1" placeholder="0" inputmode="decimal" style="background:#0f172a;border:1px solid #334155;color:#f8fafc;border-radius:0.5rem;"></div>
           </div>
           
           <!-- Cash Deposit Section (Only shown when Type is 'deposit') -->
@@ -346,7 +346,7 @@
             </h3>
             <div class="emp-form-group">
               <label for="emp-deposit-amount">Deposit Amount (₹)</label>
-              <input type="number" id="emp-deposit-amount" step="1" placeholder="Enter amount deposited in office..." inputmode="decimal" style="padding:0.6rem;font-size:0.85rem;width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;color:#f8fafc;border-radius:0.5rem;">
+              <input type="number" class="emp-mobile-input" id="emp-deposit-amount" step="1" placeholder="Enter amount deposited in office..." inputmode="decimal" style="background:#0f172a;border:1px solid #334155;color:#f8fafc;border-radius:0.5rem;">
             </div>
           </div>
 
