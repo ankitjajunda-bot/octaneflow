@@ -7,6 +7,32 @@
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
+  <!-- Global Error Boundary -->
+  <style>
+    #global-error-boundary {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; z-index: 99999;
+      background: #ef4444; color: white; padding: 1rem; font-family: monospace;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+    #global-error-boundary h3 { margin: 0 0 0.5rem 0; font-size: 1.2rem; }
+    #global-error-boundary p { margin: 0; font-size: 0.9rem; white-space: pre-wrap; }
+    #global-error-close { position: absolute; right: 1rem; top: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; padding: 0.2rem 0.5rem; cursor: pointer; border-radius: 4px; }
+  </style>
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      showGlobalError("JavaScript Error: " + message + "\nLine: " + lineno + "\nFile: " + source);
+    };
+    window.onunhandledrejection = function(event) {
+      showGlobalError("Unhandled Promise Rejection: " + (event.reason ? event.reason.message || event.reason : "Unknown error"));
+    };
+    function showGlobalError(msg) {
+      var boundary = document.getElementById('global-error-boundary');
+      if (boundary) {
+        document.getElementById('global-error-text').textContent = msg;
+        boundary.style.display = 'block';
+      }
+    }
+  </script>
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
 
@@ -29,6 +55,12 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Global Error Boundary UI -->
+  <div id="global-error-boundary">
+    <button id="global-error-close" onclick="document.getElementById('global-error-boundary').style.display='none'">Dismiss</button>
+    <h3>⚠️ Application Error</h3>
+    <p id="global-error-text"></p>
+  </div>
   <!-- Login Overlay — shown until authenticated -->
   <div id="login-overlay" style="display:flex;position:fixed;inset:0;z-index:10000;background:linear-gradient(135deg,#0f1117 0%,#1a1f2e 50%,#0f1117 100%);align-items:center;justify-content:center;">
     <div style="width:100%;max-width:420px;padding:2rem;">
@@ -2525,7 +2557,16 @@
   <script src="extracted_kc_expenses.js"></script>
   <script src="ocr_stock_data.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=48"></script>
+  <script src="js/sync.js?v=49"></script>
+  <script src="js/auth.js?v=49"></script>
+  <script src="js/ui_login.js?v=49"></script>
+  <script src="js/employee_dashboard.js?v=49"></script>
+  <script src="js/employee_submit.js?v=49"></script>
+  <script src="js/owner_approvals.js?v=49"></script>
+  <script src="js/core_db_ledger.js?v=49"></script>
+  <script src="js/error_reporting.js?v=49"></script>
+  <script src="js/dsr_checker.js?v=49"></script>
+  <script src="js/auth_reset.js?v=49"></script>
 
 
   <!-- PWA: Offline banner -->
