@@ -364,16 +364,16 @@ async function submitEmployeeReading(session) {
     const tests = sanitizeNumber(testsInput);
 
     if ((openInput && open < 0) || (closeInput && close < 0) || (testsInput && tests < 0)) {
-      return `${label} readings cannot be negative.`;
+      return { type: 'error', msg: `${label} readings cannot be negative.` };
     }
     
     // Only check close vs open validation if both fields are actually entered
     if (openInput && closeInput && close > 0 && open > 0) {
       if (close < open) {
-        return `${label} closing reading (${close}) is less than opening reading (${open}).`;
+        return { type: 'rollback', msg: `${label} closing reading (${close}) is less than opening reading (${open}).`, prefix };
       }
       if ((close - open) < tests) {
-        return `${label} tests (${tests} L) cannot be greater than the totalizer difference (${(close - open).toFixed(2)} L).`;
+        return { type: 'error', msg: `${label} tests (${tests} L) cannot be greater than the totalizer difference (${(close - open).toFixed(2)} L).` };
       }
     }
     return null;
@@ -384,14 +384,25 @@ async function submitEmployeeReading(session) {
   const err3 = checkNozzle('emp-du1d', 'DU1 Diesel');
   const err4 = checkNozzle('emp-du2d', 'DU2 Diesel');
 
-  const err = err1 || err2 || err3 || err4;
-  if (err) {
-    if (typeof showGlobalError === 'function') {
-      showGlobalError("Validation Error: " + err);
-    } else {
-      showNotification(`⚠️ Validation Error: ${err}`, 'danger');
+  const errors = [err1, err2, err3, err4].filter(e => e !== null);
+  const resetPrefixes = [];
+
+  for (const err of errors) {
+    if (err.type === 'error') {
+      if (typeof showGlobalError === 'function') {
+        showGlobalError("Validation Error: " + err.msg);
+      } else {
+        showNotification(`⚠️ Validation Error: ${err.msg}`, 'danger');
+      }
+      return; // Hard Block
     }
-    return; // Hard Block
+    if (err.type === 'rollback') {
+      if (confirm(`⚠️ Rollback detected:\n${err.msg}\n\nIs this an authorized meter replacement or reset? Click OK to submit for owner approval.`)) {
+        resetPrefixes.push(err.prefix);
+      } else {
+        return; // Abort submission
+      }
+    }
   }
 
   // Calculate volume totals for warning analysis
@@ -476,6 +487,7 @@ async function submitEmployeeReading(session) {
       close_night: s === 'night' ? closeVal : 0,
       tests_day:   s === 'day'   ? testsVal : 0,
       tests_night: s === 'night' ? testsVal : 0,
+      is_reset:    resetPrefixes.includes(prefix)
     };
   };
 

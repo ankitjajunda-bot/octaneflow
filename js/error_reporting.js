@@ -810,51 +810,62 @@ function renderCashFlow() {
     const fc = (v) => formatCurrency(v);
     const pnlColor = (v) => v >= 0 ? '#4ade80' : '#ef4444';
 
-    el(`${prefix}-date`).textContent = `${formatDate(f.buyDateStr)} (Day ${f.buyDayNum})`;
-    el(`${prefix}-load-badge`).textContent = f.loadLabel;
+    const setText = (idSuffix, text) => {
+      const element = el(`${prefix}-${idSuffix}`);
+      if (element) element.textContent = text;
+    };
 
-    el(`${prefix}-ms-stock`).textContent  = `${currentMs.toFixed(0)} L`;
-    el(`${prefix}-ms-remaining`).textContent = `${f.msDays.toFixed(1)} days left`;
-    el(`${prefix}-hsd-stock`).textContent  = `${currentHsd.toFixed(0)} L`;
-    el(`${prefix}-hsd-remaining`).textContent = `${f.hsdDays.toFixed(1)} days left`;
+    setText('date', `${formatDate(f.buyDateStr)} (Day ${f.buyDayNum})`);
+    setText('load-badge', f.loadLabel);
 
-    el(`${prefix}-avg-ms`).textContent  = ads.ms.toFixed(0);
-    el(`${prefix}-avg-hsd`).textContent = ads.hsd.toFixed(0);
-    el(`${prefix}-days`).textContent = `${f.buyDayNum} days`;
+    setText('ms-stock', `${currentMs.toFixed(0)} L`);
+    setText('ms-remaining', `${f.msDays.toFixed(1)} days left`);
+    setText('hsd-stock', `${currentHsd.toFixed(0)} L`);
+    setText('hsd-remaining', `${f.hsdDays.toFixed(1)} days left`);
 
-    if (el(`${prefix}-proj-ms`))  el(`${prefix}-proj-ms`).textContent  = fc(f.projMsCash);
-    if (el(`${prefix}-proj-hsd`)) el(`${prefix}-proj-hsd`).textContent = fc(f.projHsdCash);
-    el(`${prefix}-total-reserves`).textContent = fc(f.totalProjected);
+    setText('avg-ms', ads.ms.toFixed(0));
+    setText('avg-hsd', ads.hsd.toFixed(0));
+    setText('days', `${f.buyDayNum} days`);
 
-    el(`${prefix}-iocl-pending`).textContent = fc(f.pendingIOCL);
+    setText('proj-ms', fc(f.projMsCash));
+    setText('proj-hsd', fc(f.projHsdCash));
+    setText('total-reserves', fc(f.totalProjected));
+
+    setText('iocl-pending', fc(f.pendingIOCL));
     const nc = el(`${prefix}-net-cash`);
-    nc.textContent = fc(f.netCash);
-    nc.style.color = pnlColor(f.netCash);
-
-    el(`${prefix}-load-cost`).textContent = fc(f.chosenCost);
-
-    const sfRow = el(`${prefix}-shortfall-row`);
-    if (f.shortfall > 0) {
-      sfRow.style.display = 'flex';
-      el(`${prefix}-shortfall`).textContent = fc(f.shortfall);
-    } else {
-      sfRow.style.display = 'none';
+    if (nc) {
+      nc.textContent = fc(f.netCash);
+      nc.style.color = pnlColor(f.netCash);
     }
 
-    el(`${prefix}-rtgs-day`).textContent = formatDate(f.rtgsDeadline) +
-      (isCBIHoliday(f.rtgsDeadline) ? ' ⚠️' : ' ✓');
+    setText('load-cost', fc(f.chosenCost));
+
+    const sfRow = el(`${prefix}-shortfall-row`);
+    if (sfRow) {
+      if (f.shortfall > 0) {
+        sfRow.style.display = 'flex';
+        setText('shortfall', fc(f.shortfall));
+      } else {
+        sfRow.style.display = 'none';
+      }
+    }
+
+    setText('rtgs-day', formatDate(f.rtgsDeadline) +
+      (isCBIHoliday(f.rtgsDeadline) ? ' ⚠️' : ' ✓'));
 
     const decEl = el(`${prefix}-decision`);
-    if (f.shortfall > 0) {
-      decEl.style.background = 'rgba(239,68,68,0.1)';
-      decEl.style.color = '#f87171';
-      decEl.style.border = '1px solid rgba(239,68,68,0.3)';
-      decEl.innerHTML = `&#9888; Cash shortfall &#8377;${fc(f.shortfall)} &mdash; ${f.loadLabel}. Collect ${f.buyDayNum+2} days revenue &amp; file RTGS by ${formatDate(f.rtgsDeadline)}`;
-    } else {
-      decEl.style.background = 'rgba(34,197,94,0.08)';
-      decEl.style.color = '#4ade80';
-      decEl.style.border = '1px solid rgba(34,197,94,0.25)';
-      decEl.innerHTML = `&#10003; Buy <strong>${f.loadLabel}</strong>. File RTGS at CBI by ${formatDate(f.rtgsDeadline)}`;
+    if (decEl) {
+      if (f.shortfall > 0) {
+        decEl.style.background = 'rgba(239,68,68,0.1)';
+        decEl.style.color = '#f87171';
+        decEl.style.border = '1px solid rgba(239,68,68,0.3)';
+        decEl.innerHTML = `&#9888; Cash shortfall &#8377;${fc(f.shortfall)} &mdash; ${f.loadLabel}. Collect ${f.buyDayNum+2} days revenue &amp; file RTGS by ${formatDate(f.rtgsDeadline)}`;
+      } else {
+        decEl.style.background = 'rgba(34,197,94,0.08)';
+        decEl.style.color = '#4ade80';
+        decEl.style.border = '1px solid rgba(34,197,94,0.25)';
+        decEl.innerHTML = `&#10003; Buy <strong>${f.loadLabel}</strong>. File RTGS at CBI by ${formatDate(f.rtgsDeadline)}`;
+      }
     }
   }
 

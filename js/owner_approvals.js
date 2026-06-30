@@ -377,28 +377,28 @@ function renderApprovalsPanel() {
                       </thead>
                       <tbody>
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.02); color:#e2e8f0;">
-                          <td style="padding:0.3rem 0.5rem;"><span style="color:#ef4444;">●</span> DU1-P (E2)</td>
+                          <td style="padding:0.3rem 0.5rem;"><span style="color:#ef4444;">●</span> DU1-P (E2) ${ed.du1_p?.is_reset ? '<span style="font-size:0.6rem; background:rgba(239,68,68,0.2); color:#fca5a5; padding:0.1rem 0.3rem; border-radius:3px; margin-left:4px;">⚠️ RESET</span>' : ''}</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right; color:#94a3b8;">${du1_p_open.toFixed(2)}</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right;">${du1_p_close.toFixed(2)}</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right; color:#64748b;">${du1_p_tests} L</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right; font-weight:700; color:#fff;">${du1_p_sale.toFixed(2)} L</td>
                         </tr>
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.02); color:#e2e8f0;">
-                          <td style="padding:0.3rem 0.5rem;"><span style="color:#eab308;">●</span> DU1-D (HSD)</td>
+                          <td style="padding:0.3rem 0.5rem;"><span style="color:#eab308;">●</span> DU1-D (HSD) ${ed.du1_d?.is_reset ? '<span style="font-size:0.6rem; background:rgba(239,68,68,0.2); color:#fca5a5; padding:0.1rem 0.3rem; border-radius:3px; margin-left:4px;">⚠️ RESET</span>' : ''}</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right; color:#94a3b8;">${du1_d_open.toFixed(2)}</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right;">${du1_d_close.toFixed(2)}</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right; color:#64748b;">${du1_d_tests} L</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right; font-weight:700; color:#fff;">${du1_d_sale.toFixed(2)} L</td>
                         </tr>
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.02); color:#e2e8f0;">
-                          <td style="padding:0.3rem 0.5rem;"><span style="color:#ef4444;">●</span> DU2-P (E2)</td>
+                          <td style="padding:0.3rem 0.5rem;"><span style="color:#ef4444;">●</span> DU2-P (E2) ${ed.du2_p?.is_reset ? '<span style="font-size:0.6rem; background:rgba(239,68,68,0.2); color:#fca5a5; padding:0.1rem 0.3rem; border-radius:3px; margin-left:4px;">⚠️ RESET</span>' : ''}</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right; color:#94a3b8;">${du2_p_open.toFixed(2)}</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right;">${du2_p_close.toFixed(2)}</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right; color:#64748b;">${du2_p_tests} L</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right; font-weight:700; color:#fff;">${du2_p_sale.toFixed(2)} L</td>
                         </tr>
                         <tr style="color:#e2e8f0;">
-                          <td style="padding:0.3rem 0.5rem;"><span style="color:#eab308;">●</span> DU2-D (HSD)</td>
+                          <td style="padding:0.3rem 0.5rem;"><span style="color:#eab308;">●</span> DU2-D (HSD) ${ed.du2_d?.is_reset ? '<span style="font-size:0.6rem; background:rgba(239,68,68,0.2); color:#fca5a5; padding:0.1rem 0.3rem; border-radius:3px; margin-left:4px;">⚠️ RESET</span>' : ''}</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right; color:#94a3b8;">${du2_d_open.toFixed(2)}</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right;">${du2_d_close.toFixed(2)}</td>
                           <td style="padding:0.3rem 0.5rem; text-align:right; color:#64748b;">${du2_d_tests} L</td>
@@ -564,6 +564,21 @@ function approveEntry(entryId, skipRender = false) {
         : `Deposit: ${ed.remarks}`;
     }
   } else {
+    // 1. Core Invariant Validation: Nozzle Rollback Protection
+    for (const nozzle of ['du1_p', 'du1_d', 'du2_p', 'du2_d']) {
+      const o = ed[nozzle].open || 0;
+      const c = ed.shift === 'day' ? (ed[nozzle].close_day || 0) : (ed[nozzle].close_night || 0);
+      if (c > 0 && o > 0 && c < o) {
+        if (!ed[nozzle].is_reset) {
+          SystemLogger.error('Approval Validation', `Rollback detected in ${nozzle}. Closing reading (${c}) is less than Opening reading (${o}). Overwrite aborted.`);
+          alert(`Cannot approve: Meter rollback detected in ${nozzle}. This is not an authorized reset.`);
+          return; // Abort approval
+        } else {
+          SystemLogger.warning('Approval Validation', `Owner authorized meter reset for ${nozzle} from ${o} to ${c}`);
+        }
+      }
+    }
+
     // Merge nozzle values based on shift
     if (ed.shift === 'day') {
       for (const nozzle of ['du1_p', 'du1_d', 'du2_p', 'du2_d']) {
