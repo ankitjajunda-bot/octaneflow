@@ -503,6 +503,7 @@ function approveEntry(entryId, skipRender = false) {
   const idx = (db.pending_entries||[]).findIndex(e=>e.id===entryId);
   if (idx===-1) return;
   const entry = db.pending_entries[idx];
+  if (entry.status === 'approved') return; // Prevent double approval/double counting
   const ed    = entry.entryData;
 
   // Retrieve existing ledger row or initialize a new one
@@ -541,6 +542,11 @@ function approveEntry(entryId, skipRender = false) {
   if (entry.submission_type === 'deposit') {
     row.recon.cash = (row.recon.cash || 0) + (ed.deposit_amount || 0);
     row.recon.total_collection = (row.recon.cash || 0) + (row.recon.phonepe || 0) + (row.recon.credit || 0);
+
+    // Bookkeeping Integration (Plan 23) - Transfer cash to bank
+    if (!db.cashflow) db.cashflow = { bank_balance: 0, phonepe_balance: 0, cash_drawer: 0, iocl_cushion: 0 };
+    db.cashflow.cash_drawer = Math.max(0, (db.cashflow.cash_drawer || 0) - (ed.deposit_amount || 0));
+    db.cashflow.bank_balance = (db.cashflow.bank_balance || 0) + (ed.deposit_amount || 0);
 
     if (!row.recon.deposits) row.recon.deposits = [];
     row.recon.deposits.push({
@@ -587,6 +593,11 @@ function approveEntry(entryId, skipRender = false) {
     row.recon.card = (row.recon.card || 0) + (ed.card_sales || 0);
     row.recon.phonepe = (row.recon.phonepe || 0) + (ed.phonepe_collection || 0);
     row.recon.total_collection = row.recon.cash + row.recon.card + row.recon.phonepe + (row.recon.credit || 0);
+
+    // Bookkeeping Integration (Plan 23) - Add approved collections to cash drawer / phonepe balance
+    if (!db.cashflow) db.cashflow = { bank_balance: 0, phonepe_balance: 0, cash_drawer: 0, iocl_cushion: 0 };
+    db.cashflow.cash_drawer = (db.cashflow.cash_drawer || 0) + (ed.cash_sales || 0);
+    db.cashflow.phonepe_balance = (db.cashflow.phonepe_balance || 0) + (ed.phonepe_collection || 0);
 
     // Apply manual price overrides to the daily ledger if present
     if (ed.manual_prices) {

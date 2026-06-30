@@ -245,7 +245,8 @@ async function syncPull() {
       price_history: [],
       purchases: [],
       holidays: [],
-      users: {}
+      users: {},
+      cashflow: {}
     };
     
     stateData.forEach(row => {
@@ -255,6 +256,7 @@ async function syncPull() {
       else if (row.key === 'purchases') record.purchases = row.value;
       else if (row.key === 'holidays') record.holidays = row.value;
       else if (row.key === 'users') record.users = row.value;
+      else if (row.key === 'cashflow') record.cashflow = row.value;
     });
     
     let maxTime = new Date(0);
@@ -313,7 +315,8 @@ async function syncPush(forceAll = false) {
         { key: 'price_history', value: db.price_history || [] },
         { key: 'purchases', value: db.purchases || [] },
         { key: 'holidays', value: db.holidays || [] },
-        { key: 'users', value: db.users || {} }
+        { key: 'users', value: db.users || {} },
+        { key: 'cashflow', value: db.cashflow || {} }
       ];
       
       const { error: stateErr } = await supabaseClient.from('app_state').upsert(appStateRows);

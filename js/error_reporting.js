@@ -1912,6 +1912,37 @@ function postShiftRecon() {
   });
 
   row.recon = row.recon || {};
+  
+  // Bookkeeping Integration (Plan 23) - Idempotent Cash Drawer and Expenses update
+  const sourceRef = `shift_recon_${dateStr}_${shift}`;
+  if (!db.expenses) db.expenses = [];
+  if (!db.cashflow) db.cashflow = { bank_balance: 0, phonepe_balance: 0, cash_drawer: 0, iocl_cushion: 0 };
+
+  // 1. Rollback previous expenses from this same shift
+  const prevExpensesForShift = db.expenses.filter(e => e.source === sourceRef);
+  const prevExpTotal = prevExpensesForShift.reduce((s, e) => s + e.amount, 0);
+  db.cashflow.cash_drawer = (db.cashflow.cash_drawer || 0) + prevExpTotal;
+
+  // Remove previous expenses from global log
+  db.expenses = db.expenses.filter(e => e.source !== sourceRef);
+
+  // 2. Append new expenses to global log and deduct from cash drawer
+  const newExpenses = window.reconExpensesList.map((exp, idx) => ({
+    id: `exp_recon_${dateStr}_${shift}_${idx}_${Date.now()}`,
+    date: dateStr,
+    category: 'Operational',
+    vendor: 'Shift Expense',
+    amount: exp.amount,
+    description: exp.description,
+    source: sourceRef
+  }));
+  db.expenses.push(...newExpenses);
+  db.cashflow.cash_drawer = Math.max(0, (db.cashflow.cash_drawer || 0) - total_expenses);
+
+  // 3. Adjust cash drawer for cash counted (idempotent delta shift)
+  const prevCashCounted = row.recon[shift] ? (row.recon[shift].cash_counted || 0) : 0;
+  db.cashflow.cash_drawer = Math.max(0, (db.cashflow.cash_drawer || 0) - prevCashCounted + counted_cash);
+
   row.recon[shift] = {
     phonepe_close: curr_pe,
     phonepe_net: net_pe,

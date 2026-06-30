@@ -479,10 +479,17 @@ function computeLedgerRow(row, wacMap) {
   const total_revenue = rev_petrol + rev_diesel;
 
   // Determine WAC rates to use (look up from wacMap if available, else use current)
-  const dateWac = (wacMap && wacMap[row.date]) || { ms: db.stock?.petrol_cost_wac ?? 0, hsd: db.stock?.diesel_cost_wac ?? 0 };
+  const fallbackWacP = (db && db.stock && typeof db.stock.petrol_cost_wac === 'number') ? db.stock.petrol_cost_wac : 0;
+  const fallbackWacD = (db && db.stock && typeof db.stock.diesel_cost_wac === 'number') ? db.stock.diesel_cost_wac : 0;
+  const rawWac = (wacMap && wacMap[row.date]) || { ms: fallbackWacP, hsd: fallbackWacD };
 
-  const cost_petrol = net_petrol_24h * (dateWac.ms ?? 0);
-  const cost_diesel = net_diesel_24h * (dateWac.hsd ?? 0);
+  const dateWac = {
+    ms: parseFloat(rawWac.ms) || fallbackWacP,
+    hsd: parseFloat(rawWac.hsd) || fallbackWacD
+  };
+
+  const cost_petrol = net_petrol_24h * (dateWac.ms || 0);
+  const cost_diesel = net_diesel_24h * (dateWac.hsd || 0);
   const total_cost = cost_petrol + cost_diesel;
 
   const profit = total_revenue - total_cost;
@@ -950,6 +957,9 @@ function recordTanker(dateStr, timeStr, loadType, customP, customD, priceP, pric
   };
 
   db.purchases.unshift(purchase);
+  if (purchase.payment_status === 'paid') {
+    db.cashflow.bank_balance = Math.max(0, (db.cashflow.bank_balance || 0) - purchase.total_cost);
+  }
   saveDB();
   SystemLogger.success('recordTanker', `Recorded tanker delivery: Petrol = ${petrolQty} L @ ₹${priceP}/L, Diesel = ${dieselQty} L @ ₹${priceD}/L. Total Cost: ₹${purchase.total_cost.toFixed(2)}`, purchase);
   showNotification("✅ Tanker delivery saved to local database and synced to Supabase! Added to Tanker purchases registry and reconciled closing stock.", "success");
@@ -999,6 +1009,7 @@ function togglePayment(purchaseId) {
   if (p.payment_status === 'unpaid') {
     p.payment_status = 'paid';
     p.paid_date = new Date().toISOString().split('T')[0];
+    db.cashflow.bank_balance = Math.max(0, (db.cashflow.bank_balance || 0) - p.total_cost);
 
     const deadline = new Date(p.deadline_date);
     const paid = new Date(p.paid_date);
@@ -1017,6 +1028,7 @@ function togglePayment(purchaseId) {
     p.payment_status = 'unpaid';
     p.paid_date = null;
     p.interest_charged = 0;
+    db.cashflow.bank_balance = (db.cashflow.bank_balance || 0) + p.total_cost;
     showNotification("✅ Payment reset to unpaid status. Synced to Supabase!", "info");
   }
 
