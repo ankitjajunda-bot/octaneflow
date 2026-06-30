@@ -340,9 +340,9 @@ async function submitEmployeeReading(session) {
     const closeInput = document.getElementById(`${prefix}-close`)?.value;
     const testsInput = document.getElementById(`${prefix}-tests`)?.value;
 
-    const open = parseFloat(openInput) || 0;
-    const close = parseFloat(closeInput) || 0;
-    const tests = parseFloat(testsInput) || 0;
+    const open = sanitizeNumber(openInput);
+    const close = sanitizeNumber(closeInput);
+    const tests = sanitizeNumber(testsInput);
 
     if ((openInput && open < 0) || (closeInput && close < 0) || (testsInput && tests < 0)) {
       return `${label} readings cannot be negative.`;
@@ -367,8 +367,12 @@ async function submitEmployeeReading(session) {
 
   const err = err1 || err2 || err3 || err4;
   if (err) {
-    showNotification(`⚠️ Validation Error: ${err}`, 'danger');
-    return;
+    if (typeof showGlobalError === 'function') {
+      showGlobalError("Validation Error: " + err);
+    } else {
+      showNotification(`⚠️ Validation Error: ${err}`, 'danger');
+    }
+    return; // Hard Block
   }
 
   // Calculate volume totals for warning analysis

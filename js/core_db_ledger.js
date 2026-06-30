@@ -3,6 +3,11 @@ function formatDateTime(iso) {
   if (!iso) return '';
   return iso.replace('T',' ').slice(0,16);
 }
+function sanitizeNumber(value, fallback = 0) {
+  if (value === null || value === undefined || value === '') return fallback;
+  const parsed = Number(value);
+  return isNaN(parsed) ? fallback : parsed;
+}
 
 
 const DEFAULT_DB = {

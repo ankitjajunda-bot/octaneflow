@@ -154,22 +154,22 @@ function validateDsrData(data) {
       });
     }
 
-    const p1_open = row.du1_p.open || 0;
-    const p1_close = row.du1_p.close_day || 0;
-    const p2_open = row.du2_p.open || 0;
-    const p2_close = row.du2_p.close_day || 0;
-    const p_tests = ((row.du1_p.tests_day || 0) + (row.du1_p.tests_night || 0) + (row.du2_p.tests_day || 0) + (row.du2_p.tests_night || 0)) * 5;
+    const p1_open = sanitizeNumber(row.du1_p?.open);
+    const p1_close = sanitizeNumber(row.du1_p?.close_day);
+    const p2_open = sanitizeNumber(row.du2_p?.open);
+    const p2_close = sanitizeNumber(row.du2_p?.close_day);
+    const p_tests = (sanitizeNumber(row.du1_p?.tests_day) + sanitizeNumber(row.du1_p?.tests_night) + sanitizeNumber(row.du2_p?.tests_day) + sanitizeNumber(row.du2_p?.tests_night)) * 5;
     const p_sales = Math.max(0, (p1_close - p1_open) + (p2_close - p2_open) - p_tests);
 
-    const d1_open = row.du1_d.open || 0;
-    const d1_close = row.du1_d.close_day || 0;
-    const d2_open = row.du2_d.open || 0;
-    const d2_close = row.du2_d.close_day || 0;
-    const d_tests = ((row.du1_d.tests_day || 0) + (row.du1_d.tests_night || 0) + (row.du2_d.tests_day || 0) + (row.du2_d.tests_night || 0)) * 5;
+    const d1_open = sanitizeNumber(row.du1_d?.open);
+    const d1_close = sanitizeNumber(row.du1_d?.close_day);
+    const d2_open = sanitizeNumber(row.du2_d?.open);
+    const d2_close = sanitizeNumber(row.du2_d?.close_day);
+    const d_tests = (sanitizeNumber(row.du1_d?.tests_day) + sanitizeNumber(row.du1_d?.tests_night) + sanitizeNumber(row.du2_d?.tests_day) + sanitizeNumber(row.du2_d?.tests_night)) * 5;
     const d_sales = Math.max(0, (d1_close - d1_open) + (d2_close - d2_open) - d_tests);
 
-    const expectedRev = p_sales * (row.prices?.petrol || 0) + d_sales * (row.prices?.diesel || 0);
-    const actualColl = row.actual_collection !== undefined ? row.actual_collection : expectedRev;
+    const expectedRev = p_sales * sanitizeNumber(row.prices?.petrol) + d_sales * sanitizeNumber(row.prices?.diesel);
+    const actualColl = sanitizeNumber(row.actual_collection, expectedRev);
     const variance = expectedRev - actualColl;
 
     let isConsecutive = false;
