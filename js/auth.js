@@ -53,7 +53,7 @@ function setSession(user) {
 }
 function clearSession() { sessionStorage.removeItem(AUTH_SESSION_KEY); }
 
-// ── Create default owner account & recover lost employees ─────────────
+// ── Create default owner account ─────────────
 async function initAuth() {
   const users = getUsers();
   let modified = false;
@@ -66,22 +66,6 @@ async function initAuth() {
       createdAt: new Date().toISOString()
     };
     modified = true;
-  }
-
-  // Auto-recover lost employees from ledger history
-  if (db && db.daily_ledger) {
-    const pinHash1234 = await hashString('1234');
-    db.daily_ledger.forEach(row => {
-      const u = row.submitted_by;
-      if (u && u !== 'system' && u !== 'owner' && !users[u]) {
-        users[u] = {
-          username: u, displayName: u.charAt(0).toUpperCase() + u.slice(1), role: 'employee',
-          pinHash: pinHash1234, active: true, deviceId: null, // Device ID null means it will ask for approval, but wait! We can bypass it if we want.
-          createdAt: new Date().toISOString()
-        };
-        modified = true;
-      }
-    });
   }
 
   if (modified) saveUsers(users);
