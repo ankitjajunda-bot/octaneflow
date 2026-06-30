@@ -752,7 +752,11 @@ function deleteEmployeeAccount(username) {
 
     const users = getUsers();
     if (!users[username]) return;
-    delete users[username];
+    
+    // Tombstone deletion to prevent sync race conditions
+    users[username].deleted = true;
+    users[username].deviceId = null; // Unbind any devices
+    
     saveUsers(users);
     showNotification(`Account @${username} deleted permanently.`, 'info');
     renderUserManagement();
@@ -811,14 +815,14 @@ async function renderPendingDeviceApprovals() {
     }
 
     const users = getUsers();
-    const allEmployees = Object.values(users).filter(u => u.role === 'employee');
-    const unapprovedEmployees = allEmployees.filter(u => !u.deviceId);
+    const employees = Object.values(users).filter(u => u.role === 'employee' && !u.deleted);
+    const unapprovedEmployees = employees.filter(u => !u.deviceId);
 
     container.innerHTML = data.map(req => {
       const info = req.entry_data || {};
       let dropdownHtml = '';
       if (unapprovedEmployees.length === 0) {
-        dropdownHtml = allEmployees.length === 0
+        dropdownHtml = employees.length === 0
           ? '<span style="color:#ef4444;font-size:0.72rem;">Add employee profile first</span>'
           : '<span style="color:#94a3b8;font-size:0.72rem;">All profiles approved (Reset one above)</span>';
       } else {

@@ -428,13 +428,22 @@ async function initSync() {
     db.purchases = cloudData.purchases || db.purchases || [];
     db.holidays = cloudData.holidays || db.holidays || [];
     
-    // Safely merge users bidirectionally so cloud sync NEVER wipes local users
+    // Safely merge users bidirectionally and respect tombstones (deleted: true)
     const localU = db.users || {};
     const cloudU = cloudData.users || {};
     const safeUsers = { ...localU, ...cloudU };
+    
+    // Ensure local-only users aren't wiped, and enforce deleted flags
     for (const k in localU) {
       if (!safeUsers[k]) safeUsers[k] = localU[k];
+      if (localU[k].deleted || (cloudU[k] && cloudU[k].deleted)) {
+        safeUsers[k].deleted = true;
+      }
     }
+    for (const k in cloudU) {
+      if (cloudU[k].deleted) safeUsers[k].deleted = true;
+    }
+    
     db.users = safeUsers;
 
     // 2. Merge pending_entries: Keep unsynced local entries, overlay cloud entries (deleting resolved ones)

@@ -88,7 +88,7 @@ async function loginUser(username, credential) {
     };
   }
 
-  if (!user) {
+  if (!user || user.deleted) {
     return { success: false, error: 'User account not found.' };
   }
 
