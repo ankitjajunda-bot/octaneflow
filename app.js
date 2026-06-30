@@ -870,9 +870,26 @@ async function hashString(str) {
 
 // ── User Store ─────────────────────────────────────────────
 function getUsers() {
-  if (db && db.users) return db.users;
-  try { return JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || '{}'); }
-  catch { return {}; }
+  let localUsers = {};
+  try { localUsers = JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || '{}'); } catch {}
+  
+  if (db && db.users) {
+    if (Object.keys(db.users).length === 0 && Object.keys(localUsers).length > 0) {
+      db.users = localUsers;
+      saveDB();
+    } else {
+      let modified = false;
+      for (const k in localUsers) {
+        if (!db.users[k]) {
+          db.users[k] = localUsers[k];
+          modified = true;
+        }
+      }
+      if (modified) saveDB();
+    }
+    return db.users;
+  }
+  return localUsers;
 }
 function saveUsers(u) {
   if (db) {
