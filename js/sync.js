@@ -309,18 +309,30 @@ async function syncPush(forceAll = false) {
     
     // 1. Push app_state (Only the owner is permitted to overwrite the master app_state)
     if (isOwner) {
-      const appStateRows = [
-        { key: 'settings', value: db.settings || {} },
-        { key: 'stock', value: db.stock || {} },
-        { key: 'price_history', value: db.price_history || [] },
-        { key: 'purchases', value: db.purchases || [] },
-        { key: 'holidays', value: db.holidays || [] },
-        { key: 'users', value: db.users || {} },
-        { key: 'cashflow', value: db.cashflow || {} }
-      ];
+      let keysToPush = db.dirty_app_state_keys || [];
+      if (forceAll) {
+        keysToPush = ['settings', 'stock', 'price_history', 'purchases', 'holidays', 'users', 'cashflow'];
+      }
       
-      const { error: stateErr } = await supabaseClient.from('app_state').upsert(appStateRows);
-      if (stateErr) throw stateErr;
+      if (keysToPush.length > 0) {
+        const uniqueKeys = [...new Set(keysToPush)];
+        const appStateRows = [];
+        uniqueKeys.forEach(k => {
+          if (k === 'settings') appStateRows.push({ key: 'settings', value: db.settings || {} });
+          else if (k === 'stock') appStateRows.push({ key: 'stock', value: db.stock || {} });
+          else if (k === 'price_history') appStateRows.push({ key: 'price_history', value: db.price_history || [] });
+          else if (k === 'purchases') appStateRows.push({ key: 'purchases', value: db.purchases || [] });
+          else if (k === 'holidays') appStateRows.push({ key: 'holidays', value: db.holidays || [] });
+          else if (k === 'users') appStateRows.push({ key: 'users', value: db.users || {} });
+          else if (k === 'cashflow') appStateRows.push({ key: 'cashflow', value: db.cashflow || {} });
+        });
+        
+        if (appStateRows.length > 0) {
+          const { error: stateErr } = await supabaseClient.from('app_state').upsert(appStateRows);
+          if (stateErr) throw stateErr;
+        }
+        db.dirty_app_state_keys = []; // Clear dirty keys upon success
+      }
     } else {
       SystemLogger.info('syncPush', 'Skipped app_state push (employee devices cannot push app_state)');
     }

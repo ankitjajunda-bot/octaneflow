@@ -644,6 +644,9 @@ function approveEntry(entryId, skipRender = false) {
   db.pending_entries[idx].reviewedAt = new Date().toISOString();
   db.pending_entries[idx]._dirty     = true;
 
+  window.markAppStateDirty('stock');
+  window.markAppStateDirty('cashflow');
+
   if (!skipRender) {
     saveDB(true);
     const successMsg = entry.submission_type === 'deposit'

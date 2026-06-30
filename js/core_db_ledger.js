@@ -263,6 +263,14 @@ function buildIndexes() {
   };
 }
 
+window.markAppStateDirty = function(key) {
+  if (!db) return;
+  db.dirty_app_state_keys = db.dirty_app_state_keys || [];
+  if (!db.dirty_app_state_keys.includes(key)) {
+    db.dirty_app_state_keys.push(key);
+  }
+};
+
 function saveDB(immediate = false) {
   prunePendingEntries();
   try {
@@ -830,6 +838,8 @@ function saveDailyReadings(data) {
 
   // Sort daily ledger chronologically descending
   db.daily_ledger.sort((a, b) => new Date(b.date) - new Date(a.date));
+  window.markAppStateDirty('stock');
+  window.markAppStateDirty('cashflow');
   saveDB();
 }
 
@@ -854,6 +864,8 @@ function deleteLedgerRow(dateStr) {
       db.deleted_ledger_dates.push(dateStr);
     }
     
+    window.markAppStateDirty('stock');
+    window.markAppStateDirty('cashflow');
     saveDB();
     showNotification(`Daily record for ${formatDate(dateStr)} deleted.`, "info");
     initApp();
@@ -959,7 +971,10 @@ function recordTanker(dateStr, timeStr, loadType, customP, customD, priceP, pric
   db.purchases.unshift(purchase);
   if (purchase.payment_status === 'paid') {
     db.cashflow.bank_balance = Math.max(0, (db.cashflow.bank_balance || 0) - purchase.total_cost);
+    window.markAppStateDirty('cashflow');
   }
+  window.markAppStateDirty('purchases');
+  window.markAppStateDirty('stock');
   saveDB();
   SystemLogger.success('recordTanker', `Recorded tanker delivery: Petrol = ${petrolQty} L @ ₹${priceP}/L, Diesel = ${dieselQty} L @ ₹${priceD}/L. Total Cost: ₹${purchase.total_cost.toFixed(2)}`, purchase);
   showNotification("✅ Tanker delivery saved to local database and synced to Supabase! Added to Tanker purchases registry and reconciled closing stock.", "success");
@@ -974,6 +989,7 @@ function updateSellingPrice(dateTimeStr, priceP, priceD) {
 
   db.prices.unshift(entry);
   db.prices.sort((a,b) => new Date(b.effective_date) - new Date(a.effective_date));
+  window.markAppStateDirty('price_history');
   saveDB();
   SystemLogger.success('updateSellingPrice', `Selling prices updated: Petrol = ₹${entry.petrol.toFixed(2)}/L, Diesel = ₹${entry.diesel.toFixed(2)}/L (Effective: ${entry.effective_date})`, entry);
   showNotification("✅ Selling prices saved to local database and synced to Supabase! Updates will apply to future DSR commission calculations.", "success");
@@ -986,12 +1002,14 @@ function addHoliday(dateStr, name) {
   }
   db.holidays.push({ date: dateStr, name });
   db.holidays.sort((a,b) => new Date(a.date) - new Date(b.date));
+  window.markAppStateDirty('holidays');
   saveDB();
   showNotification("✅ Bank holiday added to calendar database and synced to Supabase! Bank credit offset will apply to credit planning.", "success");
 }
 
 function removeHoliday(dateStr) {
   db.holidays = db.holidays.filter(h => h.date !== dateStr);
+  window.markAppStateDirty('holidays');
   saveDB();
   showNotification("✅ Holiday removed from calendar database and synced to Supabase.", "info");
 }
@@ -1010,6 +1028,7 @@ function togglePayment(purchaseId) {
     p.payment_status = 'paid';
     p.paid_date = new Date().toISOString().split('T')[0];
     db.cashflow.bank_balance = Math.max(0, (db.cashflow.bank_balance || 0) - p.total_cost);
+    window.markAppStateDirty('cashflow');
 
     const deadline = new Date(p.deadline_date);
     const paid = new Date(p.paid_date);
@@ -1029,9 +1048,11 @@ function togglePayment(purchaseId) {
     p.paid_date = null;
     p.interest_charged = 0;
     db.cashflow.bank_balance = (db.cashflow.bank_balance || 0) + p.total_cost;
+    window.markAppStateDirty('cashflow');
     showNotification("✅ Payment reset to unpaid status. Synced to Supabase!", "info");
   }
 
+  window.markAppStateDirty('purchases');
   saveDB();
   initApp();
 }
@@ -3108,6 +3129,7 @@ function renderPricing() {
 function deletePrice(index) {
   if (confirm("Are you sure you want to delete this price record? This will affect historical calculations that fell under this price window.")) {
     db.prices.splice(index, 1);
+    window.markAppStateDirty('price_history');
     saveDB();
     renderPricing();
     showNotification("Pricing record deleted.", "info");
@@ -3980,6 +4002,7 @@ document.getElementById('phonepe-settings-form').addEventListener('submit', (e) 
   db.settings.phonepe_salt_key = document.getElementById('cfg-phonepe-salt-key').value.trim();
   db.settings.phonepe_salt_index = document.getElementById('cfg-phonepe-salt-index').value.trim();
 
+  window.markAppStateDirty('settings');
   saveDB();
   showNotification("PhonePe API settings saved successfully.", "success");
   initApp();
