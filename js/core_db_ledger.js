@@ -1832,7 +1832,10 @@ function renderLedger() {
           c: computeLedgerRow(null, wacMap)
         };
       }
-      const prevRow = index + 1 < db.daily_ledger.length ? db.daily_ledger[index + 1] : null;
+      const d = new Date(row.date + 'T12:00:00');
+      d.setDate(d.getDate() - 1);
+      const prevDateStr = d.toISOString().split('T')[0];
+      const prevRow = db.daily_ledger.find(r => r.date === prevDateStr);
       const isPriceChange = prevRow && row.prices && prevRow.prices &&
         (Number(row.prices.petrol || 0) !== Number(prevRow.prices.petrol || 0) || Number(row.prices.diesel || 0) !== Number(prevRow.prices.diesel || 0));
 
