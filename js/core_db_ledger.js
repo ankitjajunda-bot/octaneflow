@@ -99,30 +99,53 @@ function loadDB() {
         }
       }
 
-      // Sanitize fields against NaN / corrupt inputs
-      db.stock.petrol = Number(db.stock.petrol);
-      if (isNaN(db.stock.petrol)) db.stock.petrol = DEFAULT_DB.stock.petrol;
+      // --- UNIVERSAL DATA SANITIZATION SCRUBBER ---
+      const safeNum = (val) => {
+        const n = parseFloat(val);
+        return isNaN(n) ? 0 : n;
+      };
 
-      db.stock.diesel = Number(db.stock.diesel);
-      if (isNaN(db.stock.diesel)) db.stock.diesel = DEFAULT_DB.stock.diesel;
+      db.stock.petrol = safeNum(db.stock.petrol);
+      db.stock.diesel = safeNum(db.stock.diesel);
+      db.stock.petrol_cost_wac = safeNum(db.stock.petrol_cost_wac);
+      db.stock.diesel_cost_wac = safeNum(db.stock.diesel_cost_wac);
+      
+      db.cashflow.bank_balance = safeNum(db.cashflow.bank_balance);
+      db.cashflow.phonepe_balance = safeNum(db.cashflow.phonepe_balance);
+      db.cashflow.cash_drawer = safeNum(db.cashflow.cash_drawer);
+      db.cashflow.iocl_cushion = safeNum(db.cashflow.iocl_cushion);
 
-      db.stock.petrol_cost_wac = Number(db.stock.petrol_cost_wac);
-      if (isNaN(db.stock.petrol_cost_wac)) db.stock.petrol_cost_wac = DEFAULT_DB.stock.petrol_cost_wac;
-
-      db.stock.diesel_cost_wac = Number(db.stock.diesel_cost_wac);
-      if (isNaN(db.stock.diesel_cost_wac)) db.stock.diesel_cost_wac = DEFAULT_DB.stock.diesel_cost_wac;
-
-      db.cashflow.bank_balance = Number(db.cashflow.bank_balance);
-      if (isNaN(db.cashflow.bank_balance)) db.cashflow.bank_balance = DEFAULT_DB.cashflow.bank_balance;
-
-      db.cashflow.phonepe_balance = Number(db.cashflow.phonepe_balance);
-      if (isNaN(db.cashflow.phonepe_balance)) db.cashflow.phonepe_balance = DEFAULT_DB.cashflow.phonepe_balance;
-
-      db.cashflow.cash_drawer = Number(db.cashflow.cash_drawer);
-      if (isNaN(db.cashflow.cash_drawer)) db.cashflow.cash_drawer = DEFAULT_DB.cashflow.cash_drawer;
-
-      db.cashflow.iocl_cushion = Number(db.cashflow.iocl_cushion);
-      if (isNaN(db.cashflow.iocl_cushion)) db.cashflow.iocl_cushion = DEFAULT_DB.cashflow.iocl_cushion;
+      if (db.daily_ledger && Array.isArray(db.daily_ledger)) {
+        db.daily_ledger.forEach(row => {
+          if (row.prices) {
+            row.prices.petrol = safeNum(row.prices.petrol);
+            row.prices.diesel = safeNum(row.prices.diesel);
+          }
+          ['du1_p', 'du1_d', 'du2_p', 'du2_d'].forEach(n => {
+            if (row[n]) {
+              row[n].open = safeNum(row[n].open);
+              row[n].close_day = safeNum(row[n].close_day);
+              row[n].close_night = safeNum(row[n].close_night);
+              row[n].tests_day = safeNum(row[n].tests_day);
+              row[n].tests_night = safeNum(row[n].tests_night);
+            }
+          });
+          if (row.recon) {
+            row.recon.cash = safeNum(row.recon.cash);
+            row.recon.phonepe = safeNum(row.recon.phonepe);
+            row.recon.credit = safeNum(row.recon.credit);
+            row.recon.total_collection = safeNum(row.recon.total_collection);
+          }
+        });
+      }
+      
+      if (db.prices && Array.isArray(db.prices)) {
+        db.prices.forEach(p => {
+          p.petrol = safeNum(p.petrol);
+          p.diesel = safeNum(p.diesel);
+        });
+      }
+      // ---------------------------------------------
 
       let dbModified = false;
       

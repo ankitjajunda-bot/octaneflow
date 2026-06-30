@@ -256,8 +256,8 @@ function renderEmployeeView(session) {
 }
 
 async function submitEmployeeReading(session) {
-  const val = id => parseFloat(document.getElementById(id)?.value || 0) || 0;
-  const int = id => parseInt(document.getElementById(id)?.value  || 0) || 0;
+  const val = id => sanitizeNumber(document.getElementById(id)?.value);
+  const int = id => Math.floor(sanitizeNumber(document.getElementById(id)?.value));
 
   const dayStr = document.getElementById('emp-date-day')?.value || '';
   const monthStr = document.getElementById('emp-date-month')?.value || '';
