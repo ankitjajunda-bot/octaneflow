@@ -7,9 +7,18 @@ window.showForgotPasswordModal = function(e) {
   if (overlay) overlay.style.display = 'flex';
   
   // Reset elements
-  document.getElementById('otp-step-1').style.display = 'flex';
-  document.getElementById('otp-step-2').style.display = 'none';
-  document.getElementById('otp-step-3').style.display = 'none';
+  const step1 = document.getElementById('otp-step-1');
+  const step2 = document.getElementById('otp-step-2');
+  const step3 = document.getElementById('otp-step-3');
+  
+  if (!step1 || !step2 || !step3) {
+    alert("Update Required: Please completely close and reopen the app, or do a Hard Refresh, to use the Password Reset feature.");
+    return;
+  }
+  
+  step1.style.display = 'flex';
+  step2.style.display = 'none';
+  step3.style.display = 'none';
   
   // Clear inputs
   document.getElementById('otp-reset-username').value = '';
@@ -33,8 +42,10 @@ window.closeForgotPasswordModal = function() {
 };
 
 window.backToStep1 = function() {
-  document.getElementById('otp-step-1').style.display = 'flex';
-  document.getElementById('otp-step-2').style.display = 'none';
+  const step1 = document.getElementById('otp-step-1');
+  const step2 = document.getElementById('otp-step-2');
+  if (step1) step1.style.display = 'flex';
+  if (step2) step2.style.display = 'none';
   if (otpTimerInterval) clearInterval(otpTimerInterval);
 };
 
@@ -87,8 +98,10 @@ window.sendOtpRequest = function() {
   window.open(`https://api.whatsapp.com/send?phone=91${phone}&text=${message}`, '_blank');
   
   // Switch to Step 2
-  document.getElementById('otp-step-1').style.display = 'none';
-  document.getElementById('otp-step-2').style.display = 'flex';
+  const step1 = document.getElementById('otp-step-1');
+  const step2 = document.getElementById('otp-step-2');
+  if (step1) step1.style.display = 'none';
+  if (step2) step2.style.display = 'flex';
   
   // Start countdown timer
   let secondsLeft = 300;
@@ -134,8 +147,10 @@ window.verifyOtpRequest = function() {
   if (otpTimerInterval) clearInterval(otpTimerInterval);
   
   // Switch to Step 3
-  document.getElementById('otp-step-2').style.display = 'none';
-  document.getElementById('otp-step-3').style.display = 'flex';
+  const step2 = document.getElementById('otp-step-2');
+  const step3 = document.getElementById('otp-step-3');
+  if (step2) step2.style.display = 'none';
+  if (step3) step3.style.display = 'flex';
 };
 
 window.submitNewPassword = async function() {
