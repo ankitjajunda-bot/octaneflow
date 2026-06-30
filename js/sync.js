@@ -436,12 +436,27 @@ async function initSync() {
     // Ensure local-only users aren't wiped, and enforce deleted flags
     for (const k in localU) {
       if (!safeUsers[k]) safeUsers[k] = localU[k];
-      if (localU[k].deleted || (cloudU[k] && cloudU[k].deleted)) {
-        safeUsers[k].deleted = true;
+      
+      const localDeleted = localU[k].deleted;
+      const cloudDeleted = cloudU[k] && cloudU[k].deleted;
+      
+      if (localDeleted || cloudDeleted) {
+        if (localDeleted) {
+          safeUsers[k].deleted = true;
+        } else if (cloudDeleted) {
+          // If cloud says deleted, but local was recreated AFTER cloud's creation, do NOT resurrect tombstone
+          const localT = localU[k].createdAt ? new Date(localU[k].createdAt).getTime() : 0;
+          const cloudT = cloudU[k].createdAt ? new Date(cloudU[k].createdAt).getTime() : 0;
+          if (localT > cloudT) {
+             safeUsers[k].deleted = false; // Local is a fresh recreation, ignore old cloud tombstone
+          } else {
+             safeUsers[k].deleted = true;
+          }
+        }
       }
     }
     for (const k in cloudU) {
-      if (cloudU[k].deleted) safeUsers[k].deleted = true;
+      if (cloudU[k].deleted && !localU[k]) safeUsers[k].deleted = true;
     }
     
     db.users = safeUsers;
