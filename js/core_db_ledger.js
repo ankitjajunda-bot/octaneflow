@@ -124,19 +124,29 @@ function loadDB() {
       db.cashflow.iocl_cushion = Number(db.cashflow.iocl_cushion);
       if (isNaN(db.cashflow.iocl_cushion)) db.cashflow.iocl_cushion = DEFAULT_DB.cashflow.iocl_cushion;
 
-      if (!db.prices) db.prices = [...DEFAULT_DB.prices];
-      else {
+      let dbModified = false;
+      
+      if (!db.prices) {
+        db.prices = [...DEFAULT_DB.prices];
+        dbModified = true;
+      } else {
         let p = db.prices.find(x => x.effective_date === "2026-06-01T08:00");
-        if (p && p.petrol === 103.50 && p.diesel === 90.80) {
+        if (p && (p.petrol === 103.50 || p.diesel === 90.80)) {
           p.petrol = 113.37;
           p.diesel = 98.41;
+          dbModified = true;
         }
       }
       
-      if (!db.holidays) db.holidays = [...DEFAULT_DB.holidays];
-      if (!db.daily_ledger) db.daily_ledger = [];
+      if (!db.holidays) {
+        db.holidays = [...DEFAULT_DB.holidays];
+        dbModified = true;
+      }
+      if (!db.daily_ledger) {
+        db.daily_ledger = [];
+        dbModified = true;
+      }
 
-      let dbModified = false;
       db.daily_ledger.forEach(row => {
         row.recon = row.recon || {};
         const alignTests = (nozzle) => {
