@@ -131,7 +131,10 @@ function loadDB() {
         dbModified = true;
       } else {
         let p = db.prices.find(x => x.effective_date === "2026-06-01T08:00");
-        if (p && (p.petrol === 103.50 || p.diesel === 90.80)) {
+        if (!p) {
+          db.prices.push({ effective_date: "2026-06-01T08:00", petrol: 113.37, diesel: 98.41 });
+          dbModified = true;
+        } else if (Number(p.petrol) !== 113.37 || Number(p.diesel) !== 98.41) {
           p.petrol = 113.37;
           p.diesel = 98.41;
           dbModified = true;
