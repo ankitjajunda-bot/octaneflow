@@ -1778,7 +1778,7 @@ function renderLedger() {
       }
       const prevRow = index + 1 < db.daily_ledger.length ? db.daily_ledger[index + 1] : null;
       const isPriceChange = prevRow && row.prices && prevRow.prices &&
-        ((row.prices.petrol || 0) !== (prevRow.prices.petrol || 0) || (row.prices.diesel || 0) !== (prevRow.prices.diesel || 0));
+        (Number(row.prices.petrol || 0) !== Number(prevRow.prices.petrol || 0) || Number(row.prices.diesel || 0) !== Number(prevRow.prices.diesel || 0));
 
       const c = computeLedgerRow(row, wacMap);
       const isNoSalePetrol = (c.totals?.net_24h?.petrol || 0) <= 0;
