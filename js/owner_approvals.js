@@ -318,21 +318,6 @@ function renderApprovalsPanel() {
               const du2_d_tests = shift === 'day' ? (ed.du2_d?.tests_day || 0) : (ed.du2_d?.tests_night || 0);
               const du2_d_sale = calculateNozzleSale(ed.du2_d, shift);
 
-              // Financial Math
-              const prices = getPricesAt(ed.date);
-              const totalPetrolSales = du1_p_sale + du2_p_sale;
-              const totalDieselSales = du1_d_sale + du2_d_sale;
-              const estimatedRevenue = (totalPetrolSales * prices.petrol) + (totalDieselSales * prices.diesel);
-              const expectedCash = Math.max(0, estimatedRevenue - (ed.card_sales || 0));
-              const variance = (ed.cash_sales || 0) - expectedCash;
-
-              const varianceColor = variance < -100 ? 'rgba(239, 68, 68, 0.4)' : variance > 100 ? 'rgba(59, 130, 246, 0.4)' : 'rgba(255,255,255,0.05)';
-              const varianceTextColor = variance < -100 ? '#ef4444' : variance > 100 ? '#60a5fa' : '#22c55e';
-              const varianceSign = variance > 0 ? '+' : '';
-
-              const typeLabel = entry.submission_type === 'opening' ? '🌅 Opening' : entry.submission_type === 'snapshot' ? '📸 Snapshot' : '🏁 Closing';
-              const isSnapshot = entry.submission_type === 'snapshot';
-
               // PhonePe display
               const ppOpen = ed.phonepe_opening || 0;
               const ppMid  = ed.phonepe_midnight || 0;
@@ -341,6 +326,21 @@ function renderApprovalsPanel() {
               const ppFormula = (shift==='night' && ppMid>0)
                 ? `(₹${ppMid.toLocaleString('en-IN')}−₹${ppOpen.toLocaleString('en-IN')})+₹${ppClose.toLocaleString('en-IN')}`
                 : `₹${ppClose.toLocaleString('en-IN')}−₹${ppOpen.toLocaleString('en-IN')}`;
+
+              // Financial Math
+              const prices = getPricesAt(ed.date);
+              const totalPetrolSales = du1_p_sale + du2_p_sale;
+              const totalDieselSales = du1_d_sale + du2_d_sale;
+              const estimatedRevenue = (totalPetrolSales * prices.petrol) + (totalDieselSales * prices.diesel);
+              const expectedCash = Math.max(0, estimatedRevenue - (ed.card_sales || 0) - ppColl);
+              const variance = (ed.cash_sales || 0) - expectedCash;
+
+              const varianceColor = variance < -100 ? 'rgba(239, 68, 68, 0.4)' : variance > 100 ? 'rgba(59, 130, 246, 0.4)' : 'rgba(255,255,255,0.05)';
+              const varianceTextColor = variance < -100 ? '#ef4444' : variance > 100 ? '#60a5fa' : '#22c55e';
+              const varianceSign = variance > 0 ? '+' : '';
+
+              const typeLabel = entry.submission_type === 'opening' ? '🌅 Opening' : entry.submission_type === 'snapshot' ? '📸 Snapshot' : '🏁 Closing';
+              const isSnapshot = entry.submission_type === 'snapshot';
 
               return `
                 <div style="background:#0f111a; border:1px solid ${isSnapshot ? '#1d4ed8' : '#1e293b'}; border-left: 3px solid ${isSnapshot ? '#3b82f6' : '#334155'}; border-radius:0.75rem; padding:1rem; display:flex; gap:0.75rem;">

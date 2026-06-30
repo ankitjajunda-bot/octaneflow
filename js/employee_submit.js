@@ -407,7 +407,19 @@ async function submitEmployeeReading(session) {
   const estimatedRevenue = (totalPetrolLiters * prices.petrol) + (totalDieselLiters * prices.diesel);
   const cashEntered = val('emp-cash');
   const cardEntered = val('emp-card');
-  const totalCollections = cashEntered + cardEntered;
+  
+  // PhonePe delta model
+  const ppOpen     = val('emp-pp-open');
+  const ppMidnight = shift === 'night' ? val('emp-pp-midnight') : 0;
+  const ppClose    = val('emp-pp-close');
+  let ppCollection = 0;
+  if (shift === 'night' && ppMidnight > 0) {
+    ppCollection = (ppMidnight - ppOpen) + ppClose;
+  } else {
+    ppCollection = Math.max(0, ppClose - ppOpen);
+  }
+
+  const totalCollections = cashEntered + cardEntered + ppCollection;
 
   if (estimatedRevenue > 0) {
     const discrepancy = totalCollections - estimatedRevenue;
@@ -448,17 +460,6 @@ async function submitEmployeeReading(session) {
       tests_night: s === 'night' ? testsVal : 0,
     };
   };
-
-  // PhonePe delta model
-  const ppOpen     = val('emp-pp-open');
-  const ppMidnight = shift === 'night' ? val('emp-pp-midnight') : 0;
-  const ppClose    = val('emp-pp-close');
-  let ppCollection = 0;
-  if (shift === 'night' && ppMidnight > 0) {
-    ppCollection = (ppMidnight - ppOpen) + ppClose;
-  } else {
-    ppCollection = ppClose - ppOpen;
-  }
 
   // Manual price flag
   const manualPrices = {};
