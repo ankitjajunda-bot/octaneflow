@@ -38,8 +38,8 @@ const DEFAULT_DB = {
   prices: [
     {
       effective_date: "2026-06-01T08:00",
-      petrol: 103.50,
-      diesel: 90.80
+      petrol: 113.37,
+      diesel: 98.41
     }
   ],
   holidays: [
@@ -125,6 +125,14 @@ function loadDB() {
       if (isNaN(db.cashflow.iocl_cushion)) db.cashflow.iocl_cushion = DEFAULT_DB.cashflow.iocl_cushion;
 
       if (!db.prices) db.prices = [...DEFAULT_DB.prices];
+      else {
+        let p = db.prices.find(x => x.effective_date === "2026-06-01T08:00");
+        if (p && p.petrol === 103.50 && p.diesel === 90.80) {
+          p.petrol = 113.37;
+          p.diesel = 98.41;
+        }
+      }
+      
       if (!db.holidays) db.holidays = [...DEFAULT_DB.holidays];
       if (!db.daily_ledger) db.daily_ledger = [];
 

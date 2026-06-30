@@ -329,9 +329,13 @@ function renderApprovalsPanel() {
 
               // Financial Math
               const prices = getPricesAt(ed.date);
-              const totalPetrolSales = du1_p_sale + du2_p_sale;
-              const totalDieselSales = du1_d_sale + du2_d_sale;
-              const estimatedRevenue = (totalPetrolSales * prices.petrol) + (totalDieselSales * prices.diesel);
+              const p_price_1 = ed.manual_prices?.du1p || prices.petrol;
+              const p_price_2 = ed.manual_prices?.du2p || prices.petrol;
+              const d_price_1 = ed.manual_prices?.du1d || prices.diesel;
+              const d_price_2 = ed.manual_prices?.du2d || prices.diesel;
+              
+              const estimatedRevenue = (du1_p_sale * p_price_1) + (du2_p_sale * p_price_2) + 
+                                       (du1_d_sale * d_price_1) + (du2_d_sale * d_price_2);
               const expectedCash = Math.max(0, estimatedRevenue - (ed.card_sales || 0) - ppColl);
               const variance = (ed.cash_sales || 0) - expectedCash;
 
@@ -582,6 +586,16 @@ function approveEntry(entryId, skipRender = false) {
     row.recon.cash = (row.recon.cash || 0) + (ed.cash_sales || 0);
     row.recon.phonepe = (row.recon.phonepe || 0) + (ed.card_sales || 0);
     row.recon.total_collection = row.recon.cash + row.recon.phonepe + (row.recon.credit || 0);
+
+    // Apply manual price overrides to the daily ledger if present
+    if (ed.manual_prices) {
+      if (!row.prices) row.prices = { petrol: 0, diesel: 0 };
+      if (ed.manual_prices.du1p) row.prices.petrol = ed.manual_prices.du1p;
+      else if (ed.manual_prices.du2p) row.prices.petrol = ed.manual_prices.du2p;
+      
+      if (ed.manual_prices.du1d) row.prices.diesel = ed.manual_prices.du1d;
+      else if (ed.manual_prices.du2d) row.prices.diesel = ed.manual_prices.du2d;
+    }
 
     if (ed.remarks) {
       row.recon.remarks = row.recon.remarks
