@@ -1,0 +1,32 @@
+{
+  "project": "RKSK Fuel Station Manager",
+  "last_updated": "2026-06-28T18:02:00Z",
+  "active_driver": "ag2",
+  "verification_challenge": {
+    "question": "What is the owner's favorite fruit?",
+    "expected_answer": "stone"
+  },
+  "current_state": {
+    "completed_milestones": [
+      "Ingested and parsed June 2026 sales and totalizer data",
+      "Corrected June 8, 9, and 14 typos and prefixes in June sequence",
+      "Workspace folder cleanup, consolidation to data/, and scratch scripts purge",
+      "Spreadsheet Checker exceptions-only view filtering & row Submit buttons",
+      "Corrected physical sheet totalizer readings for March 10, April 2/3/4/5, April 14, April 24, May 9, May 12, June 5",
+      "Recursively propagated totalizer delta offsets forward to resolve all continuity gaps"
+    ],
+    "in_progress": [],
+    "next_steps": [
+      "Plan 23: Sync shift expenses (Kharcha) to global cash book as Cash Outflow",
+      "Plan 23: Auto-deduct tanker payments from bank balance (SBI/HDFC)",
+      "Plan 23: Add payment sources (Cash, Bank) to manual expense forms",
+      "Plan 23: Auto-deposit shift collections into cash book / bank ledgers"
+    ]
+  },
+  "architecture_decisions": {
+    "fuel_classification": "Price-based: Petrol is rate > 105, Diesel is rate < 100",
+    "totalizer_mapping": "DU1 Petrol (~1.5M), DU1 Diesel (~1.24M), DU2 Petrol (~45k), DU2 Diesel (~1.23M). Sorting by opening totalizer descending maps DU1 (larger) and DU2 (smaller).",
+    "sync_credentials": "Gist credentials must be loaded from localStorage under 'octaneflow_sync_cfg' (never hardcoded in app.js)",
+    "draft_pruning": "Prune draft entries once they match verified production dates, keeping local storage clean."
+  }
+}

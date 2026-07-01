@@ -1,0 +1,2789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ram Kisan Sewa Kendra, Chandaroon</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+  <!-- Global Error Boundary -->
+  <style>
+    #global-error-boundary {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; z-index: 99999;
+      background: #ef4444; color: white; padding: 1rem; font-family: monospace;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+    #global-error-boundary h3 { margin: 0 0 0.5rem 0; font-size: 1.2rem; }
+    #global-error-boundary p { margin: 0; font-size: 0.9rem; white-space: pre-wrap; }
+    #global-error-close { position: absolute; right: 1rem; top: 1rem; background: rgba(0,0,0,0.2); border: none; color: white; padding: 0.2rem 0.5rem; cursor: pointer; border-radius: 4px; }
+  </style>
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      showGlobalError("JavaScript Error: " + message + "\nLine: " + lineno + "\nFile: " + source);
+    };
+    window.onunhandledrejection = function(event) {
+      showGlobalError("Unhandled Promise Rejection: " + (event.reason ? event.reason.message || event.reason : "Unknown error"));
+    };
+    function showGlobalError(msg) {
+      var boundary = document.getElementById('global-error-boundary');
+      if (boundary) {
+        document.getElementById('global-error-text').textContent = msg;
+        boundary.style.display = 'block';
+      }
+    }
+  </script>
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- PWA Meta -->
+  <meta name="theme-color" content="#f97316">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RKSK Chandaroon">
+  <meta name="application-name" content="RKSK Chandaroon">
+  <meta name="description" content="Fuel station operations dashboard — sales, stock, P&amp;L, tanker forecast">
+
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="styles.css?v=57">
+</head>
+<body>
+  <!-- Global Error Boundary UI -->
+  <div id="global-error-boundary">
+    <button id="global-error-close" onclick="document.getElementById('global-error-boundary').style.display='none'">Dismiss</button>
+    <h3>⚠️ Application Error</h3>
+    <p id="global-error-text"></p>
+  </div>
+  <!-- Login Overlay — shown until authenticated -->
+  <div id="login-overlay" style="display:flex;position:fixed;inset:0;z-index:10000;background:linear-gradient(135deg,#0f1117 0%,#1a1f2e 50%,#0f1117 100%);align-items:center;justify-content:center;">
+    <div style="width:100%;max-width:420px;padding:2rem;">
+      <div style="text-align:center;margin-bottom:2.5rem;">
+        <div style="width:72px;height:72px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:1.25rem;display:inline-flex;align-items:center;justify-content:center;margin-bottom:1rem;box-shadow:0 0 40px rgba(249,115,22,0.35);">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        </div>
+        <h1 style="font-size:1.5rem;font-weight:800;color:#f8fafc;margin:0;line-height:1.2;">Ram Kisan Sewa Kendra<br><small style="font-size:1rem;color:#f97316;font-weight:600;">Chandaroon</small></h1>
+        <p style="color:#64748b;margin:0.35rem 0 0;">Fuel Station Management</p>
+      </div>
+      <form id="login-form" style="display:flex;flex-direction:column;gap:1rem;">
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:#94a3b8;margin-bottom:0.4rem;">Username</label>
+          <input id="login-username" type="text" autocomplete="username" placeholder="owner / employee name" required
+            style="width:100%;box-sizing:border-box;background:#1e293b;border:1px solid #334155;color:#f8fafc;border-radius:0.75rem;padding:0.8rem 1rem;font-size:1rem;outline:none;">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:#94a3b8;margin-bottom:0.4rem;">Password / PIN</label>
+          <input id="login-password" type="password" autocomplete="current-password" placeholder="Password or 4-6 digit PIN" required
+            style="width:100%;box-sizing:border-box;background:#1e293b;border:1px solid #334155;color:#f8fafc;border-radius:0.75rem;padding:0.8rem 1rem;font-size:1rem;outline:none;">
+        </div>
+        <div id="login-error" style="color:#ef4444;font-size:0.82rem;min-height:1.2rem;white-space:pre-line;"></div>
+        <button id="login-btn" type="submit"
+          style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:0.75rem;padding:0.9rem;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity 0.2s;">
+          Log In
+        </button>
+        <div style="display:flex;justify-content:space-between;margin-top:0.75rem;font-size:0.8rem;">
+          <a href="#" onclick="showForgotPasswordModal(event)" style="color:#64748b;text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='#f97316'" onmouseout="this.style.color='#64748b'">Forgot Password?</a>
+          <a href="#" onclick="showDeviceRequestForm(event)" style="color:#f97316;text-decoration:none;font-weight:600;transition:color 0.2s;">Register Device</a>
+        </div>
+      </form>
+
+      <!-- Device Request Form (initially hidden) -->
+      <form id="device-request-form" style="display:none;flex-direction:column;gap:1rem;">
+        <h2 style="font-size:1.1rem;color:#f8fafc;font-weight:700;margin:0 0 0.5rem;text-align:center;">📱 Device Access Request</h2>
+        <p style="color:#94a3b8;font-size:0.8rem;margin:0 0 0.5rem;line-height:1.4;text-align:center;">
+          Your device is not approved yet. Please fill in your details to generate a registration code for the owner.
+        </p>
+        
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:#94a3b8;margin-bottom:0.4rem;">Full Name</label>
+          <input id="req-emp-name" type="text" placeholder="e.g. Ramesh Kumar" required
+            style="width:100%;box-sizing:border-box;background:#1e293b;border:1px solid #334155;color:#f8fafc;border-radius:0.75rem;padding:0.8rem 1rem;font-size:1rem;outline:none;">
+        </div>
+        
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:#94a3b8;margin-bottom:0.4rem;">Username</label>
+          <input id="req-emp-username" type="text" placeholder="e.g. ramesh" required
+            style="width:100%;box-sizing:border-box;background:#1e293b;border:1px solid #334155;color:#f8fafc;border-radius:0.75rem;padding:0.8rem 1rem;font-size:1rem;outline:none;">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:#94a3b8;margin-bottom:0.4rem;">Phone Number / Handle</label>
+          <input id="req-emp-phone" type="text" placeholder="e.g. 9876543210" required
+            style="width:100%;box-sizing:border-box;background:#1e293b;border:1px solid #334155;color:#f8fafc;border-radius:0.75rem;padding:0.8rem 1rem;font-size:1rem;outline:none;">
+        </div>
+        
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:#94a3b8;margin-bottom:0.4rem;">Your Device ID (auto-generated)</label>
+          <input id="req-emp-device-id" type="text" readonly
+            style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #1e293b;color:#64748b;border-radius:0.75rem;padding:0.8rem 1rem;font-size:0.85rem;font-family:monospace;outline:none;">
+        </div>
+
+        <button id="gen-req-code-btn" type="submit"
+          style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:0.75rem;padding:0.9rem;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity 0.2s;">
+          Generate Registration Code
+        </button>
+
+        <a href="#" onclick="showLoginForm(event)" style="display:block;text-align:center;color:#64748b;font-size:0.8rem;margin-top:0.5rem;text-decoration:none;transition:color 0.2s;">Back to Log In</a>
+      </form>
+      
+      <!-- Registration Success Panel (initially hidden) -->
+      <div id="registration-success-panel" style="display:none;flex-direction:column;gap:1rem;text-align:center;">
+        <h2 style="font-size:1.2rem;color:#22c55e;font-weight:700;margin:0 0 0.5rem;">⏳ Request Generated!</h2>
+        <p style="color:#94a3b8;font-size:0.85rem;margin:0;line-height:1.4;">
+          Your registration code has been copied to your clipboard. Please send it to the owner via WhatsApp to approve your device.
+        </p>
+        
+        <div style="background:#1e293b;border:1px solid #334155;border-radius:0.75rem;padding:1rem;font-size:0.75rem;font-family:monospace;color:#f8fafc;word-break:break-all;max-height:120px;overflow-y:auto;" id="req-code-display-box">
+          <!-- code displays here -->
+        </div>
+
+        <button onclick="shareRequestOnWhatsApp()" style="background:#22c55e;color:#fff;border:none;border-radius:0.75rem;padding:0.9rem;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;width:100%;">
+          💬 Send Code via WhatsApp
+        </button>
+        <button onclick="copyReqCodeAgain()" style="background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:0.75rem;padding:0.6rem;font-size:0.85rem;cursor:pointer;width:100%;">
+          📋 Copy Code Again
+        </button>
+        <a href="#" onclick="showLoginForm(event)" style="display:block;text-align:center;color:#64748b;font-size:0.8rem;margin-top:0.5rem;text-decoration:none;">Back to Log In</a>
+      </div>
+
+      <p id="owner-login-hint" style="text-align:center;color:#475569;font-size:0.72rem;margin-top:1.5rem;">Owner default: username <strong>owner</strong> · password <strong>OctaneFlow@2026</strong><br>Change in Settings after first login.</p>
+    </div>
+  </div>
+
+  <!-- Employee Shell — shown instead of main app for employees -->
+  <div id="employee-shell" style="display:none;flex-direction:column;min-height:100vh;background:#0f1117;">
+    <!-- Employee Header -->
+    <header style="background:#1e293b;border-bottom:1px solid #334155;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:0.6rem;display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:700;color:#f8fafc;font-size:0.95rem;">👷 <span id="emp-user-name">Employee</span></div>
+          <div style="font-size:0.7rem;color:#64748b;">RKSK Chandaroon · Submit Readings</div>
+        </div>
+      </div>
+      <button onclick="logoutUser()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:0.5rem;padding:0.4rem 0.85rem;font-size:0.8rem;font-weight:600;cursor:pointer;">Logout</button>
+    </header>
+    <!-- Employee Body -->
+    <div style="padding:1.25rem;max-width:700px;margin:0 auto;width:100%;box-sizing:border-box;">
+      <!-- Submit Form -->
+      <div class="panel" style="margin-bottom:1.5rem;">
+        <div class="panel-header"><h2 class="panel-title">📋 Submit Shift Reading</h2></div>
+        <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;">
+          
+          <!-- Submission Type Selector -->
+          <div class="form-group" style="margin: 0;">
+            <label for="emp-submission-type">Submission Type</label>
+            <select id="emp-submission-type" onchange="updateEmpOpeningHints()" style="background:#1e293b;color:#f8fafc;border:1px solid #334155;border-radius:0.5rem;padding:0.6rem;width:100%;box-sizing:border-box;font-size:0.85rem;font-weight:600;">
+              <option value="closing">🏁 Closing Reading (Shift End)</option>
+              <option value="snapshot">📸 Mid-Shift Snapshot (Live Sale check)</option>
+              <option value="opening">🌅 Opening Reading (Shift Start)</option>
+              <option value="deposit">💰 Office Cash Deposit (Mid-Shift)</option>
+            </select>
+          </div>
+
+          <div class="emp-nozzle-grid">
+            <div class="emp-form-group">
+              <label>Date</label>
+              <div style="display:flex;gap:0.35rem;">
+                <select id="emp-date-day" style="flex:1;background:#1e293b;color:#f8fafc;border:1px solid #334155;border-radius:0.5rem;padding:0.6rem;font-size:0.85rem;width:100%;box-sizing:border-box;"></select>
+                <select id="emp-date-month" style="flex:1.4;background:#1e293b;color:#f8fafc;border:1px solid #334155;border-radius:0.5rem;padding:0.6rem;font-size:0.85rem;width:100%;box-sizing:border-box;"></select>
+                <select id="emp-date-year" style="flex:1.2;background:#1e293b;color:#f8fafc;border:1px solid #334155;border-radius:0.5rem;padding:0.6rem;font-size:0.85rem;width:100%;box-sizing:border-box;"></select>
+              </div>
+            </div>
+            <div class="emp-form-group">
+              <label for="emp-shift">Shift</label>
+              <select id="emp-shift" class="emp-mobile-input" style="background:#1e293b;color:#f8fafc;border:1px solid #334155;border-radius:0.5rem;">
+                <option value="day">☀️ Day Shift</option>
+                <option value="night">🌙 Night Shift</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Nozzle Readings -->
+          <div id="emp-nozzle-section" style="display:flex;flex-direction:column;gap:1.25rem;">
+
+            <!-- Dispensing Unit 1 (DU1) -->
+            <div style="background:rgba(255,255,255,0.02);border:1px solid #334155;border-radius:0.75rem;padding:1.25rem;display:flex;flex-direction:column;gap:1rem;">
+              <h3 style="font-weight:800;color:#f8fafc;font-size:0.95rem;margin:0;border-bottom:1px solid #334155;padding-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--primary)"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2z"/></svg>
+                Dispensing Unit 1 (DU1)
+              </h3>
+              
+              <!-- Petrol DU1-P Nozzle (E2) -->
+              <div>
+                <div style="font-weight:700;color:#f8fafc;font-size:0.8rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;gap:0.4rem;">
+                  <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:8px;height:8px;background:#ef4444;border-radius:50%;display:inline-block;"></span> Petrol DU1-P Nozzle (E2)</span>
+                  <input type="number" id="calc-du1p-manual-price" step="0.01" placeholder="Override Price" style="background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:0.25rem 0.5rem;border-radius:0.4rem;font-size:0.7rem;width:80px;height:24px;text-align:right;" title="Leave blank to use system default selling price" oninput="updateEmpLiveCalc()">
+                </div>
+                <div class="emp-nozzle-grid">
+                  <div class="emp-form-group">
+                    <label class="emp-label">Opening</label>
+                    <input type="number" class="emp-mobile-input" id="emp-du1p-open" step="0.01" placeholder="0.00" inputmode="decimal" >
+                    <span id="hint-du1p" style="font-size:0.65rem;color:#64748b;display:none;margin-top:0.15rem;"></span>
+                  </div>
+                  <div class="emp-form-group"><label class="emp-label">Closing</label><input type="number" class="emp-mobile-input" id="emp-du1p-close" step="0.01" placeholder="0.00" inputmode="decimal" ></div>
+                  <div class="emp-form-group"><label class="emp-label">Testing (Ltr)</label><input type="number" class="emp-mobile-input" id="emp-du1p-tests" placeholder="0" inputmode="decimal" ></div>
+                </div>
+                <!-- DU1 Petrol Preview Calc -->
+                <div id="calc-du1p" style="display:none;flex-direction:column;gap:0.25rem;background:rgba(239,68,68,0.03);border:1px dashed rgba(239,68,68,0.2);border-radius:0.5rem;padding:0.5rem;margin-top:0.5rem;"></div>
+              </div>
+
+              <!-- Diesel DU1-D Nozzle (HSD) -->
+              <div>
+                <div style="font-weight:700;color:#f8fafc;font-size:0.8rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;gap:0.4rem;">
+                  <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:8px;height:8px;background:#eab308;border-radius:50%;display:inline-block;"></span> Diesel DU1-D Nozzle (HSD)</span>
+                  <input type="number" id="calc-du1d-manual-price" step="0.01" placeholder="Override Price" style="background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:0.25rem 0.5rem;border-radius:0.4rem;font-size:0.7rem;width:80px;height:24px;text-align:right;" title="Leave blank to use system default selling price" oninput="updateEmpLiveCalc()">
+                </div>
+                <div class="emp-nozzle-grid">
+                  <div class="emp-form-group">
+                    <label class="emp-label">Opening</label>
+                    <input type="number" class="emp-mobile-input" id="emp-du1d-open" step="0.01" placeholder="0.00" inputmode="decimal" >
+                    <span id="hint-du1d" style="font-size:0.65rem;color:#64748b;display:none;margin-top:0.15rem;"></span>
+                  </div>
+                  <div class="emp-form-group"><label class="emp-label">Closing</label><input type="number" class="emp-mobile-input" id="emp-du1d-close" step="0.01" placeholder="0.00" inputmode="decimal" ></div>
+                  <div class="emp-form-group"><label class="emp-label">Testing (Ltr)</label><input type="number" class="emp-mobile-input" id="emp-du1d-tests" placeholder="0" inputmode="decimal" ></div>
+                </div>
+                <!-- DU1 Diesel Preview Calc -->
+                <div id="calc-du1d" style="display:none;flex-direction:column;gap:0.25rem;background:rgba(234,179,8,0.03);border:1px dashed rgba(234,179,8,0.2);border-radius:0.5rem;padding:0.5rem;margin-top:0.5rem;"></div>
+              </div>
+            </div>
+
+            <!-- Dispensing Unit 2 (DU2) -->
+            <div style="background:rgba(255,255,255,0.02);border:1px solid #334155;border-radius:0.75rem;padding:1.25rem;display:flex;flex-direction:column;gap:1rem;">
+              <h3 style="font-weight:800;color:#f8fafc;font-size:0.95rem;margin:0;border-bottom:1px solid #334155;padding-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--primary)"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2z"/></svg>
+                Dispensing Unit 2 (DU2)
+              </h3>
+              
+              <!-- Petrol DU2-P Nozzle (E2) -->
+              <div>
+                <div style="font-weight:700;color:#f8fafc;font-size:0.8rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;gap:0.4rem;">
+                  <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:8px;height:8px;background:#ef4444;border-radius:50%;display:inline-block;"></span> Petrol DU2-P Nozzle (E2)</span>
+                  <input type="number" id="calc-du2p-manual-price" step="0.01" placeholder="Override Price" style="background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:0.25rem 0.5rem;border-radius:0.4rem;font-size:0.7rem;width:80px;height:24px;text-align:right;" title="Leave blank to use system default selling price" oninput="updateEmpLiveCalc()">
+                </div>
+                <div class="emp-nozzle-grid">
+                  <div class="emp-form-group">
+                    <label class="emp-label">Opening</label>
+                    <input type="number" class="emp-mobile-input" id="emp-du2p-open" step="0.01" placeholder="0.00" inputmode="decimal" >
+                    <span id="hint-du2p" style="font-size:0.65rem;color:#64748b;display:none;margin-top:0.15rem;"></span>
+                  </div>
+                  <div class="emp-form-group"><label class="emp-label">Closing</label><input type="number" class="emp-mobile-input" id="emp-du2p-close" step="0.01" placeholder="0.00" inputmode="decimal" ></div>
+                  <div class="emp-form-group"><label class="emp-label">Testing (Ltr)</label><input type="number" class="emp-mobile-input" id="emp-du2p-tests" placeholder="0" inputmode="decimal" ></div>
+                </div>
+                <!-- DU2 Petrol Preview Calc -->
+                <div id="calc-du2p" style="display:none;flex-direction:column;gap:0.25rem;background:rgba(239,68,68,0.03);border:1px dashed rgba(239,68,68,0.2);border-radius:0.5rem;padding:0.5rem;margin-top:0.5rem;"></div>
+              </div>
+
+              <!-- Diesel DU2-D Nozzle (HSD) -->
+              <div>
+                <div style="font-weight:700;color:#f8fafc;font-size:0.8rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;gap:0.4rem;">
+                  <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:8px;height:8px;background:#eab308;border-radius:50%;display:inline-block;"></span> Diesel DU2-D Nozzle (HSD)</span>
+                  <input type="number" id="calc-du2d-manual-price" step="0.01" placeholder="Override Price" style="background:#0f172a;border:1px solid #334155;color:#f8fafc;padding:0.25rem 0.5rem;border-radius:0.4rem;font-size:0.7rem;width:80px;height:24px;text-align:right;" title="Leave blank to use system default selling price" oninput="updateEmpLiveCalc()">
+                </div>
+                <div class="emp-nozzle-grid">
+                  <div class="emp-form-group">
+                    <label class="emp-label">Opening</label>
+                    <input type="number" class="emp-mobile-input" id="emp-du2d-open" step="0.01" placeholder="0.00" inputmode="decimal" >
+                    <span id="hint-du2d" style="font-size:0.65rem;color:#64748b;display:none;margin-top:0.15rem;"></span>
+                  </div>
+                  <div class="emp-form-group"><label class="emp-label">Closing</label><input type="number" class="emp-mobile-input" id="emp-du2d-close" step="0.01" placeholder="0.00" inputmode="decimal" ></div>
+                  <div class="emp-form-group"><label class="emp-label">Testing (Ltr)</label><input type="number" class="emp-mobile-input" id="emp-du2d-tests" placeholder="0" inputmode="decimal" ></div>
+                </div>
+                <!-- DU2 Diesel Preview Calc -->
+                <div id="calc-du2d" style="display:none;flex-direction:column;gap:0.25rem;background:rgba(234,179,8,0.03);border:1px dashed rgba(234,179,8,0.2);border-radius:0.5rem;padding:0.5rem;margin-top:0.5rem;"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Live Totals Calc Banner -->
+          <div id="emp-live-totals" style="display:none;flex-direction:column;gap:0.35rem;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.2);border-radius:0.75rem;padding:0.75rem 1rem;"></div>
+
+          <!-- PhonePe delta model section -->
+          <div id="emp-phonepe-section" style="background:rgba(56,189,248,0.03);border:1px solid rgba(56,189,248,0.15);border-radius:0.75rem;padding:1.25rem;display:flex;flex-direction:column;gap:0.75rem;">
+            <h3 style="font-weight:800;color:#38bdf8;font-size:0.95rem;margin:0;border-bottom:1px solid rgba(56,189,248,0.15);padding-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;">
+              📱 PhonePe / UPI Collections
+            </h3>
+            <div class="emp-nozzle-grid">
+              <div class="emp-form-group">
+                <label for="emp-pp-open" class="emp-label">Opening PhonePe</label>
+                <input type="number" class="emp-mobile-input" id="emp-pp-open" placeholder="0" inputmode="decimal" >
+              </div>
+              <div class="emp-form-group">
+                <label for="emp-pp-close" class="emp-label">Closing PhonePe</label>
+                <input type="number" class="emp-mobile-input" id="emp-pp-close" placeholder="0" inputmode="decimal" >
+              </div>
+            </div>
+              <div class="form-row" id="pp-midnight-row" style="margin: 0; display: none;">
+                <div class="form-group" style="flex:1;margin:0;">
+                  <label for="emp-pp-midnight" style="font-size:0.7rem;color:#eab308;margin-bottom:0.25rem;">Balance at Midnight</label>
+                  <input type="number" class="emp-mobile-input" id="emp-pp-midnight" placeholder="0" inputmode="decimal">
+                  <span style="font-size:0.6rem;color:#64748b;margin-top:0.15rem;display:block;">Required for Night shift crossing 12 AM reset</span>
+                </div>
+              </div>
+            </div>
+            <!-- PhonePe Delta Calc Preview -->
+            <div id="pp-delta-preview" style="display:none;flex-direction:column;gap:0.25rem;background:rgba(56,189,248,0.05);border:1px dashed rgba(56,189,248,0.2);border-radius:0.5rem;padding:0.5rem;"></div>
+          </div>
+
+          <div class="form-row" id="emp-cash-section">
+            <div class="form-group"><label for="emp-cash">Cash Collected (₹)</label><input type="number" class="emp-mobile-input" id="emp-cash" step="1" placeholder="0" inputmode="decimal" style="background:#0f172a;border:1px solid #334155;color:#f8fafc;border-radius:0.5rem;"></div>
+          </div>
+          
+          <!-- Cash Deposit Section (Only shown when Type is 'deposit') -->
+          <div id="emp-deposit-section" style="display:none;background:rgba(34,197,94,0.03);border:1px solid rgba(34,197,94,0.15);border-radius:0.75rem;padding:1.25rem;flex-direction:column;gap:0.75rem;margin-bottom:1rem;">
+            <h3 style="font-weight:800;color:#22c55e;font-size:0.95rem;margin:0;border-bottom:1px solid rgba(34,197,94,0.15);padding-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;">
+              💰 Office Cash Deposit
+            </h3>
+            <div class="emp-form-group">
+              <label for="emp-deposit-amount">Deposit Amount (₹)</label>
+              <input type="number" class="emp-mobile-input" id="emp-deposit-amount" step="1" placeholder="Enter amount deposited in office..." inputmode="decimal" style="background:#0f172a;border:1px solid #334155;color:#f8fafc;border-radius:0.5rem;">
+            </div>
+          </div>
+
+          <div class="form-group"><label for="emp-remarks">Remarks / Notes</label><input type="text" id="emp-remarks" placeholder="Explain discrepancy or write notes for owner…"></div>
+          <button id="emp-submit-btn" class="btn btn-primary" style="width:100%;padding:0.85rem;font-size:1rem;">✅ Submit for Approval</button>
+        </div>
+      </div>
+      <!-- Submissions History -->
+      <div class="panel">
+        <div class="panel-header"><h2 class="panel-title">📜 My Submissions</h2></div>
+        <div style="padding:1.25rem;" id="emp-submissions-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-container-shell" class="app-container">
+
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16H11v-2h2v2zm0-4H11V7h2v7z"/>
+          </svg>
+        </div>
+        <span class="logo-text" style="font-size: 0.85rem; line-height: 1.2; display: flex; flex-direction: column;"><span>Ram Kisan Sewa Kendra</span><small style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">Chandaroon</small></span>
+      </div>
+
+      <ul class="nav-links">
+        <li class="nav-item active" data-view="dashboard">
+          <button>
+            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            Dashboard
+          </button>
+        </li>
+        <li class="nav-item" data-view="operations">
+          <button style="position:relative;">
+            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 6H5V7h10v2zm0 4H5v-2h10v2zm4 4H5v-2h14v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg>
+            Operations
+            <span id="approvals-badge" style="display:none;position:absolute;top:6px;right:6px;background:#ef4444;color:#fff;border-radius:9999px;width:18px;height:18px;font-size:0.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;">0</span>
+          </button>
+        </li>
+        <li class="nav-item" data-view="logistics">
+          <button>
+            <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H4v-4h11v4zm5 0h-4v-4h4v4zm0-6H4V6h16v4z"/></svg>
+            Logistics
+          </button>
+        </li>
+        <li class="nav-item" data-view="financials">
+          <button>
+            <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+            Financials
+          </button>
+        </li>
+        <li class="nav-item" data-view="settings">
+          <button>
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            Settings
+          </button>
+        </li>
+        <li class="nav-item-help" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+          <button id="sidebar-help-toggle-btn" class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.35rem; font-weight: 600; font-size: 0.8rem; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #a5b4fc; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); cursor: pointer;">
+            <span style="display: flex; align-items: center; gap: 0.35rem;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+              Quick Help Guide
+            </span>
+            <span id="sidebar-help-arrow">▼</span>
+          </button>
+          <div id="sidebar-help-content" style="display: none; padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-top: 0.5rem; font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; max-height: 250px; overflow-y: auto;">
+            <strong style="color: #fff; display: block; margin-bottom: 0.25rem;">📝 Reading Submission</strong>
+            Enter daily DU1/DU2 nozzle readings. Clean variance check verifies expected vs actual cash.
+            <strong style="color: #fff; display: block; margin-top: 0.5rem; margin-bottom: 0.25rem;">⛽ Stock Reconciliation</strong>
+            Reconciles opening + purchase − sales = closing stock. Checked against daily tank dips.
+            <strong style="color: #fff; display: block; margin-top: 0.5rem; margin-bottom: 0.25rem;">📶 Sync & Offline Mode</strong>
+            Data is saved to browser storage first. Sync status updates automatically when back online.
+          </div>
+        </li>
+      </ul>
+
+      <div class="nav-footer">
+        <div id="session-user-name" style="color:#f97316;font-weight:700;font-size:0.8rem;margin-bottom:0.5rem;"></div>
+        <button onclick="logoutUser()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:0.5rem;padding:0.3rem 0.7rem;font-size:0.72rem;font-weight:600;cursor:pointer;width:100%;margin-bottom:0.5rem;">🚪 Logout</button>
+        RKSK Chandaroon v1.0.0<br>Local-First Platform
+      </div>
+    </aside>
+
+    <!-- Main Window Content -->
+    <main class="main-content">
+
+      <!-- Top header bar -->
+      <header>
+        <div>
+          <h1 id="view-title">Dashboard Overview</h1>
+          <div class="subtab-bar" id="header-subtabs" style="display: none;"></div>
+        </div>
+        <div class="current-time-box" style="display: flex; gap: 0.75rem; align-items: center;">
+          <button class="btn btn-secondary btn-sm" id="take-tour-btn" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); color: #fff; display: flex; align-items: center; gap: 0.35rem; font-weight: 600; padding: 0.35rem 0.75rem;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="color: var(--primary);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+            Take a Tour
+          </button>
+          <button class="btn btn-secondary btn-sm" id="manual-refresh-btn" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); color: #22c55e; display: flex; align-items: center; gap: 0.35rem; font-weight: 600; padding: 0.35rem 0.6rem; cursor: pointer;" title="Pull latest data from Supabase">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #22c55e;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Refresh
+          </button>
+          <button class="btn btn-secondary btn-sm" id="cold-restart-btn" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; display: flex; align-items: center; gap: 0.35rem; font-weight: 600; padding: 0.35rem 0.6rem; cursor: pointer;" title="Force Cold Restart & Clear App Cache">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #f87171;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Restart & Sync
+          </button>
+          <span style="display: flex; align-items: center; gap: 0.35rem;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.1.8-1.3-4.5-2.7V7z"/></svg>
+            Date: <span id="current-date-span">Loading...</span>
+          </span>
+          <span id="sync-status-indicator" style="margin-left:0.5rem;"></span>
+        </div>
+      </header>
+
+      <!-- Global Alert/Sync Banner Container -->
+      <div id="global-alert-banner" style="display:none; margin: 1rem 1.25rem 0 1.25rem; border-radius: 0.5rem; padding: 0.75rem 1rem; font-weight: 500; font-size: 0.85rem; border: 1px solid rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.1); color: #fef08a; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+        <span id="global-alert-message" style="display: flex; align-items: center; gap: 0.5rem;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="color: #fbbf24; flex-shrink: 0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <span id="global-alert-text">Cloud Sync is not configured. Go to Settings to connect GitHub storage.</span>
+        </span>
+        <button class="btn btn-sm btn-primary" id="global-alert-action-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Configure</button>
+      </div>
+
+      <!-- View 1: Dashboard -->
+      <section id="view-dashboard" class="view-section active">
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-label">Today's Net Sales</span>
+            <span class="metric-value" id="dash-net-sales-volume">0 L</span>
+            <span class="metric-footer" id="dash-net-sales-split">Petrol: 0 L | Diesel: 0 L</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-label">Calculated Profit (Today)</span>
+            <span class="metric-value text-success" id="dash-shift-revenue">₹ 0.00</span>
+            <span class="metric-footer" id="dash-shift-active-indicator">Based on 24hr sales & cost</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-label">Outstanding Tanker Credit</span>
+            <span class="metric-value text-warning" id="dash-outstanding-credit">₹ 0.00</span>
+            <span class="metric-footer" id="dash-unpaid-tankers">0 pending tankers</span>
+          </div>
+
+          <div class="metric-card">
+            <span class="metric-label">Current Selling Prices</span>
+            <span class="metric-value" style="font-size:1.45rem;" id="dash-selling-prices">P: 0.00 | D: 0.00</span>
+            <span class="metric-footer" id="dash-prices-last-updated">Last update: N/A</span>
+          </div>
+
+          <div class="metric-card" id="dash-capital-card">
+            <span class="metric-label">Inventory Capital Assets</span>
+            <span class="metric-value text-success" id="dash-active-assets">₹ 0.00</span>
+            <span class="metric-footer" id="dash-locked-assets">Locked Dead Stock: ₹ 0.00</span>
+          </div>
+        </div>
+
+        <div class="grid-dashboard-main">
+
+          <!-- Underground Storage Tanks -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">
+                <svg viewBox="0 0 24 24"><path d="M19 19V8H5v11h14m0-13c1.1 0 2 .9 2 2v13c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h14M12 2c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3z"/></svg>
+                Underground Storage Tanks (UST)
+              </h2>
+              <button class="btn btn-secondary btn-sm" id="dash-trigger-purchase-btn">Record Purchase</button>
+            </div>
+
+            <div class="tanks-container">
+              <!-- Petrol Tank -->
+              <div class="fuel-tank-wrapper">
+                <div class="fuel-tank-label petrol">Petrol Tank</div>
+                <div class="tank-cylinder">
+                  <div class="tank-scale">
+                    <div class="scale-tick major" data-val="100%"></div>
+                    <div class="scale-tick" data-val="80%"></div>
+                    <div class="scale-tick" data-val="60%"></div>
+                    <div class="scale-tick" data-val="40%"></div>
+                    <div class="scale-tick" data-val="20%"></div>
+                    <div class="scale-tick major" data-val="0%"></div>
+                  </div>
+                  <div class="tank-liquid petrol" id="tank-liquid-petrol" style="height: 50%;">
+                    <div class="liquid-wave"></div>
+                    <div class="liquid-wave"></div>
+                  </div>
+                </div>
+                <div class="tank-info-text">
+                  <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 0.15rem;">Total Physical: <strong style="color:#fff;" id="tank-stock-petrol">10,000 L</strong></div>
+                  <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 0.15rem;">Usable Stock: <strong style="color:var(--success);" id="tank-usable-petrol">9,400 L</strong></div>
+                  <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 0.15rem;">Days of Cover: <span id="tank-cover-petrol">Loading...</span></div>
+                  <div style="font-size:0.8rem; color:var(--text-dim); margin-bottom: 0.35rem;">Locked Dead Stock: <span id="tank-dead-petrol">600 L</span></div>
+                  <span id="tank-percent-petrol" style="font-size: 0.8rem; color: var(--text-dim);">50%</span>
+                  <div class="tank-flow-details" id="tank-flow-petrol"></div>
+                  <button class="btn btn-secondary btn-sm" style="margin-top: 0.6rem; width: 100%;" onclick="openDipCalculator('petrol')">Measure Dip</button>
+                </div>
+              </div>
+
+              <!-- Diesel Tank -->
+              <div class="fuel-tank-wrapper">
+                <div class="fuel-tank-label diesel">Diesel Tank</div>
+                <div class="tank-cylinder">
+                  <div class="tank-scale">
+                    <div class="scale-tick major" data-val="100%"></div>
+                    <div class="scale-tick" data-val="80%"></div>
+                    <div class="scale-tick" data-val="60%"></div>
+                    <div class="scale-tick" data-val="40%"></div>
+                    <div class="scale-tick" data-val="20%"></div>
+                    <div class="scale-tick major" data-val="0%"></div>
+                  </div>
+                  <div class="tank-liquid diesel" id="tank-liquid-diesel" style="height: 50%;">
+                    <div class="liquid-wave"></div>
+                    <div class="liquid-wave"></div>
+                  </div>
+                </div>
+                <div class="tank-info-text">
+                  <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 0.15rem;">Total Physical: <strong style="color:#fff;" id="tank-stock-diesel">10,000 L</strong></div>
+                  <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 0.15rem;">Usable Stock: <strong style="color:var(--success);" id="tank-usable-diesel">9,960 L</strong></div>
+                  <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 0.15rem;">Days of Cover: <span id="tank-cover-diesel">Loading...</span></div>
+                  <div style="font-size:0.8rem; color:var(--text-dim); margin-bottom: 0.35rem;">Locked Dead Stock: <span id="tank-dead-diesel">40 L</span></div>
+                  <span id="tank-percent-diesel" style="font-size: 0.8rem; color: var(--text-dim);">50%</span>
+                  <div class="tank-flow-details" id="tank-flow-diesel"></div>
+                  <button class="btn btn-secondary btn-sm" style="margin-top: 0.6rem; width: 100%;" onclick="openDipCalculator('diesel')">Measure Dip</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Warnings & Bank Alerts -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                Action & Planning Center
+              </h2>
+            </div>
+
+            <div class="alerts-list" id="dashboard-alerts-list">
+              <!-- Alerts dynamically populated by JS -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- View 2: Sales Cumulative Sheet (Ledger) -->
+      <section id="view-ledger" class="view-section">
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 6H5V7h10v2zm0 4H5v-2h10v2zm4 4H5v-2h14v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg>
+              Sales Cumulative Sheet
+            </h2>
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+              <div style="display:flex; gap:0.4rem; align-items:center; margin-right:0.5rem; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:var(--radius-sm); padding:2px 8px;">
+                <span style="font-size:0.75rem; color:var(--text-muted);">Zoom:</span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="adjustLedgerZoom(-0.1)" style="padding:0.15rem 0.35rem; font-size:0.72rem; font-weight:700; border:none; background:transparent;">➖</button>
+                <span id="ledger-zoom-label" style="font-size:0.72rem; font-weight:700; color:#fff; min-width:32px; text-align:center;">100%</span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="adjustLedgerZoom(0.1)" style="padding:0.15rem 0.35rem; font-size:0.72rem; font-weight:700; border:none; background:transparent;">➕</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="resetLedgerZoom()" style="padding:0.15rem 0.35rem; font-size:0.72rem; border:none; background:transparent; opacity:0.6;">Reset</button>
+              </div>
+              <div class="view-mode-selector" id="view-mode-selector-parent" style="display: flex; gap: 2px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px;">
+                <button class="btn btn-secondary btn-sm" id="view-type-table-btn" style="border:none; border-radius:4px; padding: 0.35rem 0.75rem; background: var(--primary);">Spreadsheet View</button>
+                <button class="btn btn-secondary btn-sm" id="view-type-split-btn" style="border:none; border-radius:4px; padding: 0.35rem 0.75rem; background: transparent;">Split Analyst View</button>
+                <button class="btn btn-secondary btn-sm" id="view-type-pnl-btn" style="border:none; border-radius:4px; padding: 0.35rem 0.75rem; background: transparent;">P&amp;L Report</button>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="toggle-view-btn">Show 24Hr Combined</button>
+              <button class="btn btn-primary btn-sm" id="log-readings-btn-header" onclick="openLogReadingsModal()">Log Daily Readings</button>
+              <button class="btn btn-secondary btn-sm" id="export-ledger-csv-btn">Export Ledger CSV</button>
+            </div>
+          </div>
+
+          <!-- Stock Anchor Panel: Set today's verified stock to recalculate all history -->
+          <div id="stock-anchor-panel" style="background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(245,158,11,0.08)); border: 1px solid rgba(16,185,129,0.25); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); white-space: nowrap;">⚓ Stock Anchor</div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <label style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap;">Date:</label>
+              <input type="date" id="anchor-date" style="background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 0.3rem 0.5rem; font-size: 0.78rem;" />
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <label style="font-size: 0.75rem; color: #10b981; white-space: nowrap;">⛽ Petrol (L):</label>
+              <input type="number" id="anchor-petrol" min="0" step="1" placeholder="e.g. 4200" style="width: 100px; background: var(--surface); border: 1px solid rgba(16,185,129,0.4); color: var(--text); border-radius: 6px; padding: 0.3rem 0.5rem; font-size: 0.78rem;" />
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <label style="font-size: 0.75rem; color: #f59e0b; white-space: nowrap;">🛢️ Diesel (L):</label>
+              <input type="number" id="anchor-diesel" min="0" step="1" placeholder="e.g. 6800" style="width: 100px; background: var(--surface); border: 1px solid rgba(245,158,11,0.4); color: var(--text); border-radius: 6px; padding: 0.3rem 0.5rem; font-size: 0.78rem;" />
+            </div>
+            <button onclick="applyStockAnchor()" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 6px; padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap;">🔄 Recalculate All Stock</button>
+            <button onclick="clearStockAnchor()" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.75rem; font-size: 0.78rem; cursor: pointer;">✕ Clear</button>
+            <span id="anchor-status" style="font-size: 0.75rem; color: var(--text-muted);"></span>
+          </div>
+
+          <!-- Master Spreadsheet View Container -->
+          <div id="ledger-table-container">
+            <div class="spreadsheet-container">
+              <table class="spreadsheet-table" id="ledger-table">
+                <!-- Dynamically populated headers and body by app.js -->
+              </table>
+            </div>
+          </div>
+
+          <!-- Split Analyst View Container -->
+          <div id="ledger-split-container" style="display: none; margin-top: 1.5rem;">
+            <div class="ledger-date-carousel" id="ledger-date-carousel"></div>
+            <div class="ledger-analyst-panel" id="ledger-analyst-panel"></div>
+          </div>
+
+          <!-- P&L Report Container -->
+          <div id="ledger-pnl-container" style="display:none; margin-top:1rem;">
+
+            <!-- P&L Summary Tiles -->
+            <div class="stats-grid" id="pnl-summary-tiles" style="margin-bottom:1.5rem;"></div>
+
+            <!-- Sub-tab toggle -->
+            <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+              <button id="pnl-tab-monthly" onclick="switchPnlTab('monthly')" class="btn btn-primary btn-sm">Monthly Summary</button>
+              <button id="pnl-tab-daily"   onclick="switchPnlTab('daily')"   class="btn btn-secondary btn-sm">Daily Breakdown</button>
+            </div>
+
+            <!-- Monthly P&L -->
+            <div id="pnl-view-monthly">
+              <div class="panel" style="padding:0; overflow-x:auto;">
+                <table class="data-table" id="pnl-monthly-table">
+                  <thead>
+                    <tr>
+                      <th>Month</th>
+                      <th style="text-align:right;">MS Sold (L)</th>
+                      <th style="text-align:right;">HSD Sold (L)</th>
+                      <th style="text-align:right;">MS Revenue</th>
+                      <th style="text-align:right;">HSD Revenue</th>
+                      <th style="text-align:right;">Total Revenue</th>
+                      <th style="text-align:right;">MS Cost</th>
+                      <th style="text-align:right;">HSD Cost</th>
+                      <th style="text-align:right;">Gross Profit</th>
+                      <th style="text-align:right;">Expenses</th>
+                      <th style="text-align:right;">Net P&amp;L</th>
+                      <th style="text-align:right;">Margin %</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pnl-monthly-body"></tbody>
+                  <tfoot id="pnl-monthly-foot"></tfoot>
+                </table>
+              </div>
+            </div>
+
+            <!-- Daily P&L -->
+            <div id="pnl-view-daily" style="display:none;">
+              <div class="panel" style="padding:0; overflow-x:auto;">
+                <table class="data-table" id="pnl-daily-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th style="text-align:right;">MS Sold (L)</th>
+                      <th style="text-align:right;">HSD Sold (L)</th>
+                      <th style="text-align:right;">Sell Price MS</th>
+                      <th style="text-align:right;">Sell Price HSD</th>
+                      <th style="text-align:right;">Revenue</th>
+                      <th style="text-align:right;">Cost (WAC)</th>
+                      <th style="text-align:right;">Gross Profit</th>
+                      <th style="text-align:right;">Expenses</th>
+                      <th style="text-align:right;">Net P&amp;L</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pnl-daily-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div><!-- end pnl-container -->
+
+        </div><!-- end panel -->
+      </section>
+
+      <!-- View: Shift Reconciliation & Cash Count -->
+      <section id="view-shift-recon" class="view-section">
+        <div class="grid-2">
+
+          <!-- Left Column: Input Form & WhatsApp Parser -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+            <!-- WhatsApp Parser Panel -->
+            <div class="panel">
+              <div class="panel-header">
+                <h2 class="panel-title">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="var(--primary)"><path d="M16.75 13.96c.25.13.41.2.46.3.06.11.06.61-.17 1.25-.23.64-1.36 1.25-1.92 1.29-.56.04-1.1-.17-3.41-1.12-2.3-1-3.79-3.4-3.9-3.56-.11-.15-1-1.32-1-2.53 0-1.21.63-1.8.85-2.04.23-.23.5-.29.67-.29.17 0 .34.01.48.01.15.01.35-.06.55.43.2.49.69 1.68.75 1.8.06.13.1.27.02.43-.08.17-.18.3-.3.44-.13.15-.27.3-.39.43-.13.13-.26.27-.11.53.15.26.66 1.09 1.41 1.76.97.87 1.79 1.14 2.05 1.27.26.13.41.11.56-.06.15-.17.64-.74.81-1 .17-.26.34-.22.58-.13zM12 2C6.48 2 2 6.48 2 12c0 2.17.7 4.19 1.9 5.86L2.62 21.9l4.18-1.09C8.36 21.48 10.11 22 12 22c5.48 0 10-4.48 10-10S17.48 2 12 2z"/></svg>
+                  WhatsApp Report Quick-Entry
+                </h2>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem; margin-bottom: 0.75rem;">
+                <p style="font-size: 0.75rem; color: var(--text-dim); margin: 0;">
+                  Method of shift data capture:
+                </p>
+                <div style="display: flex; gap: 0.25rem; background: rgba(0,0,0,0.3); border-radius: 4px; padding: 2px;">
+                  <button id="btn-recon-mode-manual" class="btn btn-secondary btn-sm active" style="padding: 0.15rem 0.5rem; font-size: 0.65rem; border-radius: 3px; border:none;" onclick="switchReconInputMode('manual')">Manual Paste</button>
+                  <button id="btn-recon-mode-sync" class="btn btn-secondary btn-sm" style="padding: 0.15rem 0.5rem; font-size: 0.65rem; border-radius: 3px; border:none;" onclick="switchReconInputMode('sync')">Live Sync</button>
+                </div>
+              </div>
+
+              <!-- Manual Section -->
+              <div id="recon-section-manual">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.75rem;">
+                  <button class="btn btn-secondary btn-sm" onclick="copyWhatsAppTemplate()">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="vertical-align: middle; margin-right: 4px;"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                    Copy Template
+                  </button>
+                  <button class="btn btn-secondary btn-sm" style="color: #25D366;" onclick="sendWhatsAppTemplate()">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="vertical-align: middle; margin-right: 4px;"><path d="M16.75 13.96c.25.13.41.2.46.3.06.11.06.61-.17 1.25-.23.64-1.36 1.25-1.92 1.29-.56.04-1.1-.17-3.41-1.12-2.3-1-3.79-3.4-3.9-3.56-.11-.15-1-1.32-1-2.53 0-1.21.63-1.8.85-2.04.23-.23.5-.29.67-.29.17 0 .34.01.48.01.15.01.35-.06.55.43.2.49.69 1.68.75 1.8.06.13.1.27.02.43-.08.17-.18.3-.3.44-.13.15-.27.3-.39.43-.13.13-.26.27-.11.53.15.26.66 1.09 1.41 1.76.97.87 1.79 1.14 2.05 1.27.26.13.41.11.56-.06.15-.17.64-.74.81-1 .17-.26.34-.22.58-.13zM12 2C6.48 2 2 6.48 2 12c0 2.17.7 4.19 1.9 5.86L2.62 21.9l4.18-1.09C8.36 21.48 10.11 22 12 22c5.48 0 10-4.48 10-10S17.48 2 12 2z"/></svg>
+                    Send to WhatsApp
+                  </button>
+                  <button class="btn btn-primary btn-sm" style="grid-column: span 2;" onclick="parseWhatsAppReport()">
+                    Parse & Auto-Fill
+                  </button>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                  <textarea id="whatsapp-input" rows="4" placeholder="Paste WhatsApp message here... (e.g. DU1 MS: 15400 - 15580)" style="width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); background: rgba(0,0,0,0.2); color: #fff; padding: 0.5rem; font-family: monospace; font-size: 0.8rem; resize: vertical;"></textarea>
+                </div>
+              </div>
+
+              <!-- Live Sync Section -->
+              <div id="recon-section-sync" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border);">
+                  <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Sync Status</span>
+                    <span style="font-size: 0.75rem; color: var(--success); font-weight: 700; display: flex; align-items: center; gap: 4px; margin-top: 0.15rem;">
+                      <span style="width:6px; height:6px; background:var(--success); border-radius:50%; display:inline-block; box-shadow: 0 0 8px var(--success);"></span>
+                      Bridge Connected
+                    </span>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;" onclick="openModal('manage-employees-modal'); renderEmployeesTable();">
+                    Manage Staff
+                  </button>
+                </div>
+
+                <h4 style="font-size:0.75rem; color:var(--text-dim); margin-top:0.75rem; margin-bottom:0.4rem; font-weight:600;">Incoming WhatsApp Reports</h4>
+                <div id="recon-sync-messages" style="display:flex; flex-direction:column; gap:0.5rem; max-height:160px; overflow-y:auto; padding-right:2px;">
+                  <!-- incoming messages populated dynamically -->
+                </div>
+              </div>
+
+              <!-- Drag and Drop Uploader for Reading Slip -->
+              <h3 style="font-size:0.85rem; color:#fff; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin: 1rem 0 0.5rem 0; font-weight:600;">Paper Slip Verification</h3>
+              <div id="paper-upload-zone" style="border: 2px dashed var(--border); border-radius: var(--radius-md); padding: 1rem; text-align: center; cursor: pointer; transition: all 0.3s ease; background: rgba(255,255,255,0.01); position: relative; overflow: hidden;" onclick="document.getElementById('paper-slip-file').click()">
+                <input type="file" id="paper-slip-file" accept="image/*" style="display: none;" onchange="handlePaperSlipUpload(event)">
+                <div id="upload-prompt">
+                  <svg viewBox="0 0 24 24" width="32" height="32" fill="var(--text-dim)" style="margin-bottom: 0.5rem;"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                  <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0;">Drag & drop or click to upload paper slip photo</p>
+                </div>
+                <div id="upload-preview-container" style="display: none; position: relative; max-height: 180px; width: 100%;">
+                  <img id="upload-preview-img" style="max-height: 150px; border-radius: 4px; object-fit: contain; margin: 0 auto; display: block;">
+                  <div class="scanner-laser" id="scanner-laser-line" style="display: none;"></div>
+                </div>
+              </div>
+
+              <!-- Verification Results -->
+              <div id="paper-verify-report" style="display: none; margin-top: 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.25rem;">
+                  <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary);">Vision OCR Verification</span>
+                  <span id="ocr-timestamp" style="font-size: 0.7rem; color: var(--text-muted);">Extracted: -</span>
+                </div>
+                <div id="ocr-comparison-rows" style="font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                  <!-- dynamically populated comparison lines -->
+                </div>
+                <button class="btn btn-secondary btn-sm" id="btn-apply-ocr" style="width: 100%; margin-top: 0.75rem; font-size: 0.75rem; display: none;" onclick="applyOCRReadings()">
+                  Apply Paper Readings (Override Form)
+                </button>
+              </div>
+            </div>
+
+            <!-- Shift Details & Readings Form -->
+            <div class="panel">
+              <div class="panel-header">
+                <h2 class="panel-title">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="var(--primary)"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                  Shift Setup & Readings
+                </h2>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="recon-date">Operating Date</label>
+                  <input type="date" id="recon-date" required onchange="onReconShiftChange()">
+                </div>
+                <div class="form-group">
+                  <label for="recon-shift">Operating Shift</label>
+                  <select id="recon-shift" onchange="onReconShiftChange()">
+                    <option value="day">Day Shift (8 AM - 8 PM)</option>
+                    <option value="night">Night Shift (8 PM - 8 AM)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Petrol (MS) Readings Section -->
+              <h3 style="font-size:0.95rem; color: var(--color-petrol); margin-top: 1.25rem; border-bottom: 1px solid rgba(6, 182, 212, 0.15); padding-bottom: 0.25rem; font-weight:600;">Petrol Nozzle Readings (MS)</h3>
+
+              <div class="form-row" style="margin-top: 0.5rem;">
+                <div class="form-group">
+                  <label>DU1 Petrol Open</label>
+                  <input type="number" id="recon-du1-p-open" step="0.01" readonly style="background: rgba(255,255,255,0.03); color: var(--text-dim);">
+                </div>
+                <div class="form-group">
+                  <label for="recon-du1-p-close">DU1 Petrol Close</label>
+                  <input type="number" id="recon-du1-p-close" step="0.01" required placeholder="0.00" oninput="calculateLiveSales()">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>DU2 Petrol Open</label>
+                  <input type="number" id="recon-du2-p-open" step="0.01" readonly style="background: rgba(255,255,255,0.03); color: var(--text-dim);">
+                </div>
+                <div class="form-group">
+                  <label for="recon-du2-p-close">DU2 Petrol Close</label>
+                  <input type="number" id="recon-du2-p-close" step="0.01" required placeholder="0.00" oninput="calculateLiveSales()">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="recon-p-tests">Petrol Test Fuel (Auto: 5L per active nozzle)</label>
+                <input type="text" id="recon-p-tests" value="0" readonly style="background: var(--bg-card); border-color: var(--border); color: var(--text-dim); cursor: not-allowed;">
+              </div>
+
+              <!-- Diesel (HSD) Readings Section -->
+              <h3 style="font-size:0.95rem; color: var(--color-diesel); margin-top: 1.25rem; border-bottom: 1px solid rgba(245, 158, 11, 0.15); padding-bottom: 0.25rem; font-weight:600;">Diesel Nozzle Readings (HSD)</h3>
+
+              <div class="form-row" style="margin-top: 0.5rem;">
+                <div class="form-group">
+                  <label>DU1 Diesel Open</label>
+                  <input type="number" id="recon-du1-d-open" step="0.01" readonly style="background: rgba(255,255,255,0.03); color: var(--text-dim);">
+                </div>
+                <div class="form-group">
+                  <label for="recon-du1-d-close">DU1 Diesel Close</label>
+                  <input type="number" id="recon-du1-d-close" step="0.01" required placeholder="0.00" oninput="calculateLiveSales()">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>DU2 Diesel Open</label>
+                  <input type="number" id="recon-du2-d-open" step="0.01" readonly style="background: rgba(255,255,255,0.03); color: var(--text-dim);">
+                </div>
+                <div class="form-group">
+                  <label for="recon-du2-d-close">DU2 Diesel Close</label>
+                  <input type="number" id="recon-du2-d-close" step="0.01" required placeholder="0.00" oninput="calculateLiveSales()">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="recon-d-tests">Diesel Test Fuel (Auto: 5L per active nozzle)</label>
+                <input type="text" id="recon-d-tests" value="0" readonly style="background: var(--bg-card); border-color: var(--border); color: var(--text-dim); cursor: not-allowed;">
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Right Column: Cash & PhonePe Settlement, Expenses, Denominations -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+            <!-- Cash & PhonePe Reconciliation Card -->
+            <div class="panel">
+              <div class="panel-header">
+                <h2 class="panel-title">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="var(--primary)"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                  PhonePe & Cash Collections
+                </h2>
+              </div>
+
+              <!-- PhonePe Settlement -->
+              <h3 style="font-size:0.85rem; color:#fff; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem; font-weight:600;">PhonePe Settlement</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Prev Shift PhonePe (₹)</label>
+                  <input type="number" id="recon-phonepe-prev" readonly style="background: rgba(255,255,255,0.03); color: var(--text-dim);">
+                </div>
+                 <div class="form-group">
+                  <label for="recon-phonepe-curr" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Current PhonePe Total (₹)</span>
+                    <button type="button" class="btn btn-secondary btn-sm" style="padding: 0.1rem 0.4rem; font-size: 0.65rem; border: none; border-radius: 3px; cursor: pointer; color: #25D366; background: rgba(37, 211, 102, 0.1);" onclick="fetchPhonePeSettlement()">
+                      Sync PhonePe API
+                    </button>
+                  </label>
+                  <input type="number" id="recon-phonepe-curr" placeholder="0.00" oninput="calculateLiveSales()">
+                </div>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Net PhonePe Shift Collection: <strong id="recon-phonepe-net-label" style="color: var(--primary);">₹ 0.00</strong>
+              </div>
+
+              <!-- Expenses list -->
+              <h3 style="font-size:0.85rem; color:#fff; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; font-weight:600;">
+                <span>Expenses paid from Cash</span>
+                <button class="btn btn-secondary btn-sm" onclick="addExpenseRow()" style="padding: 0.15rem 0.4rem; font-size: 0.7rem; border-radius:4px;">+ Add Expense</button>
+              </h3>
+
+              <div id="expenses-container" style="display:flex; flex-direction:column; gap:0.5rem; max-height:150px; overflow-y:auto; margin-bottom: 0.5rem;">
+                <!-- expense rows dynamically populated -->
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Total Expenses: <strong id="recon-expenses-total-label" style="color: var(--danger);">₹ 0.00</strong>
+              </div>
+
+              <!-- Denomination Calculator -->
+              <h3 style="font-size:0.85rem; color:#fff; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem; font-weight:600;">Cash Denominations</h3>
+
+              <div class="denomination-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                <div class="denom-input-group" style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem;">
+                  <span style="width: 50px; color: var(--text-dim);">₹500 x</span>
+                  <input type="number" id="denom-500" min="0" value="0" oninput="calculateDenominations()" style="width: 60px; padding: 0.25rem; background: rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; border-radius:4px;">
+                  <span id="denom-val-500" style="color: #fff; font-weight: 500;">0</span>
+                </div>
+                <div class="denom-input-group" style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem;">
+                  <span style="width: 50px; color: var(--text-dim);">₹200 x</span>
+                  <input type="number" id="denom-200" min="0" value="0" oninput="calculateDenominations()" style="width: 60px; padding: 0.25rem; background: rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; border-radius:4px;">
+                  <span id="denom-val-200" style="color: #fff; font-weight: 500;">0</span>
+                </div>
+                <div class="denom-input-group" style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem;">
+                  <span style="width: 50px; color: var(--text-dim);">₹100 x</span>
+                  <input type="number" id="denom-100" min="0" value="0" oninput="calculateDenominations()" style="width: 60px; padding: 0.25rem; background: rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; border-radius:4px;">
+                  <span id="denom-val-100" style="color: #fff; font-weight: 500;">0</span>
+                </div>
+                <div class="denom-input-group" style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem;">
+                  <span style="width: 50px; color: var(--text-dim);">₹50 x</span>
+                  <input type="number" id="denom-50" min="0" value="0" oninput="calculateDenominations()" style="width: 60px; padding: 0.25rem; background: rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; border-radius:4px;">
+                  <span id="denom-val-50" style="color: #fff; font-weight: 500;">0</span>
+                </div>
+                <div class="denom-input-group" style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem;">
+                  <span style="width: 50px; color: var(--text-dim);">₹20 x</span>
+                  <input type="number" id="denom-20" min="0" value="0" oninput="calculateDenominations()" style="width: 60px; padding: 0.25rem; background: rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; border-radius:4px;">
+                  <span id="denom-val-20" style="color: #fff; font-weight: 500;">0</span>
+                </div>
+                <div class="denom-input-group" style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem;">
+                  <span style="width: 50px; color: var(--text-dim);">₹10 x</span>
+                  <input type="number" id="denom-10" min="0" value="0" oninput="calculateDenominations()" style="width: 60px; padding: 0.25rem; background: rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; border-radius:4px;">
+                  <span id="denom-val-10" style="color: #fff; font-weight: 500;">0</span>
+                </div>
+                <div class="denom-input-group" style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem;">
+                  <span style="width: 50px; color: var(--text-dim);">₹5 x</span>
+                  <input type="number" id="denom-5" min="0" value="0" oninput="calculateDenominations()" style="width: 60px; padding: 0.25rem; background: rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; border-radius:4px;">
+                  <span id="denom-val-5" style="color: #fff; font-weight: 500;">0</span>
+                </div>
+                <div class="denom-input-group" style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem;">
+                  <span style="width: 50px; color: var(--text-dim);">Coins x</span>
+                  <input type="number" id="denom-coins" min="0" value="0" oninput="calculateDenominations()" style="width: 60px; padding: 0.25rem; background: rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; border-radius:4px;">
+                  <span id="denom-val-coins" style="color: #fff; font-weight: 500;">0</span>
+                </div>
+              </div>
+              <div style="font-size: 0.95rem; color: #fff; margin-top: 0.75rem; font-weight: 600;">
+                Total Counted Cash: <strong id="recon-cash-total-label" style="color: var(--success);">₹ 0.00</strong>
+              </div>
+
+            </div>
+
+            <!-- Live Visual Animation Card -->
+            <div class="panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; min-height: 180px;">
+              <h3 style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; text-align: center; width: 100%; font-weight:600;">Live Recirculation Flow</h3>
+              <div style="display: flex; gap: 1.5rem; align-items: center; width: 100%; justify-content: space-around;">
+
+                <!-- Petrol Tank -->
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <div class="flow-tank-cylinder" style="width: 100px; height: 60px; border-radius: 30px;">
+                    <div id="recon-visual-liquid-p" class="flow-tank-liquid petrol" style="height: 50%;"></div>
+                    <div id="recon-visual-stream-p" class="recirc-stream" style="display: none; position: absolute; top: 0; left: 50%; width: 3px; height: 100%; background: var(--color-petrol); box-shadow: 0 0 8px var(--color-petrol);"></div>
+                  </div>
+                  <span style="font-size: 0.75rem; color: var(--color-petrol); font-weight: 600; margin-top: 0.25rem;">Petrol Stock</span>
+                  <span id="recon-visual-val-p" style="font-size: 0.8rem; color: #fff; font-weight: 700;">- L</span>
+                  <span id="recon-visual-badge-p" class="badge badge-success" style="display:none; font-size: 0.65rem; margin-top: 0.15rem;">+0 L</span>
+                </div>
+
+                <!-- Diesel Tank -->
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <div class="flow-tank-cylinder" style="width: 100px; height: 60px; border-radius: 30px;">
+                    <div id="recon-visual-liquid-d" class="flow-tank-liquid diesel" style="height: 50%;"></div>
+                    <div id="recon-visual-stream-d" class="recirc-stream" style="display: none; position: absolute; top: 0; left: 50%; width: 3px; height: 100%; background: var(--color-diesel); box-shadow: 0 0 8px var(--color-diesel);"></div>
+                  </div>
+                  <span style="font-size: 0.75rem; color: var(--color-diesel); font-weight: 600; margin-top: 0.25rem;">Diesel Stock</span>
+                  <span id="recon-visual-val-d" style="font-size: 0.8rem; color: #fff; font-weight: 700;">- L</span>
+                  <span id="recon-visual-badge-d" class="badge badge-success" style="display:none; font-size: 0.65rem; margin-top: 0.15rem;">+0 L</span>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Full-width Bottom Panel: Reconciliation Board -->
+        <div class="panel" style="margin-top: 1.5rem;">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="var(--primary)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.25z"/></svg>
+              Shift Reconciliation Board
+            </h2>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; text-align: center; margin-bottom: 1.5rem;">
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem;">
+              <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Total Fuel Sold</div>
+              <strong id="board-liters-sold" style="font-size: 1.25rem; color: #fff; display: block; margin-top: 0.25rem;">0.00 L</strong>
+              <span id="board-liters-split" style="font-size: 0.7rem; color: var(--text-muted);">P: 0.00 L | D: 0.00 L</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem;">
+              <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Expected Revenue</div>
+              <strong id="board-revenue" style="font-size: 1.25rem; color: #fff; display: block; margin-top: 0.25rem;">₹ 0.00</strong>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem;">
+              <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Expected Cash</div>
+              <strong id="board-expected-cash" style="font-size: 1.25rem; color: #fff; display: block; margin-top: 0.25rem;">₹ 0.00</strong>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">Revenue - Net PhonePe</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem;">
+              <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Actual Cash Accounted</div>
+              <strong id="board-cash-accounted" style="font-size: 1.25rem; color: #fff; display: block; margin-top: 0.25rem;">₹ 0.00</strong>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">Counted Cash + Expenses</span>
+            </div>
+            <div id="board-variance-card" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem;">
+              <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Reconciliation Variance</div>
+              <strong id="board-variance" style="font-size: 1.25rem; color: #fff; display: block; margin-top: 0.25rem;">₹ 0.00</strong>
+              <span id="board-variance-status" style="font-size: 0.75rem; font-weight: 700; border-radius:4px; padding: 0.05rem 0.35rem; display: inline-block; margin-top: 0.15rem;">-</span>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 1.05rem; font-weight: 700;" onclick="postShiftRecon()">Save & Post Shift Reconciliation</button>
+        </div>
+
+      </section>
+
+      <!-- View 3: Tankers & Credit -->
+      <section id="view-purchases" class="view-section">
+
+        <div class="grid-2">
+
+          <!-- Record Tanker Form -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Record Tanker Delivery (12 KL)</h2>
+            </div>
+
+            <form id="tanker-purchase-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="purchase-date">Delivery Date</label>
+                  <input type="date" id="purchase-date" required>
+                </div>
+                <div class="form-group">
+                  <label for="purchase-time">Delivery Time</label>
+                  <input type="time" id="purchase-time" required value="12:00">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="tanker-load-type">Load Configuration</label>
+                <select id="tanker-load-type">
+                  <option value="full-petrol">Full Petrol (12,000 Liters)</option>
+                  <option value="full-diesel">Full Diesel (12,000 Liters)</option>
+                  <option value="mixed-8d-4p">Mixed (8,000 L Diesel + 4,000 L Petrol)</option>
+                  <option value="mixed-8p-4d">Mixed (8,000 L Petrol + 4,000 L Diesel)</option>
+                  <option value="custom">Custom Mixed Load (Total 12,000 Liters)</option>
+                </select>
+              </div>
+
+              <!-- Custom Load Sliders (shown only when 'custom' is selected) -->
+              <div class="mixed-load-sliders" id="custom-load-sliders-container" style="display: none;">
+                <div class="mixed-load-header">
+                  <span>Distribute 12,000 Liters</span>
+                  <span id="custom-load-total-label" class="text-warning">Remaining: 12,000 L</span>
+                </div>
+                <div class="form-group">
+                  <label for="custom-petrol-qty">Petrol Quantity: <span id="custom-petrol-label">0</span> Liters</label>
+                  <input type="range" id="custom-petrol-qty" min="0" max="12000" step="4000" value="0">
+                </div>
+                <div class="form-group">
+                  <label for="custom-diesel-qty">Diesel Quantity: <span id="custom-diesel-label">0</span> Liters</label>
+                  <input type="range" id="custom-diesel-qty" min="0" max="12000" step="4000" value="0">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="purchase-invoice-no">Invoice / Challan Number</label>
+                  <input type="text" id="purchase-invoice-no" placeholder="e.g. 29384729" required style="width: 100%;">
+                </div>
+                <div class="form-group">
+                  <label for="purchase-payment-status">Payment Status</label>
+                  <select id="purchase-payment-status" style="width: 100%; padding:0.5rem; border-radius:var(--radius-sm); background:var(--bg-input); border:1px solid var(--border); color:#fff; font-family:inherit; font-size:0.85rem; height:42px;">
+                    <option value="Paid">Paid via RTGS</option>
+                    <option value="Pending">Pending RTGS (Due in 2-3 Days)</option>
+                    <option value="Due">Due / Under Credit</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="purchase-price-petrol">Petrol Purchase Price (/Liter)</label>
+                  <input type="number" id="purchase-price-petrol" step="0.01" min="0.1" placeholder="e.g. 90.50" required>
+                </div>
+                <div class="form-group">
+                  <label for="purchase-price-diesel">Diesel Purchase Price (/Liter)</label>
+                  <input type="number" id="purchase-price-diesel" step="0.01" min="0.1" placeholder="e.g. 82.20" required>
+                </div>
+              </div>
+              <div id="petrol-astm-section" style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem; display: none;">
+                <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--color-petrol); margin-bottom: 0.75rem;">Petrol (MS) Density Audit</h3>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="petrol-invoice-density">Invoice Density (15°C)</label>
+                    <input type="number" id="petrol-invoice-density" step="0.1" placeholder="e.g. 750.0" value="750.0">
+                  </div>
+                  <div class="form-group">
+                    <label for="petrol-observed-density">Observed Density</label>
+                    <input type="number" id="petrol-observed-density" step="0.1" placeholder="e.g. 745.0" value="750.0">
+                  </div>
+                  <div class="form-group">
+                    <label for="petrol-observed-temp">Observed Temp (°C)</label>
+                    <input type="number" id="petrol-observed-temp" step="0.1" placeholder="e.g. 28.5" value="25.0">
+                  </div>
+                </div>
+                <div id="petrol-astm-status" style="margin-bottom: 1.25rem; font-size: 0.82rem; line-height: 1.5; color: var(--text-muted);">
+                  <!-- Live calculation results -->
+                </div>
+              </div>
+
+              <div id="diesel-astm-section" style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem; display: none;">
+                <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--color-diesel); margin-bottom: 0.75rem;">Diesel (HSD) Density Audit</h3>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="diesel-invoice-density">Invoice Density (15°C)</label>
+                    <input type="number" id="diesel-invoice-density" step="0.1" placeholder="e.g. 830.0" value="830.0">
+                  </div>
+                  <div class="form-group">
+                    <label for="diesel-observed-density">Observed Density</label>
+                    <input type="number" id="diesel-observed-density" step="0.1" placeholder="e.g. 825.0" value="830.0">
+                  </div>
+                  <div class="form-group">
+                    <label for="diesel-observed-temp">Observed Temp (°C)</label>
+                    <input type="number" id="diesel-observed-temp" step="0.1" placeholder="e.g. 28.5" value="25.0">
+                  </div>
+                </div>
+                <div id="diesel-astm-status" style="margin-bottom: 1.25rem; font-size: 0.82rem; line-height: 1.5; color: var(--text-muted);">
+                  <!-- Live calculation results -->
+                </div>
+              </div>
+
+
+
+              <div class="alert-item info" style="margin-bottom: 1.5rem; padding: 0.8rem 1rem;">
+                <svg viewBox="0 0 24 24" width="20" height="20" style="margin-top: 2px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                <div class="alert-content" style="font-size: 0.85rem;">
+                  <span class="alert-title" style="font-size: 0.9rem;">Automatic Credit Calculator</span>
+                  Deadline: <span id="purchase-deadline-preview">2 days after delivery</span><br>
+                  Filing RTGS Date: <span id="purchase-rtgs-preview">To be determined</span>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%;">Record Tanker Delivery</button>
+            </form>
+          </div>
+
+          <!-- Outstanding Payments Card & Visual Tracker -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Credit & RTGS Planner</h2>
+            </div>
+
+            <div class="alerts-list" id="credit-planner-alerts">
+              <!-- Dynamic lists of RTGS warnings/deadlines -->
+            </div>
+
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+              <h3 style="font-size: 1rem; margin-bottom: 0.75rem; color: #fff;">Credit Terms Summary</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                Tankers are purchased on credit. You have exactly <strong>2 days</strong> from the delivery day to settle the payment. Settle payments by physically filing an <strong>RTGS Transfer</strong> at your bank. If the deadline falls on a Sunday or Bank Holiday, you must file early on the previous working day.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Purchase logs table -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Tanker Purchase History</h2>
+            <button class="btn btn-secondary btn-sm" id="export-purchases-csv-btn">Export Purchases CSV</button>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Delivery Date</th>
+                  <th>Petrol L</th>
+                  <th>Diesel L</th>
+                  <th>WAC Costs</th>
+                  <th>Due Date</th>
+                  <th>File RTGS By</th>
+                  <th>Paid Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="purchases-log-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- View: Supply Sheet (OCR Extracted Bills) -->
+      <section id="view-supplies" class="view-section">
+        
+        <!-- Summary cards for supplies -->
+        <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div class="metric-card">
+            <div class="metric-label" style="color: var(--color-petrol); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Petrol Received</div>
+            <div class="metric-value" id="supply-total-petrol" style="font-size: 1.8rem; font-weight: 700; margin-top: 0.25rem;">0 KL</div>
+            <div class="metric-trend text-muted" id="supply-count-petrol" style="font-size: 0.78rem;">0 Tankers</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label" style="color: var(--color-diesel); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Diesel Received</div>
+            <div class="metric-value" id="supply-total-diesel" style="font-size: 1.8rem; font-weight: 700; margin-top: 0.25rem;">0 KL</div>
+            <div class="metric-trend text-muted" id="supply-count-diesel" style="font-size: 0.78rem;">0 Tankers</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label" style="color: var(--primary); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Supply Cost</div>
+            <div class="metric-value" id="supply-total-cost" style="font-size: 1.8rem; font-weight: 700; margin-top: 0.25rem;">₹ 0.00</div>
+            <div class="metric-trend text-muted" id="supply-total-count" style="font-size: 0.78rem;">0 Deliveries</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header" style="flex-wrap: wrap; gap: 1rem;">
+            <h2 class="panel-title">OCR Extracted Tanker Supplies</h2>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <select id="filter-supply-product" style="padding: 0.4rem 0.8rem; font-size: 0.82rem; border-radius: 0.35rem; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); outline: none;">
+                <option value="all">All Products</option>
+                <option value="Petrol">Petrol (EBMS/MS)</option>
+                <option value="Diesel">Diesel (HSD)</option>
+              </select>
+              <input type="text" id="search-supply-input" placeholder="Search by Date/Invoice/SAP No..." style="padding: 0.4rem 0.8rem; font-size: 0.82rem; border-radius: 0.35rem; background: var(--bg-card); border: 1px solid var(--border); color: var(--text); min-width: 220px; outline: none;">
+            </div>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Invoice Date</th>
+                  <th>Product</th>
+                  <th>Quantity (KL)</th>
+                  <th>Quantity (L)</th>
+                  <th>Material Cost</th>
+                  <th>Invoice No</th>
+                  <th>SAP Entry No</th>
+                  <th>Truck Number</th>
+                  <th>Status</th>
+                  <th>Anomalies / Remarks</th>
+                </tr>
+              </thead>
+              <tbody id="supplies-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- View 4: Selling Prices -->
+      <section id="view-pricing" class="view-section">
+
+        <div class="grid-2">
+
+          <!-- Price Change Form -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Update Selling Prices</h2>
+            </div>
+
+            <form id="price-change-form">
+              <div class="form-group">
+                <label for="price-effective-date">Effective Date & Time</label>
+                <input type="datetime-local" id="price-effective-date" required>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="price-petrol">New Petrol Selling Price (/Liter)</label>
+                  <input type="number" id="price-petrol" step="0.01" min="0.1" placeholder="e.g. 103.50" required>
+                </div>
+                <div class="form-group">
+                  <label for="price-diesel">New Diesel Selling Price (/Liter)</label>
+                  <input type="number" id="price-diesel" step="0.01" min="0.1" placeholder="e.g. 90.80" required>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%;">Apply New Prices</button>
+            </form>
+          </div>
+
+          <!-- Active Price Card -->
+          <div class="panel" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+            <h2 style="font-size: 1.25rem; color: var(--text-muted); margin-bottom: 1.5rem;">Current Selling Prices</h2>
+
+            <div style="display: flex; gap: 3rem; margin-bottom: 2rem;">
+              <div>
+                <span style="font-size: 0.9rem; color: var(--color-petrol); font-weight: 600; text-transform: uppercase;">Petrol (E2)</span>
+                <div style="font-size: 3rem; font-weight: 800; color: #fff; margin-top: 0.5rem;" id="active-price-petrol-val">0.00</div>
+              </div>
+              <div style="width: 1px; background: var(--border);"></div>
+              <div>
+                <span style="font-size: 0.9rem; color: var(--color-diesel); font-weight: 600; text-transform: uppercase;">Diesel (HSD)</span>
+                <div style="font-size: 3rem; font-weight: 800; color: #fff; margin-top: 0.5rem;" id="active-price-diesel-val">0.00</div>
+              </div>
+            </div>
+
+            <div style="font-size: 0.85rem; color: var(--text-dim);" id="active-prices-date">
+              Effective from: N/A
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Historical Price Logs -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Price Change History</h2>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Effective Date & Time</th>
+                  <th>Petrol Selling Price</th>
+                  <th>Diesel Selling Price</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="prices-log-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 5: Bank Holidays -->
+      <section id="view-holidays" class="view-section" style="display:none;">
+        <div class="panel" style="padding:1.5rem; max-width:800px; margin:0 auto;">
+          <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:1rem; color:#fff;">Bank Holiday Calendar &amp; Weekend Closures</h3>
+          <p style="font-size:0.78rem; color:var(--text-dim); margin-bottom:1.5rem;">
+            Configure CBI bank closures and weekend policies. The tanker cash-flow forecast system automatically offsets order deadlines to avoid weekend or bank holiday RTGS delays.
+          </p>
+
+          <!-- Weekend Policy -->
+          <div style="display:flex; gap:1.5rem; margin-bottom:1.5rem; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; padding:1rem;">
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" id="cfg-sundays-closed" style="width:16px; height:16px;">
+              Sundays Closed (RTGS Offline)
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" id="cfg-sats-closed" style="width:16px; height:16px;">
+              Saturdays Closed (RTGS Offline)
+            </label>
+          </div>
+
+          <!-- Add Holiday Form -->
+          <form id="add-holiday-form" style="display:flex; gap:0.75rem; margin-bottom:1.5rem; align-items:flex-end; flex-wrap:wrap;">
+            <div class="form-group" style="margin:0; min-width:150px; flex:1;">
+              <label style="font-size:0.7rem; color:var(--text-muted); margin-bottom:0.25rem;">Holiday Date</label>
+              <input type="date" id="holiday-date" class="form-control" required style="padding:0.5rem; font-size:0.85rem;">
+            </div>
+            <div class="form-group" style="margin:0; min-width:200px; flex:2;">
+              <label style="font-size:0.7rem; color:var(--text-muted); margin-bottom:0.25rem;">Holiday Description</label>
+              <input type="text" id="holiday-name" class="form-control" placeholder="e.g. Diwali, Independence Day" required style="padding:0.5rem; font-size:0.85rem;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="padding:0.5rem 1rem; font-size:0.85rem;">Add Holiday</button>
+          </form>
+
+          <!-- Table -->
+          <div class="table-responsive" style="margin-top:1rem; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,0.15);">
+            <table class="table" style="margin:0;">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Holiday Name</th>
+                  <th style="width:100px; text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="holidays-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-cashflow" class="view-section">
+
+        <!-- Header -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.75rem;">
+          <div>
+            <h2 style="font-size:1.3rem; font-weight:700; color:#fff; margin:0;">Tanker Order Forecast &amp; Cash Planner</h2>
+            <p style="font-size:0.78rem; color:var(--text-dim); margin:0.2rem 0 0;">CBI bank holidays &middot; IOCL end-of-month pressure &middot; Smart load decisions</p>
+          </div>
+          <button class="btn btn-primary" onclick="renderCashFlow()" style="display:flex;align-items:center;gap:0.4rem;">
+            <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor;"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+            Recalculate
+          </button>
+        </div>
+
+        <!-- Cash Inputs bar -->
+        <div class="panel" style="padding:0.9rem 1.2rem; margin-bottom:1.25rem;">
+          <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+            <div class="form-group" style="margin:0; min-width:130px;">
+              <label style="font-size:0.7rem;">CBI Bank Balance (&#8377;)</label>
+              <input type="number" id="cf-bank-balance" class="form-control" style="padding:0.35rem 0.5rem; font-size:0.85rem;" placeholder="0" min="0">
+            </div>
+            <div class="form-group" style="margin:0; min-width:130px;">
+              <label style="font-size:0.7rem;">PhonePe Unsettled (&#8377;)</label>
+              <input type="number" id="cf-phonepe-balance" class="form-control" style="padding:0.35rem 0.5rem; font-size:0.85rem;" placeholder="0" min="0">
+            </div>
+            <div class="form-group" style="margin:0; min-width:130px;">
+              <label style="font-size:0.7rem;">Cash in Drawer (&#8377;)</label>
+              <input type="number" id="cf-cash-drawer" class="form-control" style="padding:0.35rem 0.5rem; font-size:0.85rem;" placeholder="0" min="0">
+            </div>
+            <div class="form-group" style="margin:0; min-width:130px;">
+              <label style="font-size:0.7rem;">IOCL Cushion (&#8377;)</label>
+              <input type="number" id="cf-iocl-cushion" class="form-control" style="padding:0.35rem 0.5rem; font-size:0.85rem;" placeholder="0" min="0">
+            </div>
+            <div class="form-group" style="margin:0; min-width:130px;">
+              <label style="font-size:0.7rem;">PPCC / Other (&#8377;)</label>
+              <input type="number" id="cf-ppcc-balance" class="form-control" style="padding:0.35rem 0.5rem; font-size:0.85rem;" placeholder="0" min="0">
+            </div>
+            <button class="btn btn-primary" onclick="saveCashInputsAndForecast()" style="padding:0.4rem 1rem; font-size:0.8rem; white-space:nowrap;">Save &amp; Forecast</button>
+          </div>
+        </div>
+
+        <!-- Load price reference -->
+        <div class="panel" style="padding:0.6rem 1.2rem; margin-bottom:1.25rem; background:rgba(99,102,241,0.06); border-color:rgba(99,102,241,0.25);">
+          <div style="display:flex; gap:2rem; flex-wrap:wrap; font-size:0.8rem; align-items:center;">
+            <span style="color:var(--text-dim);">Load options (from IOCL bills):</span>
+            <span><strong style="color:#818cf8;">4kL MS + 8kL HSD</strong> = <span id="load-cost-4-8">&#8212;</span></span>
+            <span><strong style="color:#f472b6;">8kL MS + 4kL HSD</strong> = <span id="load-cost-8-4">&#8212;</span></span>
+            <span style="color:var(--text-dim);">Avg sale: MS <strong id="cf-avg-ms" style="color:#4ade80;">&#8212;</strong> L/day &middot; HSD <strong id="cf-avg-hsd" style="color:#38bdf8;">&#8212;</strong> L/day</span>
+          </div>
+        </div>
+
+        <!-- 21-day CBI calendar strip -->
+        <div class="panel" style="padding:0.75rem 1rem; margin-bottom:1.25rem;">
+          <div style="font-size:0.7rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.5rem;">Next 21 Days &#8212; CBI Bank Calendar</div>
+          <div id="cf-calendar-strip" style="display:flex; gap:0.3rem; flex-wrap:wrap;"></div>
+          <div style="display:flex; gap:1.5rem; margin-top:0.5rem; font-size:0.7rem; color:var(--text-dim);">
+            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(99,102,241,0.25);border-radius:2px;margin-right:4px;"></span>Banking Day</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(244,114,182,0.35);border:1px solid rgba(244,114,182,0.6);border-radius:2px;margin-right:4px;"></span>Bank Holiday / Weekend</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(250,204,21,0.35);border:1px solid rgba(250,204,21,0.7);border-radius:2px;margin-right:4px;"></span>Recommended Buy/Pay Day</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(239,68,68,0.3);border:1px solid rgba(239,68,68,0.6);border-radius:2px;margin-right:4px;"></span>Month-End IOCL Pressure</span>
+          </div>
+        </div>
+
+        <!-- End-of-month pressure alert -->
+        <div id="eom-pressure-bar" style="display:none; margin-bottom:1.25rem;"></div>
+
+        <!-- UPCOM + NEXT TO UP forecast cards -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1.25rem;">
+
+          <!-- UPCOM card -->
+          <div class="panel" style="border-left:4px solid #f59e0b;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+              <div>
+                <div style="font-size:0.65rem; font-weight:700; letter-spacing:1px; color:#f59e0b; text-transform:uppercase;">UPCOM &#8212; Next Order</div>
+                <div id="upcom-date" style="font-size:0.9rem; font-weight:700; color:#fff; margin-top:0.2rem;">&#8212;</div>
+              </div>
+              <div id="upcom-load-badge" style="padding:0.3rem 0.8rem; border-radius:20px; font-size:0.75rem; font-weight:700; background:rgba(245,158,11,0.15); color:#f59e0b;">&#8212;</div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; font-size:0.8rem; margin-bottom:0.75rem;">
+              <div style="background:rgba(255,255,255,0.03); border-radius:6px; padding:0.5rem;">
+                <div style="color:var(--text-dim); font-size:0.68rem; margin-bottom:0.2rem;">&#9981; MS / Petrol Stock</div>
+                <div id="upcom-ms-stock" style="font-weight:700; color:#4ade80;">&#8212;</div>
+                <div id="upcom-ms-remaining" style="font-size:0.7rem; color:var(--text-dim);">&#8212;</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03); border-radius:6px; padding:0.5rem;">
+                <div style="color:var(--text-dim); font-size:0.68rem; margin-bottom:0.2rem;">&#128738; HSD / Diesel Stock</div>
+                <div id="upcom-hsd-stock" style="font-weight:700; color:#38bdf8;">&#8212;</div>
+                <div id="upcom-hsd-remaining" style="font-size:0.7rem; color:var(--text-dim);">&#8212;</div>
+              </div>
+            </div>
+            <div style="font-size:0.78rem; display:flex; flex-direction:column; gap:0.3rem;">
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Avg sale / day</span><span>MS <strong id="upcom-avg-ms">&#8212;</strong> &middot; HSD <strong id="upcom-avg-hsd">&#8212;</strong> L</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Days until buy</span><span id="upcom-days" style="font-weight:700;">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Projected cash (MS)</span><span id="upcom-proj-ms" style="color:#4ade80;">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Projected cash (HSD)</span><span id="upcom-proj-hsd" style="color:#38bdf8;">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Total cash reserves</span><span id="upcom-total-reserves" style="font-weight:600;">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">IOCL pending</span><span id="upcom-iocl-pending" style="color:#ef4444;">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:0.3rem; margin-top:0.1rem;"><span style="color:var(--text-dim);">Net cash available</span><span id="upcom-net-cash" style="font-weight:700;">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Load cost</span><span id="upcom-load-cost" style="font-weight:700;">&#8212;</span></div>
+              <div id="upcom-shortfall-row" style="display:none; justify-content:space-between; color:#ef4444;"><span>Shortfall</span><span id="upcom-shortfall">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">RTGS filing day (CBI)</span><span id="upcom-rtgs-day" style="font-weight:700; color:#f59e0b;">&#8212;</span></div>
+            </div>
+            <div id="upcom-decision" style="margin-top:0.75rem; padding:0.5rem 0.75rem; border-radius:6px; font-size:0.75rem; font-weight:600;">&#8212;</div>
+          </div>
+
+          <!-- NEXT TO UP card -->
+          <div class="panel" style="border-left:4px solid #818cf8;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+              <div>
+                <div style="font-size:0.65rem; font-weight:700; letter-spacing:1px; color:#818cf8; text-transform:uppercase;">NEXT TO UP &#8212; Second Order</div>
+                <div id="ntu-date" style="font-size:0.9rem; font-weight:700; color:#fff; margin-top:0.2rem;">&#8212;</div>
+              </div>
+              <div id="ntu-load-badge" style="padding:0.3rem 0.8rem; border-radius:20px; font-size:0.75rem; font-weight:700; background:rgba(129,140,248,0.15); color:#818cf8;">&#8212;</div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; font-size:0.8rem; margin-bottom:0.75rem;">
+              <div style="background:rgba(255,255,255,0.03); border-radius:6px; padding:0.5rem;">
+                <div style="color:var(--text-dim); font-size:0.68rem; margin-bottom:0.2rem;">&#9981; MS after 1st load</div>
+                <div id="ntu-ms-stock" style="font-weight:700; color:#4ade80;">&#8212;</div>
+                <div id="ntu-ms-remaining" style="font-size:0.7rem; color:var(--text-dim);">&#8212;</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03); border-radius:6px; padding:0.5rem;">
+                <div style="color:var(--text-dim); font-size:0.68rem; margin-bottom:0.2rem;">&#128738; HSD after 1st load</div>
+                <div id="ntu-hsd-stock" style="font-weight:700; color:#38bdf8;">&#8212;</div>
+                <div id="ntu-hsd-remaining" style="font-size:0.7rem; color:var(--text-dim);">&#8212;</div>
+              </div>
+            </div>
+            <div style="font-size:0.78rem; display:flex; flex-direction:column; gap:0.3rem;">
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Days from today</span><span id="ntu-days" style="font-weight:700;">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Projected cash (MS)</span><span id="ntu-proj-ms" style="color:#4ade80;">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Projected cash (HSD)</span><span id="ntu-proj-hsd" style="color:#38bdf8;">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Total cash reserves</span><span id="ntu-total-reserves" style="font-weight:600;">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">IOCL pending (incl 1st load)</span><span id="ntu-iocl-pending" style="color:#ef4444;">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:0.3rem; margin-top:0.1rem;"><span style="color:var(--text-dim);">Net cash available</span><span id="ntu-net-cash" style="font-weight:700;">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">Load cost</span><span id="ntu-load-cost" style="font-weight:700;">&#8212;</span></div>
+              <div id="ntu-shortfall-row" style="display:none; justify-content:space-between; color:#ef4444;"><span>Shortfall</span><span id="ntu-shortfall">&#8212;</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-dim);">RTGS filing day (CBI)</span><span id="ntu-rtgs-day" style="font-weight:700; color:#818cf8;">&#8212;</span></div>
+            </div>
+            <div id="ntu-decision" style="margin-top:0.75rem; padding:0.5rem 0.75rem; border-radius:6px; font-size:0.75rem; font-weight:600;">&#8212;</div>
+          </div>
+
+        </div><!-- end forecast cards -->
+
+        <!-- hidden legacy compat inputs -->
+        <input type="hidden" id="cf-manual-cost" value="0">
+
+      </section>
+
+      <!-- View 6: Settings -->
+      <!-- ============================================================ -->
+      <!-- EXPENSE LEDGER VIEW -->
+      <!-- ============================================================ -->
+      <section id="view-expenses" class="view-section">
+
+        <!-- Summary Cards -->
+        <div class="stats-grid" id="expense-summary-cards" style="margin-bottom:1.5rem;"></div>
+
+        <!-- Header + Add Button -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+          <div>
+            <h2 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin:0;">Operational Expense Records</h2>
+            <p style="font-size:0.78rem; color:var(--text-dim); margin:0.2rem 0 0;">Electricity bills, lube purchases, repairs, and other station expenses</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddExpenseModal()" style="display:flex;align-items:center;gap:0.4rem;">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            Add Expense
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="panel" style="padding:0.75rem 1rem; margin-bottom:1rem;">
+          <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center;">
+            <div class="form-group" style="margin:0; min-width:140px;">
+              <label style="font-size:0.7rem;">Category</label>
+              <select id="exp-filter-cat" onchange="renderExpenseLedger()" style="padding:0.3rem 0.5rem; font-size:0.8rem; background:var(--input-bg); border:1px solid var(--border); border-radius:6px; color:var(--text-primary);">
+                <option value="all">All Categories</option>
+                <option value="Electricity">Electricity</option>
+                <option value="Lube & Consumables">Lube &amp; Consumables</option>
+                <option value="Salary">Salary</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0; min-width:120px;">
+              <label style="font-size:0.7rem;">From</label>
+              <input type="date" id="exp-filter-from" onchange="renderExpenseLedger()" style="padding:0.3rem 0.5rem; font-size:0.8rem; background:var(--input-bg); border:1px solid var(--border); border-radius:6px; color:var(--text-primary);">
+            </div>
+            <div class="form-group" style="margin:0; min-width:120px;">
+              <label style="font-size:0.7rem;">To</label>
+              <input type="date" id="exp-filter-to" onchange="renderExpenseLedger()" style="padding:0.3rem 0.5rem; font-size:0.8rem; background:var(--input-bg); border:1px solid var(--border); border-radius:6px; color:var(--text-primary);">
+            </div>
+            <button class="btn btn-secondary" onclick="document.getElementById('exp-filter-cat').value='all'; document.getElementById('exp-filter-from').value=''; document.getElementById('exp-filter-to').value=''; renderExpenseLedger();" style="margin-top:1.2rem; padding:0.3rem 0.8rem; font-size:0.78rem;">Clear</button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="panel" style="padding:0;">
+          <table class="data-table" id="expense-ledger-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Vendor / Description</th>
+                <th style="text-align:right;">Amount (₹)</th>
+                <th style="text-align:center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="expense-ledger-body"></tbody>
+          </table>
+        </div>
+
+        <!-- Add/Edit Expense Modal -->
+        <div id="expense-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
+          <div class="panel" style="width:min(500px,95vw); max-height:90vh; overflow-y:auto; padding:1.5rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.2rem;">
+              <h3 id="expense-modal-title" style="margin:0; font-size:1rem; font-weight:700;">Add Expense</h3>
+              <button onclick="closeExpenseModal()" style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:1.4rem;line-height:1;">&times;</button>
+            </div>
+            <input type="hidden" id="exp-edit-id">
+            <div class="form-group">
+              <label for="exp-inp-date">Date</label>
+              <input type="date" id="exp-inp-date" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="exp-inp-cat">Category</label>
+              <select id="exp-inp-cat" class="form-control">
+                <option>Electricity</option>
+                <option>Lube &amp; Consumables</option>
+                <option>Salary</option>
+                <option>Maintenance</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="exp-inp-vendor">Vendor / Source</label>
+              <input type="text" id="exp-inp-vendor" class="form-control" placeholder="e.g. AVVNL, ANANTLUBE">
+            </div>
+            <div class="form-group">
+              <label for="exp-inp-amount">Amount (₹)</label>
+              <input type="number" id="exp-inp-amount" class="form-control" placeholder="0.00" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+              <label for="exp-inp-desc">Notes / Summary</label>
+              <textarea id="exp-inp-desc" class="form-control" rows="3" placeholder="Bill details, account number, reference, etc."></textarea>
+            </div>
+            <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:1rem;">
+              <button class="btn btn-secondary" onclick="closeExpenseModal()">Cancel</button>
+              <button class="btn btn-primary" onclick="saveExpenseEntry()">Save Expense</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <section id="view-settings" class="view-section">
+
+        <!-- User Management Card -->
+        <div class="panel" style="margin-bottom:1.5rem;border:1px solid #334155;">
+          <div class="panel-header"><h2 class="panel-title">👥 User Management</h2></div>
+          <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;">
+            <div id="user-mgmt-list"></div>
+            <div style="border-top:1px solid #334155;padding-top:1rem;">
+              <div style="font-weight:700;color:#f8fafc;margin-bottom:0.75rem;font-size:0.85rem;">Add New Employee</div>
+              <div class="form-row">
+                <div class="form-group"><label for="new-emp-name">Full Name</label><input type="text" id="new-emp-name" placeholder="Ramesh Kumar"></div>
+                <div class="form-group"><label for="new-emp-username">Username</label><input type="text" id="new-emp-username" placeholder="ramesh or 9876543210"></div>
+                <div class="form-group"><label for="new-emp-pin">PIN (4–6 digits)</label><input type="password" id="new-emp-pin" placeholder="e.g. 1234" maxlength="6"></div>
+                <div class="form-group">
+                  <label for="new-emp-role-select">Account Role</label>
+                  <select id="new-emp-role-select" style="width:100%; padding:0.5rem; border-radius:var(--radius-sm); background:var(--bg-input); border:1px solid var(--border); color:#fff; font-family:inherit; font-size:0.85rem; outline:none; height:42px;">
+                    <option value="employee">Employee (Operator)</option>
+                    <option value="owner">Owner (Administrator)</option>
+                  </select>
+                </div>
+              </div>
+              <button id="add-employee-btn" class="btn btn-primary" style="margin-top:0.5rem;">➕ Add Employee</button>
+            </div>
+
+            <!-- Approve Employee Device Requests -->
+            <div style="border-top:1px solid #334155;padding-top:1rem;margin-top:0.5rem;">
+              <div style="font-weight:700;color:#f8fafc;margin-bottom:0.4rem;font-size:0.85rem;">🔌 Pending Device Approvals</div>
+              <p style="color:#64748b;font-size:0.75rem;margin:0 0 0.75rem 0;line-height:1.3;">Devices requesting access will appear below. Choose an employee from the dropdown and click Approve to authorize their access.</p>
+              <div id="pending-device-approvals-list" style="margin-top:0.5rem;display:flex;flex-direction:column;gap:0.5rem;">
+                <p style="color:#64748b;font-size:0.75rem;text-align:center;padding:0.5rem;">Loading pending approvals...</p>
+              </div>
+            </div>
+
+            <div style="border-top:1px solid #334155;padding-top:1rem;margin-top:0.5rem;">
+              <div style="font-weight:700;color:#f8fafc;margin-bottom:0.4rem;font-size:0.85rem;">Device Setup Instructions</div>
+              <p style="color:#64748b;font-size:0.75rem;margin:0 0 0.75rem 0;line-height:1.3;">Employees should simply open this website on their phone. If their device is unrecognized, they will be prompted to enter their Name. Once they submit their request, it will appear here for you to approve with a single click. No copy-pasting required!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Owner Account Security Panel -->
+        <div class="panel" style="margin-bottom:1.5rem;border:1px solid #334155;">
+          <div class="panel-header"><h2 class="panel-title">🔐 Owner Account Security</h2></div>
+          <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;">
+            <p style="color:#94a3b8;font-size:0.85rem;margin:0;">
+              Manage your owner profile, display name, or change your login password.
+            </p>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="owner-display-name">Display Name</label>
+                <input type="text" id="owner-display-name" placeholder="Owner Name">
+              </div>
+              <div class="form-group">
+                <label for="owner-username">Username</label>
+                <input type="text" id="owner-username" placeholder="owner" autocomplete="username">
+              </div>
+              <div class="form-group">
+                <label for="owner-new-password">New Password (leave blank to keep current)</label>
+                <input type="password" id="owner-new-password" placeholder="••••••••" autocomplete="new-password">
+              </div>
+            </div>
+            <button id="update-owner-profile-btn" class="btn btn-primary" style="align-self:flex-start;padding:0.6rem 1.25rem;">💾 Update Profile &amp; Password</button>
+          </div>
+        </div>
+
+        <!-- Cloud Sync Card -->
+        <div class="panel" style="margin-bottom:1.5rem;border:1px solid #f97316;background:linear-gradient(135deg,rgba(249,115,22,0.08),rgba(15,17,23,0.9));">
+          <div class="panel-header">
+            <h2 class="panel-title">☁️ Cloud Auto-Sync (Supabase Database)</h2>
+          </div>
+          <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;">
+            <p style="color:#94a3b8;font-size:0.85rem;margin:0;">
+              Configure your Supabase database. Auto-sync is pre-configured and active for all employee devices.
+            </p>
+            <div class="form-row" style="display: none;">
+              <div class="form-group">
+                <label for="cfg-sync-master-key">Supabase API URL</label>
+                <input type="text" id="cfg-sync-master-key" placeholder="https://your-project-ref.supabase.co" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="cfg-sync-bin-id">Supabase Anon Key</label>
+                <input type="password" id="cfg-sync-bin-id" placeholder="eyJhbGciOi..." autocomplete="off">
+              </div>
+            </div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+              <button type="button" id="cfg-force-push-btn" class="btn btn-secondary" style="flex:1;min-width:140px;">
+                ⬆️ Push to Cloud
+              </button>
+              <button type="button" id="cfg-force-pull-btn" class="btn btn-secondary" style="flex:1;min-width:140px;">
+                ⬇️ Pull from Cloud
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+
+          <!-- Storage Configurations -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Underground Tanks & System Setup</h2>
+            </div>
+
+            <form id="system-settings-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="cfg-petrol-capacity">Petrol Tank Capacity (L)</label>
+                  <input type="number" id="cfg-petrol-capacity" min="5000" max="100000" step="1000" required>
+                </div>
+                <div class="form-group">
+                  <label for="cfg-diesel-capacity">Diesel Tank Capacity (L)</label>
+                  <input type="number" id="cfg-diesel-capacity" min="5000" max="100000" step="1000" required>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="cfg-safety-stock">Safety Stock Trigger (L)</label>
+                  <input type="number" id="cfg-safety-stock" min="500" max="20000" step="100" required>
+                </div>
+                <div class="form-group">
+                  <label for="cfg-currency-symbol">Currency Symbol</label>
+                  <input type="text" id="cfg-currency-symbol" placeholder="e.g. ₹, $, €" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="cfg-ads-days">Averaging Window (Days for prediction)</label>
+                <input type="number" id="cfg-ads-days" min="3" max="60" required>
+              </div>
+
+              <div style="border-top: 1px dashed var(--border); padding-top: 1rem; margin-top: 1rem; margin-bottom: 1.25rem;">
+                <h3 style="font-size: 0.95rem; color: #fff; margin-bottom: 0.75rem;">Horizontal Tank Geometry & Dead Stock</h3>
+
+                <!-- Petrol Tank -->
+                <div style="margin-bottom: 1.25rem;">
+                  <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-petrol); display: block; margin-bottom: 0.5rem;">Petrol Tank Dimensions & Suction Limit</span>
+                  <div class="form-row">
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label for="cfg-petrol-dia">Tank Diameter (cm)</label>
+                      <input type="number" id="cfg-petrol-dia" min="100" max="500" step="1" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label for="cfg-petrol-len">Tank Length (cm)</label>
+                      <input type="number" id="cfg-petrol-len" min="100" max="2000" step="0.1" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label for="cfg-petrol-dead">Unsellable Base Stock (L)</label>
+                      <input type="number" id="cfg-petrol-dead" min="0" max="5000" step="1" required>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Diesel Tank -->
+                <div>
+                  <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-diesel); display: block; margin-bottom: 0.5rem;">Diesel Tank Dimensions & Suction Limit</span>
+                  <div class="form-row">
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label for="cfg-diesel-dia">Tank Diameter (cm)</label>
+                      <input type="number" id="cfg-diesel-dia" min="100" max="500" step="1" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label for="cfg-diesel-len">Tank Length (cm)</label>
+                      <input type="number" id="cfg-diesel-len" min="100" max="2000" step="0.1" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label for="cfg-diesel-dead">Unsellable Base Stock (L)</label>
+                      <input type="number" id="cfg-diesel-dead" min="0" max="5000" step="1" required>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary">Save Settings</button>
+            </form>
+          </div>
+
+          <!-- Locked Capital Summary Panel -->
+          <div class="panel" id="settings-capital-analysis-panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Capital Investment Analysis</h2>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                Due to physical suction limit thresholds, a certain volume of fuel is permanently trapped below the suction pipes, representing **Locked Dead Capital**.
+              </p>
+
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                  <span style="color: var(--text-muted);">Petrol WAC Rate:</span>
+                  <span style="color: #fff;" id="cfg-capital-wac-petrol">₹ 0.00 / L</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                  <span style="color: var(--text-muted);">Diesel WAC Rate:</span>
+                  <span style="color: #fff;" id="cfg-capital-wac-diesel">₹ 0.00 / L</span>
+                </div>
+
+                <hr style="border: 0; border-top: 1px dashed var(--border); margin: 0.25rem 0;">
+
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                  <span style="color: var(--color-petrol); font-weight: 600;">Petrol Locked Capital:</span>
+                  <strong style="color: #fff;" id="cfg-capital-locked-petrol">₹ 0.00</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                  <span style="color: var(--color-diesel); font-weight: 600;">Diesel Locked Capital:</span>
+                  <strong style="color: #fff;" id="cfg-capital-locked-diesel">₹ 0.00</strong>
+                </div>
+
+                <hr style="border: 0; border-top: 1px dashed var(--border); margin: 0.25rem 0;">
+
+                <div style="display: flex; justify-content: space-between; font-size: 0.95rem;">
+                  <span style="color: #fff; font-weight: 700;">Total Locked Capital:</span>
+                  <strong style="color: var(--danger);" id="cfg-capital-locked-total">₹ 0.00</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PhonePe Merchant Integration Panel -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="var(--primary)"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                PhonePe API Integration
+              </h2>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                Configure your PhonePe Merchant credentials (generated in your PhonePe Business portal using your registered phone number) to automatically fetch shift settlement totals.
+              </p>
+
+              <form id="phonepe-settings-form">
+                <div class="form-group">
+                  <label for="cfg-phonepe-mid">Merchant ID (MID)</label>
+                  <input type="text" id="cfg-phonepe-mid" placeholder="e.g. MC15... or demo_mid" required style="width: 100%;">
+                </div>
+                <div class="form-row">
+                  <div class="form-group" style="flex: 2;">
+                    <label for="cfg-phonepe-salt-key">Salt Key</label>
+                    <input type="password" id="cfg-phonepe-salt-key" placeholder="e.g. SHA256 salt key or demo_salt" required style="width: 100%;">
+                  </div>
+                  <div class="form-group" style="flex: 1;">
+                    <label for="cfg-phonepe-salt-index">Salt Index</label>
+                    <input type="number" id="cfg-phonepe-salt-index" min="1" max="10" placeholder="1" required style="width: 100%;">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 0.5rem;">Save API Credentials</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Backup & Restore -->
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Data Safety & Portability</h2>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                This app runs entirely in your browser. Regularly download backups to prevent data loss due to browser cleaning or clearing site cookies.
+              </p>
+
+              <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn btn-secondary" id="backup-db-btn" style="flex: 1;">
+                  <svg viewBox="0 0 24 24" width="18" height="18"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+                  Export Backup (JSON)
+                </button>
+
+                <label class="btn btn-secondary" style="flex: 1; text-align: center; margin: 0; cursor: pointer;">
+                  <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align: middle; margin-right: 4px;"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                  Import Backup
+                  <input type="file" id="restore-db-file" style="display: none;">
+                </label>
+              </div>
+
+              <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                <h3 style="font-size: 0.95rem; color: var(--danger);">Danger Zone</h3>
+                <p style="font-size: 0.8rem; color: var(--text-dim);">
+                  Wiping the database deletes all shift histories, purchase logs, price entries, and custom holidays. This action cannot be undone.
+                </p>
+                <button class="btn btn-danger" id="clear-db-btn" style="align-self: flex-start;">Reset All Database Data</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Diagnostics & System Activity logs -->
+        <div class="panel" style="border: 1px solid var(--border); margin-top: 1.5rem;">
+          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <h2 class="panel-title" style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="var(--color-diesel)"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2zm0 8H7v-2h10v2z"/></svg>
+              Diagnostics &amp; Activity Logs
+            </h2>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="test-diag-error-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">⚠️ Test Error</button>
+              <button type="button" class="btn btn-danger btn-sm" id="clear-diag-logs-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #f87171;">🧹 Clear Logs</button>
+            </div>
+          </div>
+
+          <div style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem;">
+            <!-- Real-time Diagnostic Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+              
+              <!-- DB Status Card -->
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Local Storage DB</span>
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                  <strong style="font-size: 1.1rem; color: #fff;" id="diag-db-status">Available</strong>
+                  <span style="font-size: 0.75rem; color: var(--text-dim);" id="diag-db-size">0 KB</span>
+                </div>
+                <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; margin-top: 0.25rem;">
+                  <div id="diag-db-quota-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s ease;"></div>
+                </div>
+                <span style="font-size: 0.65rem; color: var(--text-dim);" id="diag-db-quota-text">0.0% of 5MB quota</span>
+              </div>
+
+              <!-- Records Status Card -->
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Database Records</span>
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                  <strong style="font-size: 1.1rem; color: #fff;" id="diag-db-records">0 Days</strong>
+                  <span style="font-size: 0.75rem; color: var(--text-dim);" id="diag-db-purchases">0 Purchases</span>
+                </div>
+                <span style="font-size: 0.65rem; color: var(--text-dim);" id="diag-db-pending">0 Pending Submissions</span>
+              </div>
+
+              <!-- Cloud Sync Status Card -->
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Supabase Sync Connection</span>
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                  <strong style="font-size: 1.1rem; color: #fff;" id="diag-sync-status">Not Configured</strong>
+                  <span style="font-size: 0.75rem; color: var(--text-dim);" id="diag-sync-time">Never</span>
+                </div>
+                <span style="font-size: 0.65rem; color: var(--text-dim); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" id="diag-sync-gist-id">Database: Not Configured</span>
+              </div>
+
+            </div>
+
+            <!-- Log Console View -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Real-Time Console Stream:</span>
+              <div id="diagnostic-logs-list" style="background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; font-family: monospace; font-size: 0.75rem; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; line-height: 1.4;">
+                <div style="color: var(--text-dim); text-align: center; padding: 1rem;">No activity logged yet. Perform some actions to see diagnostic data.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Seeding & Mock Data Area -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Pre-populate Simulation Data</h2>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+              If you are opening this system for the first time, click below to populate mock pricing, 14 days of simulated sales, and purchase records. This gives you an immediate preview of the predictive ordering model, WAC valuations, and holiday reminders in action.
+            </p>
+            <button class="btn btn-accent" id="seed-mock-data-btn" style="align-self: flex-start;">Seed Demo Database</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Approvals Section (Owner only) -->
+      <section id="view-approvals" class="view-section">
+        <div class="panel">
+          <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 class="panel-title">✅ Employee Submissions — Pending Approvals</h2>
+            <button id="approvals-refresh-btn" onclick="refreshApprovalsPanel()" class="btn btn-secondary btn-sm" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; display: flex; align-items: center; gap: 0.35rem; font-weight: 600; padding: 0.35rem 0.6rem; cursor: pointer;">
+              🔄 Refresh Now
+            </button>
+          </div>
+          <div style="padding:1.25rem;" id="approvals-list">
+            <div style="text-align:center;color:#64748b;padding:3rem;">No submissions yet.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DSR Data Checker & OCR Verifier View -->
+      <section id="view-dsr-checker" class="view-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="dsr-month-tabs">
+            <button class="btn btn-secondary btn-sm active" id="dsr-tab-november" onclick="selectDsrMonth('november')">Nov 2025</button>
+            <button class="btn btn-secondary btn-sm" id="dsr-tab-december" onclick="selectDsrMonth('december')">Dec 2025</button>
+            <button class="btn btn-secondary btn-sm" id="dsr-tab-january" onclick="selectDsrMonth('january')">Jan 2026</button>
+            <button class="btn btn-secondary btn-sm" id="dsr-tab-February" onclick="selectDsrMonth('February')">Feb 2026</button>
+            <button class="btn btn-secondary btn-sm" id="dsr-tab-march" onclick="selectDsrMonth('march')">Mar 2026</button>
+            <button class="btn btn-secondary btn-sm" id="dsr-tab-april" onclick="selectDsrMonth('april')">Apr 2026</button>
+            <button class="btn btn-secondary btn-sm" id="dsr-tab-may" onclick="selectDsrMonth('may')">May 2026</button>
+            <button class="btn btn-secondary btn-sm" id="dsr-tab-june" onclick="selectDsrMonth('june')">Jun 2026</button>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" onclick="exportDsrJSON()">💾 Export JSON</button>
+            <button class="btn btn-primary" onclick="approveAndMergeDsr()">Data Checked: Merge to Production</button>
+          </div>
+        </div>
+
+        <!-- Monthly Summary Cards -->
+        <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 1.5rem;">
+          <div class="metric-card">
+            <span class="metric-label">Reviewing Month</span>
+            <span class="metric-value" id="dsr-summary-month-name">November 2025</span>
+            <span class="metric-footer" id="dsr-summary-total-days">0 days loaded</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Petrol Sales (Month)</span>
+            <span class="metric-value" id="dsr-summary-petrol-sales">0 L</span>
+            <span class="metric-footer">From totalizer deltas</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Diesel Sales (Month)</span>
+            <span class="metric-value" id="dsr-summary-diesel-sales">0 L</span>
+            <span class="metric-footer">From totalizer deltas</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">OCR Checker Status</span>
+            <span class="metric-value" id="dsr-summary-status-badge">
+              <span class="validation-badge success">All Clean</span>
+            </span>
+            <span class="metric-footer" id="dsr-summary-issue-count">0 issues detected</span>
+          </div>
+        </div>
+
+        <!-- Validation Error Message log -->
+        <div class="error-log" id="dsr-validation-error-log" style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; display: none;">
+          <div class="error-log-title" style="font-weight: 700; color: #ef4444; font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            Review Issues / Mathematical Discrepancies
+          </div>
+          <ul class="error-list" id="dsr-validation-error-list" style="margin: 0; padding-left: 1.25rem; font-size: 0.8rem; color: #fca5a5; line-height: 1.5;"></ul>
+        </div>
+
+        <!-- Spreadsheet Panel -->
+        <div class="panel">
+          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+            <h2 class="panel-title">✏️ Digitized DSR Spreadsheet (Click dashed cells to edit)</h2>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">
+              Editing automatically propagates opening values to maintain continuous sequences.
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 1.25rem; background:rgba(255,255,255,0.01); border-bottom:1px solid var(--border); flex-wrap:wrap; gap:0.5rem;">
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <span style="font-size:0.75rem; color:var(--text-muted);">Spreadsheet Zoom:</span>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="adjustDsrZoom(-0.1)" style="padding:0.15rem 0.4rem; font-size:0.75rem; font-weight:700;">➖ Zoom Out</button>
+              <span id="dsr-zoom-label" style="font-size:0.75rem; font-weight:700; color:#fff; min-width:35px; text-align:center;">100%</span>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="adjustDsrZoom(0.1)" style="padding:0.15rem 0.4rem; font-size:0.75rem; font-weight:700;">➕ Zoom In</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="resetDsrZoom()" style="padding:0.15rem 0.4rem; font-size:0.75rem;">Reset</button>
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">
+              💡 Click any dashed cell to edit.
+            </div>
+          </div>
+          <div id="dsr-spreadsheet-container" style="overflow-x: auto; padding: 0.5rem;">
+            <table class="spreadsheet-table" style="min-width: 1800px; width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr class="header-group" style="border-bottom: 1px solid var(--border); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); text-align: left;">
+                  <th rowspan="2" style="text-align: left; padding: 0.5rem;">Date</th>
+                  <th colspan="4" style="background: rgba(6, 182, 212, 0.08); border-bottom: 2px solid var(--color-petrol); padding: 0.5rem; text-align: center;">Petrol Dispensing Units (Totalizers)</th>
+                  <th rowspan="2" style="background: rgba(6, 182, 212, 0.04); padding: 0.5rem; text-align: right;" title="Testing volume (typically 5L per test, deducted from sales)">Tests</th>
+                  <th rowspan="2" style="background: rgba(6, 182, 212, 0.04); padding: 0.5rem; text-align: right;" title="Calculated net petrol sales volume">Petrol L</th>
+                  <th colspan="3" style="background: rgba(16, 185, 129, 0.08); border-bottom: 2px solid #10b981; padding: 0.5rem; text-align: center;">Petrol Tank Wetstock</th>
+                  <th colspan="4" style="background: rgba(234, 179, 8, 0.08); border-bottom: 2px solid var(--color-diesel); padding: 0.5rem; text-align: center;">Diesel Dispensing Units (Totalizers)</th>
+                  <th rowspan="2" style="background: rgba(234, 179, 8, 0.04); padding: 0.5rem; text-align: right;" title="Testing volume (typically 5L per test, deducted from sales)">Tests</th>
+                  <th rowspan="2" style="background: rgba(234, 179, 8, 0.04); padding: 0.5rem; text-align: right;" title="Calculated net diesel sales volume">Diesel L</th>
+                  <th colspan="3" style="background: rgba(245, 158, 11, 0.08); border-bottom: 2px solid #f59e0b; padding: 0.5rem; text-align: center;">Diesel Tank Wetstock</th>
+                  <th colspan="3" style="background: rgba(14, 165, 233, 0.08); border-bottom: 2px solid var(--primary); padding: 0.5rem; text-align: center;">Cash Variance Analysis</th>
+                  <th rowspan="2" style="padding: 0.5rem; text-align: center;" title="Mathematical checks for totalizer continuity and logical limits">Math Check</th>
+                </tr>
+                <tr class="header-sub" style="border-bottom: 1px solid var(--border); font-size: 0.7rem; color: var(--text-dim); text-align: right;">
+                  <th style="background: rgba(6, 182, 212, 0.04); padding: 0.4rem; text-align: right;" title="Opening totalizer reading for Dispensing Unit 1">DU1 Open</th>
+                  <th style="background: rgba(6, 182, 212, 0.04); padding: 0.4rem; text-align: right;" title="Closing totalizer reading for Dispensing Unit 1">DU1 Close</th>
+                  <th style="background: rgba(6, 182, 212, 0.04); padding: 0.4rem; text-align: right;" title="Opening totalizer reading for Dispensing Unit 2">DU2 Open</th>
+                  <th style="background: rgba(6, 182, 212, 0.04); padding: 0.4rem; text-align: right;" title="Closing totalizer reading for Dispensing Unit 2">DU2 Close</th>
+                  <th style="background: rgba(16, 185, 129, 0.04); padding: 0.4rem; text-align: right;" title="Measured tank dip height in centimeters">Dip (cm)</th>
+                  <th style="background: rgba(16, 185, 129, 0.04); padding: 0.4rem; text-align: right;" title="Calculated tank volume in Liters based on calibration chart">Volume (L)</th>
+                  <th style="background: rgba(16, 185, 129, 0.04); padding: 0.4rem; text-align: right;" title="Wetstock variance: Physical closing stock minus expected book stock">Variance (L)</th>
+                  <th style="background: rgba(234, 179, 8, 0.04); padding: 0.4rem; text-align: right;" title="Opening totalizer reading for Dispensing Unit 1">DU1 Open</th>
+                  <th style="background: rgba(234, 179, 8, 0.04); padding: 0.4rem; text-align: right;" title="Closing totalizer reading for Dispensing Unit 1">DU1 Close</th>
+                  <th style="background: rgba(234, 179, 8, 0.04); padding: 0.4rem; text-align: right;" title="Opening totalizer reading for Dispensing Unit 2">DU2 Open</th>
+                  <th style="background: rgba(234, 179, 8, 0.04); padding: 0.4rem; text-align: right;" title="Closing totalizer reading for Dispensing Unit 2">DU2 Close</th>
+                  <th style="background: rgba(245, 158, 11, 0.04); padding: 0.4rem; text-align: right;" title="Measured tank dip height in centimeters">Dip (cm)</th>
+                  <th style="background: rgba(245, 158, 11, 0.04); padding: 0.4rem; text-align: right;" title="Calculated tank volume in Liters based on calibration chart">Volume (L)</th>
+                  <th style="background: rgba(245, 158, 11, 0.04); padding: 0.4rem; text-align: right;" title="Wetstock variance: Physical closing stock minus expected book stock">Variance (L)</th>
+                  <th style="background: rgba(14, 165, 233, 0.04); padding: 0.4rem; text-align: right;" title="Theoretical sales value based on volume and daily rates">Expected Rev</th>
+                  <th style="background: rgba(14, 165, 233, 0.04); padding: 0.4rem; text-align: right;" title="Sum of all actual collections (Cash, PhonePe, Cards, Credit)">Actual Coll</th>
+                  <th style="background: rgba(14, 165, 233, 0.04); padding: 0.4rem; text-align: right;" title="Collection variance: Expected Revenue minus Actual Collection">Variance</th>
+                </tr>
+              </thead>
+              <tbody id="dsr-review-table-body">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- KC DSR Live Edit Dashboard View -->
+      <section id="view-kc-dsr-live" class="view-section" style="padding: 0; height: calc(100vh - 120px); min-height: 600px;">
+        <iframe src="live_shift_reconciliation_dashboard.html" style="width: 100%; height: 100%; border: none; border-radius: var(--radius-lg); background: var(--bg-card);"></iframe>
+      </section>
+
+    </main>
+  </div><!-- /app-container-shell -->
+
+
+  <!-- Modal: Log Daily Readings -->
+  <div class="modal-overlay" id="log-readings-modal">
+    <div class="modal-box" style="max-width: 800px;">
+      <div class="modal-header">
+        <h2 id="log-readings-modal-title">Log Daily Totalizer Readings</h2>
+        <button class="modal-close" onclick="closeModal('log-readings-modal')">&times;</button>
+      </div>
+      <form id="log-readings-form">
+        <div class="form-row" style="margin-bottom: 1.25rem;">
+          <div class="form-group">
+            <label for="ledger-date">Operating Date</label>
+            <input type="date" id="ledger-date" required>
+          </div>
+          <div class="form-group" style="visibility: hidden;">
+            <!-- spacer -->
+          </div>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Enter the opening (8 AM), day shift closing (8 PM), and next morning closing (8 AM next day) readings for both Dispensing Units (DUs).
+        </p>
+
+        <div class="modal-ledger-grid">
+
+          <!-- Dispensing Unit 1 -->
+          <div class="modal-ledger-card">
+            <h3>Dispensing Unit 1 (DU 1)</h3>
+
+            <!-- Petrol/MS -->
+            <div style="margin-bottom: 1rem;">
+              <span style="font-size:0.8rem; font-weight:600; color:var(--color-petrol);">Petrol (MS) Nozzle</span>
+              <div class="form-row" style="margin-top: 0.4rem; gap: 0.5rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem;">Open 8AM</label>
+                  <input type="number" id="du1_p_open" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem;">Close 8PM</label>
+                  <input type="number" id="du1_p_close_day" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem;">Close 8AM (Next)</label>
+                  <input type="number" id="du1_p_close_night" step="0.01" min="0" required placeholder="0.00">
+                </div>
+              </div>
+              <div class="form-row" style="margin-top: 0.4rem; gap: 0.5rem;">
+                <div class="form-group" style="margin-bottom:0; width: 100%;">
+                  <label style="font-size:0.75rem;">Calibration Tests (Auto-calculated: 5L if active)</label>
+                  <input type="text" id="du1_p_tests_day" value="0 L" readonly style="background: var(--bg-card); border-color: var(--border); color: var(--text-dim); cursor: not-allowed;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Diesel/HSD -->
+            <div class="modal-ledger-section">
+              <span style="font-size:0.8rem; font-weight:600; color:var(--color-diesel);">Diesel (HSD) Nozzle</span>
+              <div class="form-row" style="margin-top: 0.4rem; gap: 0.5rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem;">Open 8AM</label>
+                  <input type="number" id="du1_d_open" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem;">Close 8PM</label>
+                  <input type="number" id="du1_d_close_day" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem;">Close 8AM (Next)</label>
+                  <input type="number" id="du1_d_close_night" step="0.01" min="0" required placeholder="0.00">
+                </div>
+              </div>
+              <div class="form-row" style="margin-top: 0.4rem; gap: 0.5rem;">
+                <div class="form-group" style="margin-bottom:0; width: 100%;">
+                  <label style="font-size:0.75rem;">Calibration Tests (Auto-calculated: 5L if active)</label>
+                  <input type="text" id="du1_d_tests_day" value="0 L" readonly style="background: var(--bg-card); border-color: var(--border); color: var(--text-dim); cursor: not-allowed;">
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Dispensing Unit 2 -->
+          <div class="modal-ledger-card">
+            <h3>Dispensing Unit 2 (DU 2)</h3>
+
+            <!-- Petrol/MS -->
+            <div style="margin-bottom: 1rem;">
+              <span style="font-size:0.8rem; font-weight:600; color:var(--color-petrol);">Petrol (MS) Nozzle</span>
+              <div class="form-row" style="margin-top: 0.4rem; gap: 0.5rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem;">Open 8AM</label>
+                  <input type="number" id="du2_p_open" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem;">Close 8PM</label>
+                  <input type="number" id="du2_p_close_day" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem;">Close 8AM (Next)</label>
+                  <input type="number" id="du2_p_close_night" step="0.01" min="0" required placeholder="0.00">
+                </div>
+              </div>
+              <div class="form-row" style="margin-top: 0.4rem; gap: 0.5rem;">
+                <div class="form-group" style="margin-bottom:0; width: 100%;">
+                  <label style="font-size:0.75rem;">Calibration Tests (Auto-calculated: 5L if active)</label>
+                  <input type="text" id="du2_p_tests_day" value="0 L" readonly style="background: var(--bg-card); border-color: var(--border); color: var(--text-dim); cursor: not-allowed;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Diesel/HSD -->
+            <div class="modal-ledger-section">
+              <span style="font-size:0.8rem; font-weight:600; color:var(--color-diesel);">Diesel (HSD) Nozzle</span>
+              <div class="form-row" style="margin-top: 0.4rem; gap: 0.5rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem;">Open 8AM</label>
+                  <input type="number" id="du2_d_open" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem;">Close 8PM</label>
+                  <input type="number" id="du2_d_close_day" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem;">Close 8AM (Next)</label>
+                  <input type="number" id="du2_d_close_night" step="0.01" min="0" required placeholder="0.00">
+                </div>
+              </div>
+              <div class="form-row" style="margin-top: 0.4rem; gap: 0.5rem;">
+                <div class="form-group" style="margin-bottom:0; width: 100%;">
+                  <label style="font-size:0.75rem;">Calibration Tests (Auto-calculated: 5L if active)</label>
+                  <input type="text" id="du2_d_tests_day" value="0 L" readonly style="background: var(--bg-card); border-color: var(--border); color: var(--text-dim); cursor: not-allowed;">
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Plan 21: Starting Stock Dip Overrides -->
+        <div class="modal-ledger-card" style="margin: 0 1rem 1.25rem 1rem; border: 1px dashed var(--border); background: rgba(255, 255, 255, 0.005); box-sizing: border-box;">
+          <h3 style="font-size: 0.85rem; margin-bottom: 0.25rem;">Starting Stock Dip Overrides (Morning Volume)</h3>
+          <p style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.75rem;">
+            If specified, these manual values will override the reconciled starting stock for this day. Leave blank to auto-reconcile or carry forward.
+          </p>
+          <div class="form-row" style="gap: 1rem;">
+            <div class="form-group" style="margin-bottom:0; flex: 1;">
+              <label for="ledger_p_dip_override" style="color:var(--color-petrol); font-size: 0.72rem; font-weight: 600;">Petrol Starting Dip (Liters)</label>
+              <input type="number" id="ledger_p_dip_override" step="1" min="0" placeholder="Auto-reconciled" style="width: 100%;">
+            </div>
+            <div class="form-group" style="margin-bottom:0; flex: 1;">
+              <label for="ledger_d_dip_override" style="color:var(--color-diesel); font-size: 0.72rem; font-weight: 600;">Diesel Starting Dip (Liters)</label>
+              <input type="number" id="ledger_d_dip_override" step="1" min="0" placeholder="Auto-reconciled" style="width: 100%;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily Cash Expenses (Commission Deductions) -->
+        <div class="modal-ledger-card" style="margin: 0 1rem 1.25rem 1rem; border: 1px dashed var(--border); background: rgba(255, 255, 255, 0.005); box-sizing: border-box;">
+          <h3 style="font-size: 0.85rem; margin-bottom: 0.25rem;">Daily Cash Expenses (Deducted from Commission)</h3>
+          <p style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.75rem;">
+            Log cash payments made from the drawer on this operating day (e.g. Milk, handovers).
+          </p>
+          
+          <!-- Modal Expenses List -->
+          <div id="modal-expenses-list" style="margin-bottom: 0.75rem; max-height: 120px; overflow-y: auto; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border); padding: 0.5rem; border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem;">
+            <div style="color: var(--text-dim); text-align: center; padding: 0.5rem;">No daily cash expenses logged for this date.</div>
+          </div>
+          
+          <!-- Inputs to add expense -->
+          <div class="form-row" style="gap: 0.5rem; align-items: flex-end;">
+            <div class="form-group" style="flex: 2; margin-bottom: 0;">
+              <label style="font-size: 0.72rem;">Description / Recipient</label>
+              <input type="text" id="new-dayexp-name" placeholder="e.g. Milk, ANKIT, tea" style="width:100%; height:34px; padding: 0.35rem; font-size:0.8rem;">
+            </div>
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label style="font-size: 0.72rem;">Amount (₹)</label>
+              <input type="number" id="new-dayexp-amount" placeholder="0.00" style="width:100%; height:34px; padding: 0.35rem; font-size:0.8rem;">
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="addModalExpense()" style="height:34px; padding: 0 0.75rem; font-size:0.78rem;">➕ Add</button>
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-top: 1.25rem; margin-bottom: 1.25rem; padding: 0 1rem; width: 100%;">
+          <div class="form-group" style="width: 100%; margin-bottom: 0;">
+            <label for="ledger-remarks" style="font-size:0.8rem; font-weight:600; color:var(--text-main); margin-bottom: 0.4rem; display: block;">Remarks & Feedback for AI Reconciler</label>
+            <textarea id="ledger-remarks" rows="2" placeholder="Enter instructions, notes, or explanations for the AI..." style="width: 100%; min-height: 60px; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-family: inherit; font-size: 0.85rem; resize: vertical; box-sizing: border-box;"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('log-readings-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Daily Readings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Calculate Stock by Dip -->
+  <div class="modal-overlay" id="dip-calculator-modal">
+    <div class="modal-box" style="max-width: 450px;">
+      <div class="modal-header">
+        <h2 id="dip-calculator-modal-title">Calculate Stock by Dip</h2>
+        <button class="modal-close" onclick="closeModal('dip-calculator-modal')">&times;</button>
+      </div>
+      <form id="dip-calculator-form">
+        <input type="hidden" id="dip-tank-type" value="petrol">
+
+        <div class="form-group">
+          <label id="dip-tank-label" style="font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; display: block;"></label>
+          <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1rem;" id="dip-tank-dims">
+            Diameter: -- cm | Length: -- cm | Capacity: -- L
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="dip-value">Dip Reading</label>
+            <input type="number" id="dip-value" min="0" max="1000" step="0.1" placeholder="e.g. 100" required>
+          </div>
+          <div class="form-group">
+            <label for="dip-unit">Unit</label>
+            <select id="dip-unit">
+              <option value="cm" selected>Centimeters (cm)</option>
+              <option value="mm">Millimeters (mm)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Live Calculation Preview -->
+        <div class="dip-results-box" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1.25rem 0;">
+          <h4 style="font-size: 0.85rem; color: #fff; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Live Calculation Results</h4>
+
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+            <span style="color: var(--text-muted);">Total Physical Volume:</span>
+            <strong id="dip-result-total" style="color: #fff;">0.00 L</strong>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+            <span style="color: var(--text-muted);">Unsellable Dead Stock:</span>
+            <span id="dip-result-dead" style="color: var(--danger);">0.00 L</span>
+          </div>
+
+          <div style="border-top: 1px dashed var(--border); margin: 0.5rem 0; padding-top: 0.5rem; display: flex; justify-content: space-between; font-size: 0.95rem;">
+            <span style="font-weight: 600; color: #fff;">Usable (Sellable) Stock:</span>
+            <strong id="dip-result-usable" style="color: var(--success);">0.00 L</strong>
+          </div>
+
+          <div id="dip-warning" style="display: none; font-size: 0.75rem; color: var(--danger); margin-top: 0.5rem; line-height: 1.2;">
+            Warning: Dip height exceeds tank diameter!
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('dip-calculator-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Apply to Inventory</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Manage Employees -->
+  <div class="modal-overlay" id="manage-employees-modal">
+    <div class="modal-box" style="max-width: 550px;">
+      <div class="modal-header">
+        <h2>Manage Station Employees</h2>
+        <button class="modal-close" onclick="closeModal('manage-employees-modal')">&times;</button>
+      </div>
+
+      <!-- Add Employee Form -->
+      <form id="add-employee-form" onsubmit="addEmployee(event)" style="border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; margin-bottom: 1.25rem;">
+        <h3 style="font-size:0.9rem; color:#fff; margin-bottom:0.75rem; font-weight:600;">Add New Authorized Employee</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="new-emp-name">Full Name</label>
+            <input type="text" id="new-emp-name" placeholder="e.g. Anil Operator" required style="width:100%; padding: 0.35rem; background: rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; border-radius:4px; font-size:0.8rem;">
+          </div>
+          <div class="form-group">
+            <label for="new-emp-phone">Phone Number / Handle</label>
+            <input type="text" id="new-emp-phone" placeholder="e.g. +91 98765 43210" required style="width:100%; padding: 0.35rem; background: rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; border-radius:4px; font-size:0.8rem;">
+          </div>
+        </div>
+        <div class="form-row" style="margin-top: 0.5rem; display: flex; align-items: flex-end; gap:0.5rem;">
+          <div class="form-group" style="flex: 2;">
+            <label for="new-emp-role">Role</label>
+            <select id="new-emp-role" style="width:100%; padding: 0.35rem; background: rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; border-radius:4px; font-size:0.8rem;">
+              <option value="Operator">Pump Operator</option>
+              <option value="Supervisor">Supervisor</option>
+              <option value="Manager">Manager</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.45rem; font-size:0.8rem;">Add Employee</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Employee List Table -->
+      <h3 style="font-size:0.9rem; color:#fff; margin-bottom:0.75rem; font-weight:600;">Authorized Employees Directory</h3>
+      <div style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.15); border-radius: 6px; border:1px solid var(--border);">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border); color: var(--text-dim); background: rgba(255,255,255,0.01);">
+              <th style="padding: 0.5rem;">Name</th>
+              <th style="padding: 0.5rem;">Phone / Handle</th>
+              <th style="padding: 0.5rem;">Role</th>
+              <th style="padding: 0.5rem; text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="employees-table-body">
+            <!-- Dynamically populated rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('manage-employees-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Tour Overlay -->
+  <div id="tour-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(9, 13, 22, 0.45); backdrop-filter: blur(1px); z-index: 9999; pointer-events: none; transition: var(--transition);"></div>
+  <div id="tour-bubble" class="tour-bubble" style="display: none;">
+    <div class="tour-header">
+      <span class="tour-step-counter" id="tour-step-counter">Step 1 of 5</span>
+      <button class="tour-close-btn" onclick="endTour()">&times;</button>
+    </div>
+    <div class="tour-body" id="tour-body-text">
+      Tour text goes here.
+    </div>
+    <div class="tour-footer">
+      <button class="btn btn-secondary btn-sm" id="tour-prev-btn" onclick="prevTourStep()">Back</button>
+      <div style="display:flex; gap:0.5rem;">
+        <button class="btn btn-secondary btn-sm" onclick="endTour()">Skip</button>
+        <button class="btn btn-primary btn-sm" id="tour-next-btn" onclick="nextTourStep()">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="dsr_data.js"></script>
+  <script src="supply_bills_data.js"></script>
+  <script src="extracted_kc_expenses.js"></script>
+  <script src="ocr_stock_data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/schema.js?v=70"></script>
+  <script src="js/submission_flow.js?v=70"></script>
+  <script src="js/sync.js?v=70"></script>
+  <script src="js/auth.js?v=69"></script>
+  <script src="js/ui_login.js?v=69"></script>
+  <script src="js/employee_dashboard.js?v=69"></script>
+  <script src="js/employee_submit.js?v=69"></script>
+  <script src="js/owner_approvals.js?v=69"></script>
+  <script src="js/core_db_ledger.js?v=69"></script>
+  <script src="js/error_reporting.js?v=69"></script>
+  <script src="js/dsr_checker.js?v=69"></script>
+  <script src="js/auth_reset.js?v=69"></script>
+
+
+  <!-- PWA: Offline banner -->
+  <div id="pwa-offline-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
+    background:#1e293b;color:#f8fafc;text-align:center;padding:0.6rem 1rem;font-size:0.85rem;
+    font-family:'Outfit',sans-serif;border-top:2px solid #f97316;box-shadow:0 -4px 20px rgba(0,0,0,0.4);">
+    &#x1F4F6; You're offline &mdash; OctaneFlow is running from local cache. Data saves locally.
+  </div>
+
+  <!-- PWA: Install prompt banner -->
+  <div id="pwa-install-banner" style="display:none;position:fixed;bottom:3.5rem;left:1rem;right:1rem;
+    z-index:9998;background:linear-gradient(135deg,#1e293b,#0f172a);color:#f8fafc;border:1px solid #f97316;
+    border-radius:1rem;padding:1rem 1.2rem;font-family:'Outfit',sans-serif;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5);align-items:center;gap:1rem;">
+    <img src="/icons/icon-72x72.png" style="width:40px;height:40px;border-radius:10px;" alt="">
+    <div style="flex:1">
+      <div style="font-weight:700;font-size:0.95rem;">Install OctaneFlow</div>
+      <div style="font-size:0.75rem;color:#94a3b8;">Add to home screen for offline access</div>
+    </div>
+    <button id="pwa-install-btn" style="background:#f97316;color:#fff;border:none;border-radius:0.5rem;
+      padding:0.5rem 1rem;font-weight:700;font-size:0.85rem;cursor:pointer;">Install</button>
+    <button id="pwa-install-dismiss" style="background:transparent;color:#64748b;border:none;
+      font-size:1.2rem;cursor:pointer;padding:0.25rem;">&#x2715;</button>
+  </div>
+
+  <script>
+    // ── Service Worker ───────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(reg => {
+            console.log('[PWA] SW registered:', reg.scope);
+            setInterval(() => reg.update(), 60000);
+          })
+          .catch(err => console.warn('[PWA] SW failed:', err));
+      });
+
+      // Auto-reload the page once the new Service Worker activates and takes control
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+    }
+
+    // ── Offline banner ───────────────────────────────────────
+    const _offlineBanner = document.getElementById('pwa-offline-banner');
+    function _updateOnline() {
+      if (_offlineBanner) _offlineBanner.style.display = navigator.onLine ? 'none' : 'block';
+    }
+    window.addEventListener('online',  _updateOnline);
+    window.addEventListener('offline', _updateOnline);
+    _updateOnline();
+
+    // ── Install prompt ───────────────────────────────────────
+    let _deferredPrompt = null;
+    const _installBanner  = document.getElementById('pwa-install-banner');
+    const _installBtn     = document.getElementById('pwa-install-btn');
+    const _installDismiss = document.getElementById('pwa-install-dismiss');
+
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      _deferredPrompt = e;
+      if (_installBanner && !sessionStorage.getItem('pwa-dismissed')) {
+        _installBanner.style.display = 'flex';
+      }
+    });
+
+    if (_installBtn) {
+      _installBtn.addEventListener('click', async () => {
+        if (_installBanner) _installBanner.style.display = 'none';
+        if (_deferredPrompt) {
+          _deferredPrompt.prompt();
+          await _deferredPrompt.userChoice;
+          _deferredPrompt = null;
+        }
+      });
+    }
+
+    if (_installDismiss) {
+      _installDismiss.addEventListener('click', () => {
+        if (_installBanner) _installBanner.style.display = 'none';
+        sessionStorage.setItem('pwa-dismissed', '1');
+      });
+    }
+
+    window.addEventListener('appinstalled', () => {
+      if (_installBanner) _installBanner.style.display = 'none';
+      _deferredPrompt = null;
+    });
+
+    // Spreadsheet Zoom Logic
+    let currentDsrZoom = 1.0;
+    window.adjustDsrZoom = function(delta) {
+      currentDsrZoom = Math.min(2.0, Math.max(0.5, currentDsrZoom + delta));
+      const table = document.querySelector('#dsr-spreadsheet-container table');
+      if (table) {
+        table.style.zoom = currentDsrZoom;
+      }
+      const label = document.getElementById('dsr-zoom-label');
+      if (label) label.textContent = Math.round(currentDsrZoom * 100) + '%';
+    };
+    window.resetDsrZoom = function() {
+      currentDsrZoom = 1.0;
+      window.adjustDsrZoom(0);
+    };
+
+    let currentLedgerZoom = 1.0;
+    window.adjustLedgerZoom = function(delta) {
+      currentLedgerZoom = Math.min(2.0, Math.max(0.5, currentLedgerZoom + delta));
+      const table = document.querySelector('#ledger-table-container table');
+      if (table) {
+        table.style.zoom = currentLedgerZoom;
+      }
+      const label = document.getElementById('ledger-zoom-label');
+      if (label) label.textContent = Math.round(currentLedgerZoom * 100) + '%';
+    };
+    window.resetLedgerZoom = function() {
+      currentLedgerZoom = 1.0;
+      window.adjustLedgerZoom(0);
+    };
+
+    // Apple Trackpad pinch-to-zoom support (ctrl + scroll wheel gestures)
+    function setupTrackpadZoom(containerId, getZoom, setZoom) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.addEventListener('wheel', function(e) {
+        if (e.ctrlKey) {
+          e.preventDefault();
+          // deltaY is negative when pinching in, positive when pinching out
+          let delta = -e.deltaY * 0.005;
+          let newZoom = Math.min(2.0, Math.max(0.5, getZoom() + delta));
+          setZoom(newZoom);
+        }
+      }, { passive: false });
+    }
+
+    // Attach listeners on load
+    document.addEventListener('DOMContentLoaded', () => {
+      setupTrackpadZoom('dsr-spreadsheet-container', () => currentDsrZoom, (val) => {
+        currentDsrZoom = val;
+        const table = document.querySelector('#dsr-spreadsheet-container table');
+        if (table) table.style.zoom = currentDsrZoom;
+        const label = document.getElementById('dsr-zoom-label');
+        if (label) label.textContent = Math.round(currentDsrZoom * 100) + '%';
+      });
+
+      setupTrackpadZoom('ledger-table-container', () => currentLedgerZoom, (val) => {
+        currentLedgerZoom = val;
+        const table = document.querySelector('#ledger-table-container table');
+        if (table) table.style.zoom = currentLedgerZoom;
+        const label = document.getElementById('ledger-zoom-label');
+        if (label) label.textContent = Math.round(currentLedgerZoom * 100) + '%';
+      });
+    });
+  <!-- OTP Password Reset Overlay -->
+  <div id="otp-reset-overlay" style="display:none;position:fixed;inset:0;z-index:20000;background:rgba(15,23,42,0.95);backdrop-filter:blur(10px);align-items:center;justify-content:center;color:var(--text-main);font-family:var(--font-sans);">
+    <div style="width:100%;max-width:440px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem;box-shadow:0 10px 25px -5px rgba(0,0,0,0.5);">
+      
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:1rem;">
+        <h3 style="font-size:1.2rem;font-weight:700;color:#fff;margin:0;">🔐 Reset Account Password</h3>
+        <button onclick="closeForgotPasswordModal()" style="background:transparent;border:none;color:var(--text-muted);font-size:1.5rem;cursor:pointer;line-height:1;">&times;</button>
+      </div>
+
+      <!-- Step 1: Input Details -->
+      <div id="otp-step-1" style="display:flex;flex-direction:column;gap:1.2rem;">
+        <p style="font-size:0.85rem;color:var(--text-muted);margin:0;line-height:1.4;">Enter your username and registered mobile number. We will generate a secure OTP and send it via WhatsApp.</p>
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:0.4rem;">Username</label>
+          <input id="otp-reset-username" type="text" placeholder="e.g. owner" style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid var(--border);color:#fff;border-radius:var(--radius-sm);padding:0.7rem;font-size:0.95rem;outline:none;">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:0.4rem;">Registered Mobile Number (10 digits)</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <span style="color:var(--text-muted);font-size:0.95rem;font-weight:600;">+91</span>
+            <input id="otp-reset-phone" type="tel" placeholder="9876543210" maxlength="10" style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid var(--border);color:#fff;border-radius:var(--radius-sm);padding:0.7rem;font-size:0.95rem;outline:none;">
+          </div>
+        </div>
+        <div id="otp-error-step1" style="color:#ef4444;font-size:0.8rem;min-height:1rem;"></div>
+        <button onclick="sendOtpRequest()" style="background:linear-gradient(135deg,var(--primary),#2563eb);color:#fff;border:none;border-radius:var(--radius-sm);padding:0.8rem;font-size:0.95rem;font-weight:700;cursor:pointer;">Send OTP via WhatsApp</button>
+      </div>
+
+      <!-- Step 2: Enter OTP -->
+      <div id="otp-step-2" style="display:none;flex-direction:column;gap:1.2rem;">
+        <p style="font-size:0.85rem;color:var(--text-muted);margin:0;line-height:1.4;">An OTP code was sent to your WhatsApp number. Please check your messages and enter it below.</p>
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:0.4rem;">Enter 6-Digit OTP</label>
+          <input id="otp-input-code" type="text" maxlength="6" placeholder="******" style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid var(--border);color:#fff;border-radius:var(--radius-sm);padding:0.7rem;font-size:1.2rem;text-align:center;letter-spacing:6px;font-weight:700;outline:none;">
+        </div>
+        <div id="otp-timer" style="font-size:0.8rem;color:var(--color-diesel);text-align:center;font-weight:600;">Time remaining: 05:00</div>
+        <div id="otp-error-step2" style="color:#ef4444;font-size:0.8rem;min-height:1rem;"></div>
+        <div style="display:flex;gap:0.5rem;">
+          <button onclick="backToStep1()" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:var(--radius-sm);padding:0.8rem;font-size:0.95rem;font-weight:700;cursor:pointer;">Back</button>
+          <button onclick="verifyOtpRequest()" style="flex:1.5;background:linear-gradient(135deg,var(--success),#059669);color:#fff;border:none;border-radius:var(--radius-sm);padding:0.8rem;font-size:0.95rem;font-weight:700;cursor:pointer;">Verify OTP</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Set New Password -->
+      <div id="otp-step-3" style="display:none;flex-direction:column;gap:1.2rem;">
+        <p style="font-size:0.85rem;color:var(--text-muted);margin:0;line-height:1.4;">OTP verified successfully! Please enter your new login password or PIN below.</p>
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:0.4rem;">New Password / PIN</label>
+          <input id="otp-new-password" type="password" placeholder="Min 4 characters" style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid var(--border);color:#fff;border-radius:var(--radius-sm);padding:0.7rem;font-size:0.95rem;outline:none;">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:var(--text-muted);margin-bottom:0.4rem;">Confirm New Password</label>
+          <input id="otp-confirm-password" type="password" placeholder="Repeat new password" style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid var(--border);color:#fff;border-radius:var(--radius-sm);padding:0.7rem;font-size:0.95rem;outline:none;">
+        </div>
+        <div id="otp-error-step3" style="color:#ef4444;font-size:0.8rem;min-height:1rem;"></div>
+        <button onclick="submitNewPassword()" style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:var(--radius-sm);padding:0.8rem;font-size:0.95rem;font-weight:700;cursor:pointer;">Update Password</button>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

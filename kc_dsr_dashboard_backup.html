@@ -1,0 +1,381 @@
+Created At: 2026-06-27T12:06:32Z
+Completed At: 2026-06-27T12:06:33Z
+File Path: `file:///Users/macintosh/.gemini/antigravity/scratch/fuel-station-manager/kc_dsr_dashboard.html`
+Total Lines: 760
+Total Bytes: 71189
+Showing lines 1 to 760
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: <!DOCTYPE html>
+2: <html lang="en">
+3: <head>
+4: <meta charset="UTF-8">
+5: <meta name="viewport" content="width=device-width,initial-scale=1.0">
+6: <title>KC DSR — Live Edit Dashboard</title>
+7: <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+8: <style>
+9: *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+10: :root{
+11:   --bg:#07090f;--s1:#0d1520;--s2:#121e2e;--s3:#182438;
+12:   --brd:rgba(255,255,255,.06);--brd2:rgba(255,255,255,.11);
+13:   --txt:#e2e8f0;--dim:#64748b;--muted:#1e2d45;
+14:   --p:#38bdf8;--pb:rgba(56,189,248,.1);
+15:   --d:#fb923c;--db:rgba(251,146,60,.1);
+16:   --g:#4ade80;--gb:rgba(74,222,128,.09);
+17:   --y:#fbbf24;--yb:rgba(251,191,36,.09);
+18:   --r:#f87171;--rb:rgba(248,113,113,.09);
+19:   --pu:#a78bfa;
+20:   --teal:#2dd4bf;
+21:   --r4:10px;--r2:6px;
+22: }
+23: body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:13px}
+24: 
+25: /* ── HEADER ── */
+26: .hdr{background:linear-gradient(135deg,#09111f 0%,#160e35 100%);border-bottom:1px solid var(--brd);
+27:   padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+28: .hdr-title{font-size:1.2rem;font-weight:800;letter-spacing:-.3px;
+29:   background:linear-gradient(120deg,#818cf8,#38bdf8,#4ade80);
+30:   -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+31: .hdr-sub{font-size:.68rem;color:var(--dim);margin-top:2px}
+32: .badge{font-size:.62rem;font-weight:700;padding:3px 10px;border-radius:100px;
+33:   border:1px solid;text-transform:uppercase;letter-spacing:.4px;cursor:default}
+34: .b-pu{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--pu)}
+35: .b-g {background:rgba(74,222,128,.1); border-color:rgba(74,222,128,.3); color:var(--g)}
+36: .b-y {background:rgba(251,191,36,.1); border-color:rgba(251,191,36,.3); color:var(--y)}
+37: .b-r {background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.3);color:var(--r)}
+38: .hdr-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+39: 
+40: /* ── MAIN ── */
+41: .main{padding:16px 20px}
+42: 
+43: /* ── TABS ── */
+44: .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+45: .tab{background:var(--s1);border:1px solid var(--brd);color:var(--dim);
+46:   font-family:inherit;font-size:.73rem;font-weight:500;
+47:   padding:6px 14px;border-radius:100px;cursor:pointer;transition:all .15s}
+48: .tab:hover{color:var(--txt);border-color:rgba(129,140,248,.4)}
+49: .tab.active{background:rgba(129,140,248,.12);border-color:rgba(129,140,248,.5);color:#818cf8;font-weight:700}
+50: 
+51: /* ── ERRORS PANEL ── */
+52: .err-panel{background:var(--rb);border:1px solid rgba(248,113,113,.25);border-left:3px solid var(--r);
+53:   border-radius:var(--r4);padding:14px 16px;margin-bottom:14px}
+54: .err-panel h4{font-size:.75rem;font-weight:700;color:var(--r);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+55: .err-list{display:flex;flex-direction:column;gap:6px}
+56: .err-item{
+57:   background:rgba(10,15,25,.5);border:1px solid rgba(248,113,113,.2);
+58:   border-radius:var(--r2);padding:9px 12px;
+59:   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+60: }
+61: .err-date{font-size:.7rem;font-weight:700;color:#fca5a5;min-width:78px}
+62: .err-noz{font-size:.7rem;color:var(--txt);min-width:140px;font-weight:500}
+63: .err-detail{font-size:.68rem;color:var(--dim);flex:1}
+64: .err-btns{display:flex;gap:5px}
+65: .btn{font-family:inherit;font-size:.68rem;font-weight:600;padding:4px 10px;border-radius:5px;
+66:   border:1px solid;cursor:pointer;transition:all .15s}
+67: .btn:hover{filter:brightness(1.15)}
+68: .btn-resolve{background:rgba(74,222,128,.15);border-color:rgba(74,222,128,.4);color:var(--g)}
+69: .btn-edit   {background:rgba(56,189,248,.12);border-color:rgba(56,189,248,.35);color:var(--p)}
+70: .btn-jump   {background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--pu)}
+71: .btn-export {background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.3);color:var(--g)}
+72: .btn-reset  {background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.3);color:var(--r)}
+73: .btn-save   {background:rgba(56,189,248,.15);border-color:rgba(56,189,248,.4);color:var(--p)}
+74: 
+75: .warn-panel{background:var(--yb);border:1px solid rgba(251,191,36,.2);border-left:3px solid var(--y);
+76:   border-radius:var(--r4);padding:12px 16px;margin-bottom:14px}
+77: .warn-panel h4{font-size:.72rem;font-weight:700;color:var(--y);margin-bottom:8px}
+78: .warn-item{font-size:.68rem;color:var(--dim);display:flex;gap:8px;margin-bottom:4px}
+79: .wdate{color:var(--y);font-weight:700;min-width:78px}
+80: .wnoz{color:var(--txt);min-width:140px}
+81: 
+82: /* ── KPI ROW ── */
+83: .kpi-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+84: .kpi{background:var(--s1);border:1px solid var(--brd);border-radius:var(--r4);
+85:   padding:12px 16px;flex:1;min-width:120px;position:relative;overflow:hidden}
+86: .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--a,#818cf8)}
+87: .kpi-l{font-size:.62rem;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+88: .kpi-v{font-size:1.35rem;font-weight:800;letter-spacing:-.5px;color:var(--a,#818cf8)}
+89: .kpi-s{font-size:.62rem;color:var(--dim);margin-top:2px}
+90: 
+91: /* ── TABLE ── */
+92: .tbl-wrap{overflow-x:auto;border-radius:var(--r4);border:1px solid var(--brd)}
+93: table{width:100%;border-collapse:collapse;font-size:.69rem;white-space:nowrap}
+94: 
+95: /* Sticky date column */
+96: td:first-child,th:first-child{
+97:   position:sticky;left:0;z-index:4;background:var(--s2)
+98: }
+99: th:first-child{z-index:6;background:#0d1520}
+100: 
+101: thead th{
+102:   background:#0d1520;color:var(--dim);font-weight:600;
+103:   font-size:.6rem;text-transform:uppercase;letter-spacing:.4px;
+104:   padding:8px 7px;text-align:right;border-bottom:1px solid var(--brd);
+105:   position:sticky;top:0;z-index:5
+106: }
+107: thead th.grp{text-align:center;border-bottom:2px solid var(--gc,transparent)}
+108: thead th.grp-p{--gc:var(--p);background:rgba(56,189,248,.04)}
+109: thead th.grp-d{--gc:var(--d);background:rgba(251,146,60,.04)}
+110: thead th.grp-p2{--gc:rgba(56,189,248,.4);background:rgba(56,189,248,.02)}
+111: thead th.grp-d2{--gc:rgba(251,146,60,.4);background:rgba(251,146,60,.02)}
+112: thead th.grp-tot{--gc:var(--g);background:rgba(74,222,128,.03)}
+113: 
+114: td{padding:6px 7px;border-bottom:1px solid rgba(255,255,255,.025);text-align:right;color:var(--txt)}
+115: tr:hover td{background:rgba(255,255,255,.015)}
+116: tr.row-err td{background:rgba(248,113,113,.04)!important}
+117: tr.row-warn td{background:rgba(251,191,36,.03)!important}
+118: tr.row-editing td{background:rgba(56,189,248,.05)!important;outline:2px solid rgba(56,189,248,.3)}
+119: tr:last-child td{border-bottom:none}
+120: 
+121: /* editable cell */
+122: .editable{
+123:   display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.65rem;
+124:   padding:2px 4px;border-radius:3px;min-width:60px;text-align:right;
+125:   cursor:pointer;transition:background .1s;
+126: }
+127: .editable:hover{background:rgba(56,189,248,.1);outline:1px solid rgba(56,189,248,.3)}
+128: .editable.editing{
+129:   background:rgba(56,189,248,.15)!important;
+130:   outline:2px solid rgba(56,189,248,.6)!important;
+131:   cursor:text
+132: }
+133: .cell-input{
+134:   font-family:'JetBrains Mono',monospace;font-size:.65rem;
+135:   background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.5);
+136:   color:var(--txt);border-radius:3px;padding:2px 5px;
+137:   width:80px;text-align:right;outline:none
+138: }
+139: 
+140: /* status cols */
+141: .cp{color:var(--p)} .cd{color:var(--d)} .cg{color:var(--g)} .cy{color:var(--y)} .cr{color:var(--r)} .dim{color:var(--dim)}
+142: .mono{font-family:'JetBrains Mono',monospace;font-size:.62rem}
+143: .bold{font-weight:700}
+144: .err-val{color:var(--r);font-weight:700}
+145: .diff-val{color:var(--y);font-size:.58rem;margin-left:2px}
+146: 
+147: .tag{display:inline-block;font-size:.58rem;font-weight:700;padding:1px 5px;
+148:   border-radius:3px;vertical-align:middle;border:1px solid;margin-left:2px;cursor:default}
+149: .t-ok  {background:var(--gb);border-color:rgba(74,222,128,.25);color:var(--g)}
+150: .t-warn{background:var(--yb);border-color:rgba(251,191,36,.25);color:var(--y)}
+151: .t-err {background:var(--rb);border-color:rgba(248,113,113,.25);color:var(--r)}
+152: .t-mis {background:var(--s2);border-color:var(--brd2);color:var(--dim)}
+153: 
+154: /* ── EDIT MODAL ── */
+155: .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center}
+156: .modal{background:#0f1826;border:1px solid var(--brd2);border-radius:12px;padding:24px;
+157:   width:520px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+158: .modal h3{font-size:.9rem;font-weight:700;color:var(--txt);margin-bottom:4px}
+159: .modal-sub{font-size:.7rem;color:var(--dim);margin-bottom:18px}
+160: .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+161: .modal-field label{font-size:.65rem;font-weight:600;color:var(--dim);text-transform:uppercase;
+162:   letter-spacing:.4px;display:block;margin-bottom:5px}
+163: .modal-field input{
+164:   width:100%;background:var(--s2);border:1px solid var(--brd2);color:var(--txt);
+165:   font-family:'JetBrains Mono',monospace;font-size:.8rem;border-radius:6px;
+166:   padding:8px 10px;outline:none;transition:border .15s
+167: }
+168: .modal-field input:focus{border-color:rgba(56,189,248,.5);background:rgba(56,189,248,.05)}
+169: .modal-field input.err-inp{border-color:rgba(248,113,113,.5)!important;background:rgba(248,113,113,.05)!important}
+170: .modal-calc{background:var(--s2);border:1px solid var(--brd);border-radius:6px;
+171:   padding:10px 12px;font-size:.72rem;margin-bottom:14px}
+172: .modal-calc .mc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+173: .modal-calc .mc-row:last-child{margin:0;padding-top:6px;border-top:1px solid var(--brd);font-weight:700}
+174: .mc-lbl{color:var(--dim)} .mc-val{color:var(--txt)}
+175: .mc-ok{color:var(--g)} .mc-err{color:var(--r)}
+176: .modal-btns{display:flex;justify-content:flex-end;gap:8px}
+177: .modal-note{font-size:.65rem;color:var(--dim);margin-bottom:12px;padding:8px;
+178:   background:var(--s2);border-radius:5px;border-left:2px solid var(--y)}
+179: 
+180: /* ── TOAST ── */
+181: .toast{position:fixed;bottom:24px;right:24px;background:#1a2940;border:1px solid var(--brd2);
+182:   border-radius:8px;padding:12px 18px;font-size:.75rem;font-weight:500;z-index:200;
+183:   transition:opacity .3s;pointer-events:none}
+184: .toast-g{border-left:3px solid var(--g);color:var(--g)}
+185: .toast-r{border-left:3px solid var(--r);color:var(--r)}
+186: .toast-y{border-left:3px solid var(--y);color:var(--y)}
+187: 
+188: /* resolved row */
+189: tr.row-resolved td:first-child::after{content:' ✓';color:var(--g);font-size:.6rem}
+190: </style>
+191: </head>
+192: <body>
+193: 
+194: <div class="hdr">
+195:   <div>
+196:     <div class="hdr-title">⛽ KC DSR — Live Edit Dashboard</div>
+197:     <div class="hdr-sub">Nov 10, 2025 → Jan 31, 2026 · 84 days · 4 Nozzles · Math Validated · Inline Editable</div>
+198:   </div>
+199:   <div class="hdr-actions">
+200:     <span class="badge b-pu">KC Verified</span>
+201:     <span id="errBadge" class="badge b-r">Loading…</span>
+202:     <button class="btn btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+203:     <button class="btn btn-reset" onclick="resetAll()">↩ Reset All</button>
+204:   </div>
+205: </div>
+206: 
+207: <div class="main">
+208:   <div class="tabs" id="tabs"></div>
+209: 
+210:   <!-- Error panel -->
+211:   <div id="errPanel" style="display:none" class="err-panel">
+212:     <h4>🔴 Math Errors — Written Litres ≠ Closing − Opening</h4>
+213:     <div class="err-list" id="errList"></div>
+214:   </div>
+215: 
+216:   <!-- Warning panel -->
+217:   <div id="warnPanel" style="display:none" class="warn-panel">
+218:     <h4>⚠ Data Quality Flags</h4>
+219:     <div id="warnList"></div>
+220:   </div>
+221: 
+222:   <!-- KPIs -->
+223:   <div class="kpi-row" id="kpis"></div>
+224: 
+225:   <!-- Table -->
+226:   <div class="tbl-wrap">
+227:     <table id="mainTable">
+228:       <thead>
+229:         <tr>
+230:           <th rowspan="3" style="text-align:left;min-width:100px">Date / Status</th>
+231:           <th colspan="6" class="grp grp-p">DU1 · N1 · Petrol &nbsp;₹105.43/L</th>
+232:           <th colspan="6" class="grp grp-d">DU1 · N2 · Diesel &nbsp;₹90.85/L</th>
+233:           <th colspan="6" class="grp grp-p2">DU2 · N1 · Petrol &nbsp;₹105.43/L</th>
+234:           <th colspan="6" class="grp grp-d2">DU2 · N2 · Diesel &nbsp;₹90.85/L</th>
+235:           <th colspan="4" class="grp grp-tot">Day Totals</th>
+236:         </tr>
+237:         <tr>
+238:           <th colspan="2" class="grp-p" style="text-align:center;font-size:.55rem">Totalizer Reads</th>
+239:           <th colspan="4" class="grp-p" style="text-align:center;font-size:.55rem">Sales</th>
+240:           <th colspan="2" class="grp-d" style="text-align:center;font-size:.55rem">Totalizer Reads</th>
+241:           <th colspan="4" class="grp-d" style="text-align:center;font-size:.55rem">Sales</th>
+242:           <th colspan="2" class="grp-p2" style="text-align:center;font-size:.55rem">Totalizer Reads</th>
+243:           <th colspan="4" class="grp-p2" style="text-align:center;font-size:.55rem">Sales</th>
+244:           <th colspan="2" class="grp-d2" style="text-align:center;font-size:.55rem">Totalizer Reads</th>
+245:           <th colspan="4" class="grp-d2" style="text-align:center;font-size:.55rem">Sales</th>
+246:           <th colspan="4"></th>
+247:         </tr>
+248:         <tr>
+249:           <th class="cp dim">Opening</th><th class="cp dim">Closing</th>
+250:           <th class="cp bold">Written L</th><th class="cp dim">Calc L</th><th class="cp dim">Δ</th><th class="cp dim">₹ Amt</th>
+251:           <th class="cd dim">Opening</th><th class="cd dim">Closing</th>
+252:           <th class="cd bold">Written L</th><th class="cd dim">Calc L</th><th class="cd dim">Δ</th><th class="cd dim">₹ Amt</th>
+253:           <th class="cp dim">Opening</th><th class="cp dim">Closing</th>
+254:           <th class="cp bold">Written L</th><th class="cp dim">Calc L</th><th class="cp dim">Δ</th><th class="cp dim">₹ Amt</th>
+255:           <th class="cd dim">Opening</th><th class="cd dim">Closing</th>
+256:           <th class="cd bold">Written L</th><th class="cd dim">Calc L</th><th class="cd dim">Δ</th><th class="cd dim">₹ Amt</th>
+257:           <th class="cp bold">Petrol L</th><th class="cd bold">Diesel L</th>
+258:           <th class="bold">Total L</th><th class="cg bold">Revenue ₹</th>
+259:         </tr>
+260:       </thead>
+261:       <tbody id="tbody"></tbody>
+262:     </table>
+263:   </div>
+264: </div>
+265: 
+266: <!-- Edit Modal -->
+267: <div class="modal-overlay" id="modalOverlay" style="display:none" onclick="closeModal(event)">
+268:   <div class="modal" onclick="event.stopPropagation()">
+269:     <h3 id="modalTitle">Edit Nozzle Entry</h3>
+270:     <div class="modal-sub" id="modalSub"></div>
+271:     <div class="modal-note" id="modalNote" style="display:none"></div>
+272:     <div class="modal-grid">
+273:       <div class="modal-field">
+274:         <label>Opening Totalizer</label>
+275:         <input id="inp-open" type="number" step="0.01" oninput="recalcModal()">
+276:       </div>
+277:       <div class="modal-field">
+278:         <label>Closing Totalizer</label>
+279:         <input id="inp-close" type="number" step="0.01" oninput="recalcModal()">
+280:       </div>
+281:       <div class="modal-field">
+282:         <label>Written Litres (from DSR)</label>
+283:         <input id="inp-wL" type="number" step="0.01" oninput="recalcModal()">
+284:       </div>
+285:       <div class="modal-field">
+286:         <label>Amount ₹</label>
+287:         <input id="inp-amt" type="number" step="1">
+288:       </div>
+289:     </div>
+290:     <div class="modal-calc" id="modalCalc"></div>
+291:     <div class="modal-btns">
+292:       <button class="btn btn-reset" onclick="closeModal()">Cancel</button>
+293:       <button class="btn btn-resolve" onclick="resolveWithCalc()" id="btnResolve">✓ Use Calc Litres</button>
+294:       <button class="btn btn-save" onclick="saveModal()">💾 Save Changes</button>
+295:     </div>
+296:   </div>
+297: </div>
+298: 
+299: <div class="toast" id="toast" style="opacity:0"></div>
+300: 
+301: <script>
+302: // ──────────────────────────────────────────────────────────────
+303: // DATASET — nozzle_sales_corrected.csv with corrected DU2-N2 labels
+304: // Fields: date, {du1p|du1d|du2p|du2d}_{open,close,L,price,amt,note,calc_L,math_ok}
+305: // ──────────────────────────────────────────────────────────────
+306: const ORIG = [
+307: {"date":"2025-11-10","du1p_open":1358984.7,"du1p_close":1359501.75,"du1p_L":517.05,"du1p_price":105.43,"du1p_amt":54512,"du1p_note":"","du1d_open":1123761.29,"du1d_close":1124418.55,"du1d_L":657.26,"du1d_price":90.85,"du1d_amt":59712,"du1d_note":"","du2p_open":21518.07,"du2p_close":21543.66,"du2p_L":25.59,"du2p_price":105.43,"du2p_amt":2697,"du2p_note":"","du2d_open":1080951.81,"du2d_close":1081226.16,"du2d_L":274.35,"du2d_price":90.85,"du2d_amt":24924,"du2d_note":""},
+308: {"date":"2025-11-11","du1p_open":1359658.09,"du1p_close":1360201.87,"du1p_L":543.78,"du1p_price":105.43,"du1p_amt":57330,"du1p_note":"","du1d_open":1124555.23,"du1d_close":1125084.71,"du1d_L":529.48,"du1d_price":90.85,"du1d_amt":48103,"du1d_note":"","du2p_open":21544.7,"du2p_close":21643.81,"du2p_L":99.11,"du2p_price":105.43,"du2p_amt":10449,"du2p_note":"","du2d_open":1081284.19,"du2d_close":1081685.1,"du2d_L":400.91,"du2d_price":90.85,"du2d_amt":36422,"du2d_note":""},
+309: {"date":"2025-11-12","du1p_open":1360311.57,"du1p_close":1360783.93,"du1p_L":472.36,"du1p_price":105.43,"du1p_amt":49800,"du1p_note":"","du1d_open":1125347.61,"du1d_close":1126020.28,"du1d_L":672.67,"du1d_price":90.85,"du1d_amt":61112,"du1d_note":"","du2p_open":21647.13,"du2p_close":21703.94,"du2p_L":56.81,"du2p_price":105.43,"du2p_amt":5989,"du2p_note":"","du2d_open":1081864.53,"du2d_close":1082445.62,"du2d_L":581.09,"du2d_price":90.85,"du2d_amt":52792,"du2d_note":""},
+310: {"date":"2025-11-13","du1p_open":1360902.37,"du1p_close":1361424.03,"du1p_L":521.66,"du1p_price":105.43,"du1p_amt":54998,"du1p_note":"","du1d_open":1126256.02,"du1d_close":1126631.5,"du1d_L":375.48,"du1d_price":90.85,"du1d_amt":34112,"du1d_note":"","du2p_open":21703.94,"du2p_close":21766.42,"du2p_L":62.48,"du2p_price":105.43,"du2p_amt":6587,"du2p_note":"","du2d_open":1082609.63,"du2d_close":1083060.83,"du2d_L":451.2,"du2d_price":90.85,"du2d_amt":40991,"du2d_note":""},
+311: {"date":"2025-11-14","du1p_open":1361544.33,"du1p_close":1362009.43,"du1p_L":465.1,"du1p_price":105.43,"du1p_amt":49035,"du1p_note":"","du1d_open":1126927.06,"du1d_close":1127363.22,"du1d_L":436.16,"du1d_price":90.85,"du1d_amt":39625,"du1d_note":"","du2p_open":21793.9,"du2p_close":21926.22,"du2p_L":132.32,"du2p_price":105.43,"du2p_amt":13950,"du2p_note":"","du2d_open":1083159.85,"du2d_close":1083640.16,"du2d_L":480.31,"du2d_price":90.85,"du2d_amt":43636,"du2d_note":""},
+312: {"date":"2025-11-15","du1p_open":1362067.54,"du1p_close":1362500.13,"du1p_L":432.59,"du1p_price":105.43,"du1p_amt":45607,"du1p_note":"","du1d_open":1127594.52,"du1d_close":1128178.06,"du1d_L":583.54,"du1d_price":90.85,"du1d_amt":53014,"du1d_note":"","du2p_open":21926.22,"du2p_close":21991.51,"du2p_L":65.29,"du2p_price":105.43,"du2p_amt":6883,"du2p_note":"","du2d_open":1083706.2,"du2d_close":1084002.53,"du2d_L":296.33,"du2d_price":90.85,"du2d_amt":26921,"du2d_note":""},
+313: {"date":"2025-11-16","du1p_open":1362555.54,"du1p_close":1363066.89,"du1p_L":511.35,"du1p_price":105.43,"du1p_amt":53911,"du1p_note":"","du1d_open":1128358.01,"du1d_close":1128807.76,"du1d_L":449.75,"du1d_price":90.85,"du1d_amt":40859,"du1d_note":"","du2p_open":22005.47,"du2p_close":22122.31,"du2p_L":116.84,"du2p_price":105.43,"du2p_amt":12318,"du2p_note":"","du2d_open":1084111.82,"du2d_close":1084528.79,"du2d_L":416.97,"du2d_price":90.85,"du2d_amt":37881,"du2d_note":""},
+314: {"date":"2025-11-17","du1p_open":1363182.05,"du1p_close":1363620.79,"du1p_L":438.74,"du1p_price":105.43,"du1p_amt":46256,"du1p_note":"","du1d_open":1128915.1,"du1d_close":1129387.1,"du1d_L":472.0,"du1d_price":90.85,"du1d_amt":42881,"du1d_note":"","du2p_open":22132.74,"du2p_close":22179.75,"du2p_L":47.01,"du2p_price":105.43,"du2p_amt":4956,"du2p_note":"","du2d_open":1084815.36,"du2d_close":1085214.89,"du2d_L":399.53,"du2d_price":90.85,"du2d_amt":36297,"du2d_note":""},
+315: {"date":"2025-11-18","du1p_open":1363697.73,"du1p_close":1364199.23,"du1p_L":501.5,"du1p_price":105.43,"du1p_amt":52873,"du1p_note":"","du1d_open":1129439.05,"du1d_close":1129770.36,"du1d_L":331.31,"du1d_price":90.85,"du1d_amt":30099,"du1d_note":"","du2p_open":22183.54,"du2p_close":22242.7,"du2p_L":59.16,"du2p_price":105.43,"du2p_amt":6237,"du2p_note":"","du2d_open":1085342.02,"du2d_close":1085737.04,"du2d_L":395.02,"du2d_price":90.85,"du2d_amt":35887,"du2d_note":""},
+316: {"date":"2025-11-19","du1p_open":1364275.86,"du1p_close":1364819.94,"du1p_L":544.08,"du1p_price":105.43,"du1p_amt":57362,"du1p_note":"","du1d_open":1129912.35,"du1d_close":1130286.5,"du1d_L":374.15,"du1d_price":90.85,"du1d_amt":33991,"du1d_note":"","du2p_open":22242.7,"du2p_close":22310.32,"du2p_L":67.62,"du2p_price":105.43,"du2p_amt":7129,"du2p_note":"","du2d_open":1085849.31,"du2d_close":1086273.76,"du2d_L":424.45,"du2d_price":90.85,"du2d_amt":38561,"du2d_note":""},
+317: {"date":"2025-11-20","du1p_open":1364890.44,"du1p_close":1365353.45,"du1p_L":463.01,"du1p_price":105.43,"du1p_amt":48815,"du1p_note":"","du1d_open":1130474.83,"du1d_close":1130745.59,"du1d_L":270.76,"du1d_price":90.85,"du1d_amt":24598,"du1d_note":"","du2p_open":22314.32,"du2p_close":22409.14,"du2p_L":94.82,"du2p_price":105.43,"du2p_amt":9996,"du2p_note":"","du2d_open":1086321.09,"du2d_close":1086681.57,"du2d_L":360.42,"du2d_price":90.85,"du2d_amt":32744,"du2d_note":"Minor: Calc=360.48"},
+318: {"date":"2025-11-21","du1p_open":1365462.65,"du1p_close":1365990.6,"du1p_L":527.95,"du1p_price":105.43,"du1p_amt":55661,"du1p_note":"","du1d_open":1130919.31,"du1d_close":1131212.99,"du1d_L":293.08,"du1d_price":90.85,"du1d_amt":26626,"du1d_note":"Minor: Calc=293.68","du2p_open":22414.84,"du2p_close":22447.06,"du2p_L":32.22,"du2p_price":105.43,"du2p_amt":3396,"du2p_note":"","du2d_open":1086865.39,"du2d_close":1087512.2,"du2d_L":646.81,"du2d_price":90.85,"du2d_amt":58762,"du2d_note":""},
+319: {"date":"2025-11-22","du1p_open":1366014.32,"du1p_close":1366579.42,"du1p_L":565.1,"du1p_price":105.43,"du1p_amt":59578,"du1p_note":"","du1d_open":1131257.9,"du1d_close":1131899.26,"du1d_L":641.36,"du1d_price":90.85,"du1d_amt":58267,"du1d_note":"","du2p_open":22447.06,"du2p_close":22539.91,"du2p_L":92.85,"du2p_price":105.43,"du2p_amt":9789,"du2p_note":"","du2d_open":1087653.1,"du2d_close":1088317.25,"du2d_L":664.15,"du2d_price":90.85,"du2d_amt":60338,"du2d_note":""},
+320: {"date":"2025-11-23","du1p_open":1367326.01,"du1p_close":1367427.58,"du1p_L":101.57,"du1p_price":105.43,"du1p_amt":10708,"du1p_note":"","du1d_open":1132440.4,"du1d_close":1132724.15,"du1d_L":283.75,"du1d_price":90.85,"du1d_amt":25778,"du1d_note":"","du2p_open":22616.32,"du2p_close":22618.22,"du2p_L":1.9,"du2p_price":105.43,"du2p_amt":200,"du2p_note":"","du2d_open":1088945.18,"du2d_close":1089105.09,"du2d_L":159.91,"du2d_price":90.85,"du2d_amt":14527,"du2d_note":""},
+321: {"date":"2025-11-24","du1p_open":1367427.58,"du1p_close":1367925.89,"du1p_L":498.31,"du1p_price":105.43,"du1p_amt":52536,"du1p_note":"","du1d_open":1132724.15,"du1d_close":1133075.03,"du1d_L":350.88,"du1d_price":90.85,"du1d_amt":31877,"du1d_note":"","du2p_open":22618.22,"du2p_close":22699.76,"du2p_L":81.54,"du2p_price":105.43,"du2p_amt":8596,"du2p_note":"","du2d_open":1089105.9,"du2d_close":1089538.28,"du2d_L":432.38,"du2d_price":90.85,"du2d_amt":39281,"du2d_note":""},
+322: {"date":"2025-11-25","du1p_open":1368083.57,"du1p_close":1368609.94,"du1p_L":526.37,"du1p_price":105.43,"du1p_amt":55495,"du1p_note":"","du1d_open":1133225.01,"du1d_close":1133582.48,"du1d_L":357.47,"du1d_price":90.85,"du1d_amt":32476,"du1d_note":"","du2p_open":22707.35,"du2p_close":22783.49,"du2p_L":76.14,"du2p_price":105.43,"du2p_amt":8027,"du2p_note":"","du2d_open":1089804.05,"du2d_close":1090145.06,"du2d_L":341.01,"du2d_price":90.85,"du2d_amt":30980,"du2d_note":""},
+323: {"date":"2025-11-26","du1p_open":1368761.15,"du1p_close":1369141.61,"du1p_L":380.46,"du1p_price":105.43,"du1p_amt":40111,"du1p_note":"","du1d_open":1133707.96,"du1d_close":1133837.43,"du1d_L":129.47,"du1d_price":90.85,"du1d_amt":11762,"du1d_note":"","du2p_open":22786.43,"du2p_close":22858.83,"du2p_L":72.4,"du2p_price":105.43,"du2p_amt":7633,"du2p_note":"","du2d_open":1090491.13,"du2d_close":1090948.26,"du2d_L":457.13,"du2d_price":90.85,"du2d_amt":41530,"du2d_note":""},
+324: {"date":"2025-11-27","du1p_open":1369233.09,"du1p_close":1369756.91,"du1p_L":523.82,"du1p_price":105.43,"du1p_amt":55226,"du1p_note":"","du1d_open":1133971.82,"du1d_close":1134190.71,"du1d_L":218.89,"du1d_price":90.85,"du1d_amt":19886,"du1d_note":"","du2p_open":22883.59,"du2p_close":22934.27,"du2p_L":50.68,"du2p_price":105.43,"du2p_amt":5343,"du2p_note":"","du2d_open":1091025.97,"du2d_close":1091657.55,"du2d_L":631.58,"du2d_price":90.85,"du2d_amt":57379,"du2d_note":""},
+325: {"date":"2025-11-28","du1p_open":1369887.76,"du1p_close":1370416.49,"du1p_L":528.73,"du1p_price":105.43,"du1p_amt":55744,"du1p_note":"","du1d_open":1134339.86,"du1d_close":1134773.18,"du1d_L":433.32,"du1d_price":90.85,"du1d_amt":39367,"du1d_note":"","du2p_open":22934.27,"du2p_close":23059.96,"du2p_L":125.69,"du2p_price":105.43,"du2p_amt":13251,"du2p_note":"","du2d_open":1091822.95,"du2d_close":1092402.61,"du2d_L":579.66,"du2d_price":90.85,"du2d_amt":52662,"du2d_note":""},
+326: {"date":"2025-11-29","du1p_open":1370514.61,"du1p_close":1371120.66,"du1p_L":606.05,"du1p_price":105.43,"du1p_amt":63895,"du1p_note":"","du1d_open":1134828.79,"du1d_close":1135137.99,"du1d_L":309.2,"du1d_price":90.85,"du1d_amt":28090,"du1d_note":"","du2p_open":2305.77,"du2p_close":2391.13,"du2p_L":85.36,"du2p_price":105.43,"du2p_amt":8999,"du2p_note":"","du2d_open":1092523.9,"du2d_close":1092954.21,"du2d_L":430.31,"du2d_price":90.85,"du2d_amt":39093,"du2d_note":""},
+327: {"date":"2025-11-30","du1p_open":1371239.26,"du1p_close":1371724.61,"du1p_L":485.35,"du1p_price":105.43,"du1p_amt":51170,"du1p_note":"","du1d_open":1135441.58,"du1d_close":1135932.91,"du1d_L":491.33,"du1d_price":90.85,"du1d_amt":44637,"du1d_note":"","du2p_open":23231.26,"du2p_close":23307.91,"du2p_L":76.65,"du2p_price":105.43,"du2p_amt":8081,"du2p_note":"","du2d_open":1093066.49,"du2d_close":1093700.91,"du2d_L":634.42,"du2d_price":90.85,"du2d_amt":57637,"du2d_note":""},
+328: {"date":"2025-12-01","du1p_open":1371903.2,"du1p_close":1372449.39,"du1p_L":546.09,"du1p_price":105.43,"du1p_amt":57574,"du1p_note":"Minor: Calc=546.19","du1d_open":1136038.59,"du1d_close":1136400.9,"du1d_L":362.31,"du1d_price":90.85,"du1d_amt":32915,"du1d_note":"","du2p_open":23326.41,"du2p_close":23524.57,"du2p_L":198.16,"du2p_price":105.43,"du2p_amt":20892,"du2p_note":"","du2d_open":1093957.04,"du2d_close":1094649.7,"du2d_L":692.66,"du2d_price":90.85,"du2d_amt":62928,"du2d_note":""},
+329: {"date":"2025-12-02","du1p_open":1372565.26,"du1p_close":1373118.58,"du1p_L":553.32,"du1p_price":105.43,"du1p_amt":58336,"du1p_note":"","du1d_open":1136511.95,"du1d_close":1136716.74,"du1d_L":204.79,"du1d_price":90.85,"du1d_amt":18605,"du1d_note":"","du2p_open":23561.09,"du2p_close":23624.66,"du2p_L":63.57,"du2p_price":105.43,"du2p_amt":6702,"du2p_note":"","du2d_open":1094780.15,"du2d_close":1095185.12,"du2d_L":404.97,"du2d_price":90.85,"du2d_amt":36791,"du2d_note":""},
+330: {"date":"2025-12-03","du1p_open":1373240.24,"du1p_close":1373773.84,"du1p_L":533.6,"du1p_price":105.43,"du1p_amt":56257,"du1p_note":"","du1d_open":1136854.89,"du1d_close":1137067.09,"du1d_L":212.2,"du1d_price":90.85,"du1d_amt":19278,"du1d_note":"","du2p_open":23636.13,"du2p_close":23727.81,"du2p_L":91.68,"du2p_price":105.43,"du2p_amt":9665,"du2p_note":"","du2d_open":1095268.77,"du2d_close":1095594.83,"du2d_L":326.06,"du2d_price":90.85,"du2d_amt":29622,"du2d_note":""},
+331: {"date":"2025-12-04","du1p_open":1374371.0,"du1p_close":1374853.64,"du1p_L":482.64,"du1p_price":105.43,"du1p_amt":50884,"du1p_note":"","du1d_open":1137510.03,"du1d_close":1137850.32,"du1d_L":340.29,"du1d_price":90.85,"du1d_amt":30915,"du1d_note":"","du2p_open":23907.44,"du2p_close":24076.44,"du2p_L":169.0,"du2p_price":105.43,"du2p_amt":17817,"du2p_note":"","du2d_open":1096351.92,"du2d_close":1096798.41,"du2d_L":446.49,"du2d_price":90.85,"du2d_amt":40563,"du2d_note":""},
+332: {"date":"2025-12-05","du1p_open":1373856.05,"du1p_close":1374264.89,"du1p_L":408.84,"du1p_price":105.43,"du1p_amt":43104,"du1p_note":"","du1d_open":1137132.02,"du1d_close":1137442.88,"du1d_L":310.86,"du1d_price":90.85,"du1d_amt":28241,"du1d_note":"","du2p_open":23727.81,"du2p_close":23894.73,"du2p_L":166.92,"du2p_price":105.43,"du2p_amt":17598,"du2p_note":"","du2d_open":1095833.99,"du2d_close":1096202.22,"du2d_L":368.23,"du2d_price":90.85,"du2d_amt":33453,"du2d_note":""},
+333: {"date":"2025-12-06","du1p_open":1374917.17,"du1p_close":1375432.97,"du1p_L":515.8,"du1p_price":105.43,"du1p_amt":54380,"du1p_note":"","du1d_open":1137888.84,"du1d_close":1138277.6,"du1d_L":388.76,"du1d_price":90.85,"du1d_amt":35318,"du1d_note":"","du2p_open":24089.72,"du2p_close":24165.47,"du2p_L":75.75,"du2p_price":105.43,"du2p_amt":7986,"du2p_note":"","du2d_open":1096825.92,"du2d_close":1097245.9,"du2d_L":419.98,"du2d_price":90.85,"du2d_amt":38155,"du2d_note":""},
+334: {"date":"2025-12-07","du1p_open":1375536.98,"du1p_close":1376095.69,"du1p_L":558.71,"du1p_price":105.43,"du1p_amt":58904,"du1p_note":"","du1d_open":1138426.06,"du1d_close":1138733.96,"du1d_L":307.9,"du1d_price":90.85,"du1d_amt":27972,"du1d_note":"","du2p_open":24167.37,"du2p_close":24702.62,"du2p_L":35.25,"du2p_price":105.43,"du2p_amt":3716,"du2p_note":"MATH ERR: Calc=535.25 — decimal missed?","du2d_open":1097317.44,"du2d_close":1097509.53,"du2d_L":192.09,"du2d_price":90.85,"du2d_amt":17451,"du2d_note":""},
+335: {"date":"2025-12-08","du1p_open":1376188.88,"du1p_close":1376793.88,"du1p_L":605.0,"du1p_price":105.43,"du1p_amt":63874,"du1p_note":"Amount mismatch: Calc amt=63785","du1d_open":1138864.99,"du1d_close":1139272.21,"du1d_L":407.22,"du1d_price":90.85,"du1d_amt":36995,"du1d_note":"","du2p_open":24231.07,"du2p_close":24277.41,"du2p_L":46.34,"du2p_price":null,"du2p_amt":4885,"du2p_note":"UNCLEAR price","du2d_open":1097654.92,"du2d_close":1098020.5,"du2d_L":365.58,"du2d_price":null,"du2d_amt":33212,"du2d_note":"UNCLEAR price"},
+336: {"date":"2025-12-09","du1p_open":1376867.09,"du1p_close":1377415.16,"du1p_L":548.07,"du1p_price":105.43,"du1p_amt":57783,"du1p_note":"","du1d_open":1139416.95,"du1d_close":1139811.06,"du1d_L":394.11,"du1d_price":90.85,"du1d_amt":35804,"du1d_note":"","du2p_open":24281.26,"du2p_close":24335.06,"du2p_L":53.86,"du2p_price":105.43,"du2p_amt":5678,"du2p_note":"Minor: Calc=53.8","du2d_open":1098173.58,"du2d_close":1098531.03,"du2d_L":357.45,"du2d_price":90.85,"du2d_amt":32478,"du2d_note":""},
+337: {"date":"2025-12-10","du1p_open":1377461.1,"du1p_close":1377772.38,"du1p_L":311.28,"du1p_price":105.43,"du1p_amt":32818,"du1p_note":"","du1d_open":1139811.06,"du1d_close":1139811.06,"du1d_L":0.0,"du1d_price":90.85,"du1d_amt":0,"du1d_note":"Zero litres — nozzle inactive?","du2p_open":24339.04,"du2p_close":24557.94,"du2p_L":218.9,"du2p_price":105.43,"du2p_amt":23078,"du2p_note":"","du2d_open":1098638.23,"du2d_close":1099397.9,"du2d_L":759.67,"du2d_price":90.85,"du2d_amt":69016,"du2d_note":""},
+338: {"date":"2025-12-11","du1p_open":1377851.91,"du1p_close":1378438.27,"du1p_L":586.36,"du1p_price":105.43,"du1p_amt":61819,"du1p_note":"","du1d_open":1139811.06,"du1d_close":1139811.06,"du1d_L":0.0,"du1d_price":90.85,"du1d_amt":0,"du1d_note":"Zero litres — nozzle inactive?","du2p_open":24581.61,"du2p_close":24709.09,"du2p_L":127.48,"du2p_price":105.43,"du2p_amt":13440,"du2p_note":"","du2d_open":1099592.98,"du2d_close":1100475.42,"du2d_L":882.44,"du2d_price":90.85,"du2d_amt":80169,"du2d_note":""},
+339: {"date":"2025-12-12","du1p_open":1379161.25,"du1p_close":1379210.57,"du1p_L":49.32,"du1p_price":105.43,"du1p_amt":5199,"du1p_note":"","du1d_open":1101424.31,"du1d_close":1101567.98,"du1d_L":143.67,"du1d_price":90.85,"du1d_amt":13052,"du1d_note":"","du2p_open":24865.49,"du2p_close":24867.86,"du2p_L":2.37,"du2p_price":105.43,"du2p_amt":250,"du2p_note":"","du2d_open":null,"du2d_close":null,"du2d_L":null,"du2d_price":null,"du2d_amt":null,"du2d_note":"Missing data"},
+340: {"date":"2025-12-13","du1p_open":1379210.57,"du1p_close":1379626.61,"du1p_L":416.04,"du1p_price":105.43,"du1p_amt":43863,"du1p_note":"","du1d_open":1101567.98,"du1d_close":1102067.77,"du1d_L":499.79,"du1d_price":90.85,"du1d_amt":45405,"du1d_note":"","du2p_open":24867.86,"du2p_close":25022.75,"du2p_L":154.89,"du2p_price":105.43,"du2p_amt":16330,"du2p_note":"","du2d_open":null,"du2d_close":null,"du2d_L":null,"du2d_price":null,"du2d_amt":null,"du2d_note":"UNCLEAR"},
+341: {"date":"2025-12-14","du1p_open":1379731.52,"du1p_close":1380282.0,"du1p_L":550.48,"du1p_price":105.43,"du1p_amt":58037,"du1p_note":"","du1d_open":1139811.06,"du1d_close":1140014.99,"du1d_L":203.93,"du1d_price":90.85,"du1d_amt":18527,"du1d_note":"","du2p_open":25040.3,"du2p_close":25089.41,"du2p_L":49.11,"du2p_price":105.43,"du2p_amt":5177,"du2p_note":"","du2d_open":1102186.73,"du2d_close":1102819.23,"du2d_L":632.5,"du2d_price":90.85,"du2d_amt":57462,"du2d_note":""},
+342: {"date":"2025-12-15","du1p_open":1380340.86,"du1p_close":1380811.7,"du1p_L":470.84,"du1p_price":105.43,"du1p_amt":49640,"du1p_note":"","du1d_open":1140159.3,"du1d_close":1140383.77,"du1d_L":224.47,"du1d_price":90.85,"du1d_amt":20393,"du1d_note":"","du2p_open":25090.55,"du2p_close":25182.97,"du2p_L":92.42,"du2p_price":105.43,"du2p_amt":9743,"du2p_note":"","du2d_open":1103034.41,"du2d_close":1103565.59,"du2d_L":531.18,"du2d_price":90.85,"du2d_amt":48257,"du2d_note":""},
+343: {"date":"2025-12-16","du1p_open":1380911.31,"du1p_close":1381368.11,"du1p_L":456.8,"du1p_price":105.43,"du1p_amt":48160,"du1p_note":"","du1d_open":1140450.36,"du1d_close":1140654.66,"du1d_L":234.3,"du1d_price":90.85,"du1d_amt":21286,"du1d_note":"MATH ERR: Calc=204.3, Written=234.3","du2p_open":25182.97,"du2p_close":25238.43,"du2p_L":55.46,"du2p_price":105.43,"du2p_amt":5847,"du2p_note":"","du2d_open":1103637.14,"du2d_close":1104115.29,"du2d_L":478.15,"du2d_price":90.85,"du2d_amt":43439,"du2d_note":""},
+344: {"date":"2025-12-17","du1p_open":1381424.08,"du1p_close":1381894.58,"du1p_L":470.5,"du1p_price":105.43,"du1p_amt":49604,"du1p_note":"","du1d_open":1140839.84,"du1d_close":1141167.79,"du1d_L":327.95,"du1d_price":90.85,"du1d_amt":29794,"du1d_note":"","du2p_open":25238.43,"du2p_close":25277.0,"du2p_L":38.57,"du2p_price":105.43,"du2p_amt":4066,"du2p_note":"","du2d_open":1104175.83,"du2d_close":1104631.43,"du2d_L":455.6,"du2d_price":90.85,"du2d_amt":41391,"du2d_note":""},
+345: {"date":"2025-12-18","du1p_open":1381753.48,"du1p_close":1382538.7,"du1p_L":785.22,"du1p_price":105.43,"du1p_amt":82785,"du1p_note":"","du1d_open":1141221.23,"du1d_close":1141591.12,"du1d_L":369.89,"du1d_price":90.85,"du1d_amt":33590,"du1d_note":"Minor: Amt calc=33604","du2p_open":null,"du2p_close":null,"du2p_L":null,"du2p_price":null,"du2p_amt":null,"du2p_note":"UNCLEAR","du2d_open":1104753.6,"du2d_close":1105152.23,"du2d_L":398.63,"du2d_price":90.85,"du2d_amt":36198,"du2d_note":"Minor: Amt calc=36215"},
+346: {"date":"2025-12-19","du1p_open":1382616.02,"du1p_close":1383150.02,"du1p_L":534.0,"du1p_price":105.43,"du1p_amt":56299,"du1p_note":"","du1d_open":1141614.78,"du1d_close":1141795.65,"du1d_L":180.87,"du1d_price":90.85,"du1d_amt":16432,"du1d_note":"","du2p_open":25366.23,"du2p_close":25398.66,"du2p_L":32.43,"du2p_price":105.43,"du2p_amt":3419,"du2p_note":"","du2d_open":1105198.46,"du2d_close":1105506.67,"du2d_L":308.21,"du2d_price":90.85,"du2d_amt":28000,"du2d_note":""},
+347: {"date":"2025-12-20","du1p_open":1383186.27,"du1p_close":1383735.56,"du1p_L":549.29,"du1p_price":105.43,"du1p_amt":57911,"du1p_note":"","du1d_open":1141855.76,"du1d_close":1142101.3,"du1d_L":245.54,"du1d_price":90.85,"du1d_amt":22307,"du1d_note":"","du2p_open":25404.35,"du2p_close":25428.81,"du2p_L":24.46,"du2p_price":105.43,"du2p_amt":2578,"du2p_note":"","du2d_open":1105543.01,"du2d_close":1105784.35,"du2d_L":241.34,"du2d_price":90.85,"du2d_amt":21925,"du2d_note":""},
+348: {"date":"2025-12-21","du1p_open":1383852.45,"du1p_close":1384309.72,"du1p_L":457.27,"du1p_price":105.43,"du1p_amt":48209,"du1p_note":"","du1d_open":1142227.55,"du1d_close":1142479.77,"du1d_L":252.22,"du1d_price":90.85,"du1d_amt":22914,"du1d_note":"","du2p_open":25452.52,"du2p_close":25526.64,"du2p_L":74.12,"du2p_price":105.43,"du2p_amt":7814,"du2p_note":"","du2d_open":1105839.39,"du2d_close":1106098.73,"du2d_L":259.34,"du2d_price":90.85,"du2d_amt":23561,"du2d_note":""},
+349: {"date":"2025-12-22","du1p_open":1384420.99,"du1p_close":1384867.12,"du1p_L":446.13,"du1p_price":105.43,"du1p_amt":47035,"du1p_note":"","du1d_open":1142684.71,"du1d_close":1143094.58,"du1d_L":409.87,"du1d_price":90.85,"du1d_amt":37236,"du1d_note":"","du2p_open":25538.02,"du2p_close":25599.08,"du2p_L":61.06,"du2p_price":105.43,"du2p_amt":6437,"du2p_note":"","du2d_open":1106202.58,"du2d_close":1106551.83,"du2d_L":349.25,"du2d_price":90.85,"du2d_amt":31729,"du2d_note":""},
+350: {"date":"2025-12-23","du1p_open":1384918.06,"du1p_close":1385463.46,"du1p_L":545.4,"du1p_price":105.43,"du1p_amt":57501,"du1p_note":"","du1d_open":1143149.62,"du1d_close":1143511.86,"du1d_L":362.24,"du1d_price":90.85,"du1d_amt":32909,"du1d_note":"","du2p_open":25599.08,"du2p_close":25752.67,"du2p_L":153.59,"du2p_price":105.43,"du2p_amt":16192,"du2p_note":"","du2d_open":1106573.84,"du2d_close":1107206.49,"du2d_L":632.65,"du2d_price":90.85,"du2d_amt":57476,"du2d_note":""},
+351: {"date":"2025-12-24","du1p_open":1385528.19,"du1p_close":1385999.17,"du1p_L":470.98,"du1p_price":105.43,"du1p_amt":49655,"du1p_note":"","du1d_open":1143560.32,"du1d_close":1143943.21,"du1d_L":382.89,"du1d_price":90.85,"du1d_amt":34785,"du1d_note":"","du2p_open":25752.67,"du2p_close":25873.76,"du2p_L":121.09,"du2p_price":105.43,"du2p_amt":12766,"du2p_note":"","du2d_open":1107353.69,"du2d_close":1107820.06,"du2d_L":466.97,"du2d_price":90.85,"du2d_amt":42424,"du2d_note":"Minor: Calc=466.37"},
+352: {"date":"2025-12-25","du1p_open":1386082.42,"du1p_close":1386460.3,"du1p_L":377.88,"du1p_price":105.43,"du1p_amt":39839,"du1p_note":"","du1d_open":1144022.46,"du1d_close":1144233.12,"du1d_L":210.66,"du1d_price":90.85,"du1d_amt":19138,"du1d_note":"","du2p_open":25878.5,"du2p_close":26027.01,"du2p_L":148.51,"du2p_price":105.43,"du2p_amt":15657,"du2p_note":"","du2d_open":1107907.16,"du2d_close":1108267.87,"du2d_L":360.71,"du2d_price":90.85,"du2d_amt":32770,"du2d_note":""},
+353: {"date":"2025-12-26","du1p_open":1386539.48,"du1p_close":1386715.31,"du1p_L":175.83,"du1p_price":105.43,"du1p_amt":18537,"du1p_note":"","du1d_open":1144402.2,"du1d_close":1144702.73,"du1d_L":300.53,"du1d_price":90.85,"du1d_amt":27303,"du1d_note":"","du2p_open":26032.7,"du2p_close":26395.22,"du2p_L":362.52,"du2p_price":105.43,"du2p_amt":38220,"du2p_note":"","du2d_open":1108285.7,"du2d_close":1108845.83,"du2d_L":560.13,"du2d_price":90.85,"du2d_amt":50887,"du2d_note":""},
+354: {"date":"2025-12-27","du1p_open":1386783.49,"du1p_close":1386916.73,"du1p_L":133.24,"du1p_price":105.43,"du1p_amt":14047,"du1p_note":"","du1d_open":1144824.51,"du1d_close":1144969.51,"du1d_L":145.0,"du1d_price":90.85,"du1d_amt":13173,"du1d_note":"","du2p_open":26397.12,"du2p_close":26675.65,"du2p_L":278.53,"du2p_price":105.43,"du2p_amt":29365,"du2p_note":"","du2d_open":1108907.57,"du2d_close":1109388.05,"du2d_L":480.48,"du2d_price":90.85,"du2d_amt":43651,"du2d_note":""},
+355: {"date":"2025-12-28","du1p_open":1386954.62,"du1p_close":1387514.46,"du1p_L":559.84,"du1p_price":105.43,"du1p_amt":59023,"du1p_note":"","du1d_open":1145065.82,"du1d_close":1145438.9,"du1d_L":373.08,"du1d_price":90.85,"du1d_amt":33894,"du1d_note":"","du2p_open":26688.09,"du2p_close":26766.17,"du2p_L":72.08,"du2p_price":105.43,"du2p_amt":7599,"du2p_note":"Minor: Calc=78.08","du2d_open":1109462.89,"du2d_close":1110159.5,"du2d_L":696.61,"du2d_price":90.85,"du2d_amt":63287,"du2d_note":""},
+356: {"date":"2025-12-29","du1p_open":1387666.12,"du1p_close":1388172.9,"du1p_L":506.78,"du1p_price":105.43,"du1p_amt":53429,"du1p_note":"","du1d_open":1145513.19,"du1d_close":1145861.92,"du1d_L":348.73,"du1d_price":90.85,"du1d_amt":31682,"du1d_note":"","du2p_open":26760.17,"du2p_close":26792.61,"du2p_L":32.44,"du2p_price":105.43,"du2p_amt":3420,"du2p_note":"","du2d_open":1110203.52,"du2d_close":1110572.91,"du2d_L":369.39,"du2d_price":90.85,"du2d_amt":33559,"du2d_note":""},
+357: {"date":"2025-12-30","du1p_open":1388779.96,"du1p_close":1388859.08,"du1p_L":79.12,"du1p_price":105.43,"du1p_amt":8341,"du1p_note":"","du1d_open":1146287.79,"du1d_close":1146341.17,"du1d_L":53.38,"du1d_price":90.85,"du1d_amt":4849,"du1d_note":"","du2p_open":26925.94,"du2p_close":26935.83,"du2p_L":9.89,"du2p_price":105.43,"du2p_amt":1042,"du2p_note":"","du2d_open":1111027.74,"du2d_close":1111062.97,"du2d_L":35.23,"du2d_price":90.85,"du2d_amt":3200,"du2d_note":""},
+358: {"date":"2025-12-31","du1p_open":1388859.08,"du1p_close":1389301.31,"du1p_L":442.23,"du1p_price":105.43,"du1p_amt":46624,"du1p_note":"","du1d_open":1146341.17,"du1d_close":1146716.71,"du1d_L":375.54,"du1d_price":90.85,"du1d_amt":34117,"du1d_note":"","du2p_open":26935.83,"du2p_close":27010.21,"du2p_L":74.38,"du2p_price":105.43,"du2p_amt":7841,"du2p_note":"","du2d_open":1111062.97,"du2d_close":1111312.39,"du2d_L":249.42,"du2d_price":90.85,"du2d_amt":22659,"du2d_note":""},
+359: {"date":"2026-01-01","du1p_open":1389355.58,"du1p_close":1389873.45,"du1p_L":517.87,"du1p_price":105.43,"du1p_amt":54599,"du1p_note":"","du1d_open":1146842.13,"du1d_close":1147103.26,"du1d_L":261.13,"du1d_price":90.85,"du1d_amt":23723,"du1d_note":"","du2p_open":27015.24,"du2p_close":27045.41,"du2p_L":30.22,"du2p_price":105.43,"du2p_amt":3186,"du2p_note":"","du2d_open":1111380.63,"du2d_close":1111699.45,"du2d_L":318.82,"du2d_price":90.85,"du2d_amt":28964,"du2d_note":""},
+360: {"date":"2026-01-02","du1p_open":1389939.08,"du1p_close":1390470.74,"du1p_L":531.66,"du1p_price":105.43,"du1p_amt":56052,"du1p_note":"","du1d_open":1147151.2,"du1d_close":1147504.79,"du1d_L":353.59,"du1d_price":90.85,"du1d_amt":32123,"du1d_note":"","du2p_open":27045.46,"du2p_close":27112.87,"du2p_L":67.41,"du2p_price":105.43,"du2p_amt":7107,"du2p_note":"","du2d_open":1111733.84,"du2d_close":1112103.79,"du2d_L":369.95,"du2d_price":90.85,"du2d_amt":33609,"du2d_note":""},
+361: {"date":"2026-01-03","du1p_open":1390519.53,"du1p_close":1390991.68,"du1p_L":472.15,"du1p_price":105.43,"du1p_amt":49778,"du1p_note":"","du1d_open":1147613.12,"du1d_close":1147991.92,"du1d_L":378.8,"du1d_price":90.85,"du1d_amt":34413,"du1d_note":"","du2p_open":27112.87,"du2p_close":27152.4,"du2p_L":39.53,"du2p_price":105.43,"du2p_amt":4167,"du2p_note":"","du2d_open":1112170.23,"du2d_close":1112503.45,"du2d_L":332.52,"du2d_price":90.85,"du2d_amt":30209,"du2d_note":"Minor: Calc=333.22"},
+362: {"date":"2026-01-04","du1p_open":1391566.16,"du1p_close":1391646.17,"du1p_L":80.01,"du1p_price":105.43,"du1p_amt":8435,"du1p_note":"","du1d_open":1148427.18,"du1d_close":1148597.03,"du1d_L":169.85,"du1d_price":90.85,"du1d_amt":15430,"du1d_note":"","du2p_open":27205.25,"du2p_close":27205.25,"du2p_L":0.0,"du2p_price":105.43,"du2p_amt":0,"du2p_note":"Zero litres","du2d_open":1113055.7,"du2d_close":1113143.86,"du2d_L":88.16,"du2d_price":90.85,"du2d_amt":8009,"du2d_note":""},
+363: {"date":"2026-01-05","du1p_open":1391646.17,"du1p_close":1392100.01,"du1p_L":453.84,"du1p_price":105.43,"du1p_amt":47848,"du1p_note":"","du1d_open":1148597.03,"du1d_close":1148879.63,"du1d_L":282.6,"du1d_price":90.85,"du1d_amt":25674,"du1d_note":"","du2p_open":27205.25,"du2p_close":27307.19,"du2p_L":101.94,"du2p_price":105.43,"du2p_amt":10747,"du2p_note":"","du2d_open":1113143.86,"du2d_close":1113417.98,"du2d_L":274.12,"du2d_price":90.85,"du2d_amt":24903,"du2d_note":""},
+364: {"date":"2026-01-06","du1p_open":1392206.86,"du1p_close":1392665.5,"du1p_L":458.64,"du1p_price":105.43,"du1p_amt":48354,"du1p_note":"","du1d_open":1149098.15,"du1d_close":1149373.56,"du1d_L":275.41,"du1d_price":90.85,"du1d_amt":25020,"du1d_note":"","du2p_open":27318.01,"du2p_close":27341.04,"du2p_L":23.03,"du2p_price":105.43,"du2p_amt":2428,"du2p_note":"","du2d_open":1113428.99,"du2d_close":1113772.6,"du2d_L":343.61,"du2d_price":90.85,"du2d_amt":31216,"du2d_note":""},
+365: {"date":"2026-01-07","du1p_open":1392757.89,"du1p_close":1393221.84,"du1p_L":463.95,"du1p_price":105.43,"du1p_amt":48914,"du1p_note":"","du1d_open":1149504.54,"du1d_close":1149791.21,"du1d_L":286.67,"du1d_price":90.85,"du1d_amt":26043,"du1d_note":"","du2p_open":27341.04,"du2p_close":27447.98,"du2p_L":106.94,"du2p_price":105.43,"du2p_amt":11274,"du2p_note":"","du2d_open":1113829.95,"du2d_close":1114168.33,"du2d_L":338.38,"du2d_price":90.85,"du2d_amt":30741,"du2d_note":""},
+366: {"date":"2026-01-08","du1p_open":1393273.22,"du1p_close":1393710.29,"du1p_L":437.07,"du1p_price":105.43,"du1p_amt":46080,"du1p_note":"","du1d_open":1149818.55,"du1d_close":1150135.88,"du1d_L":317.33,"du1d_price":90.85,"du1d_amt":28829,"du1d_note":"","du2p_open":27452.54,"du2p_close":27469.54,"du2p_L":17.0,"du2p_price":105.43,"du2p_amt":1792,"du2p_note":"","du2d_open":1114179.34,"du2d_close":1114546.24,"du2d_L":366.9,"du2d_price":90.85,"du2d_amt":33332,"du2d_note":""},
+367: {"date":"2026-01-09","du1p_open":1393740.17,"du1p_close":1394229.15,"du1p_L":488.98,"du1p_price":105.43,"du1p_amt":51553,"du1p_note":"","du1d_open":1150265.4,"du1d_close":1150599.7,"du1d_L":334.3,"du1d_price":90.85,"du1d_amt":30371,"du1d_note":"","du2p_open":27469.54,"du2p_close":27558.92,"du2p_L":89.38,"du2p_price":105.43,"du2p_amt":9423,"du2p_note":"","du2d_open":1114548.44,"du2d_close":1115031.9,"du2d_L":483.46,"du2d_price":90.85,"du2d_amt":43922,"du2d_note":""},
+368: {"date":"2026-01-10","du1p_open":1394299.43,"du1p_close":1394680.53,"du1p_L":381.1,"du1p_price":105.43,"du1p_amt":40179,"du1p_note":"","du1d_open":1150619.51,"du1d_close":1150890.83,"du1d_L":271.73,"du1d_price":90.85,"du1d_amt":24686,"du1d_note":"Minor: Calc=271.32","du2p_open":27566.05,"du2p_close":27669.02,"du2p_L":102.97,"du2p_price":105.43,"du2p_amt":10856,"du2p_note":"","du2d_open":1115085.95,"du2d_close":1115353.23,"du2d_L":267.28,"du2d_price":90.85,"du2d_amt":24282,"du2d_note":""},
+369: {"date":"2026-01-11","du1p_open":1394712.98,"du1p_close":1395254.24,"du1p_L":541.26,"du1p_price":105.43,"du1p_amt":57065,"du1p_note":"","du1d_open":1150946.45,"du1d_close":1151147.27,"du1d_L":200.82,"du1d_price":90.85,"du1d_amt":18244,"du1d_note":"","du2p_open":27669.04,"du2p_close":27714.0,"du2p_L":44.96,"du2p_price":105.43,"du2p_amt":4740,"du2p_note":"","du2d_open":1115425.88,"du2d_close":1115802.12,"du2d_L":376.24,"du2d_price":90.85,"du2d_amt":34187,"du2d_note":""},
+370: {"date":"2026-01-12","du1p_open":1395326.43,"du1p_close":1395807.21,"du1p_L":480.78,"du1p_price":105.43,"du1p_amt":50688,"du1p_note":"","du1d_open":1151219.71,"du1d_close":1151490.53,"du1d_L":270.82,"du1d_price":90.85,"du1d_amt":24603,"du1d_note":"","du2p_open":27715.9,"du2p_close":27797.19,"du2p_L":81.29,"du2p_price":105.43,"du2p_amt":8570,"du2p_note":"","du2d_open":1115868.17,"du2d_close":1116213.76,"du2d_L":345.59,"du2d_price":90.85,"du2d_amt":31396,"du2d_note":""},
+371: {"date":"2026-01-13","du1p_open":1395911.41,"du1p_close":1396398.31,"du1p_L":486.9,"du1p_price":105.43,"du1p_amt":51333,"du1p_note":"","du1d_open":1151543.64,"du1d_close":1151875.03,"du1d_L":331.39,"du1d_price":90.85,"du1d_amt":30106,"du1d_note":"","du2p_open":27798.52,"du2p_close":27882.8,"du2p_L":84.28,"du2p_price":105.43,"du2p_amt":8885,"du2p_note":"","du2d_open":1116254.93,"du2d_cl
+<truncated 26221 bytes>
+
+NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.

@@ -1,0 +1,65 @@
+Rows in cleaned file: 59
+Rows with doubts/discrepancies: 58
+Sort order: oldest invoice date to latest invoice date; each PDF page/material line is kept separately.
+Quantity rule applied: quantity_kl is restricted to 4, 8, or 12 KL. Unclear quantities are left blank and flagged.
+Final field scope: rates are excluded; file keeps product quantity, product/item total, and full bill total.
+
+Doubts/discrepancies:
+- 11-Jan-25 | 11 jan 2026 to 30 jan 2026.pdf p1 | Petrol | qty=8 | quantity 8 KL corrected from OCR; material total unclear; original OCR note: missing rate_per_kl; missing material_total
+- 11-Jan-25 | 11 jan 2026 to 30 jan 2026.pdf p1 | Diesel | qty=unclear | quantity unclear; allowed values are 4/8/12 KL; material total unclear; original OCR note: missing quantity_kl; missing rate_per_kl; missing material_total
+- 22-Jan-25 | 11 jan 2026 to 30 jan 2026.pdf p2 | Petrol | qty=8 | quantity 8 KL corrected from OCR; material total unclear; invoice total unclear; original OCR note: missing material_total
+- 22-Jan-25 | 11 jan 2026 to 30 jan 2026.pdf p2 | Diesel | qty=8 | material total unclear; invoice total unclear; original OCR note: missing material_total
+- 30-Jan-25 | 11 jan 2026 to 30 jan 2026.pdf p3 | Petrol | qty=8 | quantity 8 KL corrected from OCR; invoice total unclear
+- 30-Jan-25 | 11 jan 2026 to 30 jan 2026.pdf p3 | Diesel | qty=4 | material total unclear; invoice total unclear; original OCR note: missing material_total
+- 12-Dec-24 | 12. dec 2024 to 31 dec 2024.pdf p1 | Petrol | qty=4 | invoice total unclear
+- 12-Dec-24 | 12. dec 2024 to 31 dec 2024.pdf p1 | Diesel | qty=8 | material total unclear; invoice total unclear; original OCR note: missing material_total
+- 24-Dec-24 | 12. dec 2024 to 31 dec 2024.pdf p2 | Petrol | qty=4 | time unclear; TT/truck number unclear; invoice total unclear; original OCR note: missing time; bill total calculated from item totals; bottom total OCR unclear
+- 24-Dec-24 | 12. dec 2024 to 31 dec 2024.pdf p2 | Diesel | qty=8 | time unclear; TT/truck number unclear; invoice total unclear; original OCR note: missing time; bill total calculated from item totals; bottom total OCR unclear
+- 31-Dec-24 | 12. dec 2024 to 31 dec 2024.pdf p3 | Petrol | qty=8 | invoice total unclear; original OCR note: missing rate_per_kl; bill total calculated from item totals; bottom total OCR unclear
+- 31-Dec-24 | 12. dec 2024 to 31 dec 2024.pdf p3 | Diesel | qty=4 | invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+- 05-Feb-25 | 5 feb 2025 to 28 feb 2025.pdf p1 | Diesel | qty=12 | TT/truck number unclear; item total from ocr_total_line; original OCR note: missing rate_per_kl
+- 15-Feb-25 | 5 feb 2025 to 28 feb 2025.pdf p2 | Petrol | qty=4 | item total from ocr_total_line; invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+- 15-Feb-25 | 5 feb 2025 to 28 feb 2025.pdf p2 | Diesel | qty=8 | invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+- 21-Feb-25 | 5 feb 2025 to 28 feb 2025.pdf p3 | Petrol | qty=8 | item total from ocr_total_line; invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+- 28-Feb-25 | 5 feb 2025 to 28 feb 2025.pdf p4 | Petrol | qty=8 | item total from ocr_total_line; invoice total unclear; original OCR note: missing rate_per_kl; missing material_total; bill total calculated from item totals; bottom total OCR unclear
+- 28-Feb-25 | 5 feb 2025 to 28 feb 2025.pdf p4 | Diesel | qty=4 | invoice total unclear; original OCR note: missing rate_per_kl; bill total calculated from item totals; bottom total OCR unclear
+- 08-Mar-25 | 8 march 2025 to 31 march 2025.pdf p1 | Diesel | qty=12 | item total from ocr_total_line; invoice total unclear; original OCR note: missing rate_per_kl; bill total calculated from item totals; bottom total OCR unclear
+- 15-Mar-25 | 8 march 2025 to 31 march 2025.pdf p2 | Diesel | qty=8 | material total unclear; invoice total unclear; original OCR note: missing material_total
+- 22-Mar-25 | 8 march 2025 to 31 march 2025.pdf p3 | Petrol | qty=unclear | quantity unclear; allowed values are 4/8/12 KL; invoice total unclear; original OCR note: missing rate_per_kl; bill total calculated from item totals; bottom total OCR unclear
+- 31-Mar-25 | 8 march 2025 to 31 march 2025.pdf p4 | Petrol | qty=8 | SAP entry no unclear; material total unclear; invoice total unclear; original OCR note: missing sap_entry_no; missing material_total
+- 31-Mar-25 | 8 march 2025 to 31 march 2025.pdf p4 | Diesel | qty=4 | SAP entry no unclear; material total unclear; invoice total unclear; original OCR note: missing sap_entry_no; missing rate_per_kl; missing material_total
+- 09-Nov-24 | 9 nov 2024 to 30 nov 2024.pdf p1 | Diesel | qty=12 | invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+- 10-Nov-24 | 9 nov 2024 to 30 nov 2024.pdf p2 | Petrol | qty=8 | invoice total unclear; original OCR note: missing rate_per_kl; bill total calculated from item totals; bottom total OCR unclear
+- 20-Nov-24 | 9 nov 2024 to 30 nov 2024.pdf p3 | Petrol | qty=4 | item total from ocr_total_line; invoice total unclear; original OCR note: missing quantity_kl; bill total calculated from item totals; bottom total OCR unclear
+- 20-Nov-24 | 9 nov 2024 to 30 nov 2024.pdf p3 | Diesel | qty=8 | invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+- 27-Nov-24 | 9 nov 2024 to 30 nov 2024.pdf p4 | Diesel | qty=unclear | quantity unclear; allowed values are 4/8/12 KL; material total unclear; invoice total unclear; original OCR note: missing quantity_kl; missing rate_per_kl; missing material_total
+- 30-Nov-24 | 9 nov 2024 to 30 nov 2024.pdf p5 | Petrol | qty=unclear | quantity unclear; allowed values are 4/8/12 KL; item total from ocr_total_line; bill total from ocr_column; original OCR note: missing rate_per_kl
+- 30-Nov-24 | 9 nov 2024 to 30 nov 2024.pdf p5 | Petrol | qty=8 | item total from ocr_total_line; bill total from ocr_column; original OCR note: missing quantity_kl; missing material_total
+- 30-Nov-24 | 9 nov 2024 to 30 nov 2024.pdf p5 | Diesel | qty=4 | bill total from ocr_column
+- 11-Jun-26 | 11 june 2026.pdf p1 | Diesel | qty=12 | TT/truck number unclear; invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+- 14-May-26 | 14 may 2026.pdf p1 | Petrol | qty=4 | invoice total unclear
+- 14-May-26 | 14 may 2026.pdf p1 | Diesel | qty=unclear | quantity unclear; allowed values are 4/8/12 KL; material total unclear; invoice total unclear; original OCR note: missing rate_per_kl
+- 17-Apr-26 | 17 April 2026.pdf p1 | Petrol | qty=4 | time unclear; material total unclear; invoice total unclear; original OCR note: missing date; missing time; missing material_total
+- 17-Apr-26 | 17 April 2026.pdf p1 | Diesel | qty=8 | time unclear; material total unclear; invoice total unclear; original OCR note: missing date; missing time; missing material_total
+- 18-Jun-26 | 18 june 2026.pdf p1 | Petrol | qty=4 | invoice total unclear
+- 18-Jun-26 | 18 june 2026.pdf p1 | Diesel | qty=8 | material total unclear; invoice total unclear; original OCR note: missing material_total
+- 19-May-26 | 19 may 2026.pdf p1 | Petrol | qty=8 | item total from ocr_total_line; invoice total unclear; original OCR note: missing quantity_kl; missing rate_per_kl; missing material_total
+- 19-May-26 | 19 may 2026.pdf p1 | Diesel | qty=unclear | quantity unclear; allowed values are 4/8/12 KL; material total unclear; invoice total unclear; original OCR note: missing quantity_kl; missing rate_per_kl
+- 02-Apr-26 | 2 April 2026.pdf p1 | Petrol | qty=4 | invoice total unclear
+- 02-Apr-26 | 2 April 2026.pdf p1 | Diesel | qty=8 | material total unclear; invoice total unclear; original OCR note: missing material_total
+- 21-Apr-26 | 21 April 2026.pdf p1 | Petrol | qty=8 | material total unclear; invoice total unclear; original OCR note: missing material_total
+- 21-Apr-26 | 21 April 2026.pdf p1 | Diesel | qty=4 | material total unclear; invoice total unclear; original OCR note: missing quantity_kl; missing rate_per_kl; missing material_total
+- 21-May-26 | 21 may 2026.pdf p1 | Diesel | qty=12 | time unclear; TT/truck number unclear; invoice total unclear; original OCR note: missing time; missing tt_number; bill total calculated from item totals; bottom total OCR unclear
+- 23-May-26 | 23 may 2026.pdf p1 | Diesel | qty=12 | invoice total unclear; original OCR note: missing sap_entry_no; bill total calculated from item totals; bottom total OCR unclear
+- 24-Jun-26 | 24 june 2026.pdf p1 | Petrol | qty=4 | invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+- 26-May-26 | 26 may 2026.pdf p1 | Diesel | qty=12 | item total from ocr_total_line; bill total from ocr_column; original OCR note: missing material_total
+- 27-Apr-26 | 27 April 2026.pdf p1 | Petrol | qty=4 | TT/truck number unclear; invoice total unclear
+- 27-Apr-26 | 27 April 2026.pdf p1 | Diesel | qty=8 | TT/truck number unclear; material total unclear; invoice total unclear; original OCR note: missing material_total
+- 29-May-26 | 29 may 2026.pdf p1 | Petrol | qty=4 | invoice total unclear
+- 29-May-26 | 29 may 2026.pdf p1 | Diesel | qty=8 | material total unclear; invoice total unclear; original OCR note: missing material_total
+- 30-Apr-26 | 30 April 2026.pdf p1 | Petrol | qty=4 | invoice total unclear; original OCR note: missing rate_per_kl; bill total calculated from item totals; bottom total OCR unclear
+- 05-Jun-26 | 5 june 2026.pdf p1 | Petrol | qty=12 | quantity 12 KL corrected from OCR; item total from visual_verified; bill total from visual_verified; original OCR note: No EBMS/HSD material row found by OCR
+- 07-May-26 | 7 may 2026.pdf p1 | Petrol | qty=4 | invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+- 07-May-26 | 7 may 2026.pdf p1 | Diesel | qty=8 | invoice total unclear; bill total calculated from item totals; bottom total OCR unclear
+- 09-Apr-26 | 9 April 2026.pdf p1 | Petrol | qty=4 | invoice total unclear
+- 09-Apr-26 | 9 April 2026.pdf p1 | Diesel | qty=8 | material total unclear; invoice total unclear; original OCR note: missing material_total

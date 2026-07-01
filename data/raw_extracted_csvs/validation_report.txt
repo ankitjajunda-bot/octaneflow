@@ -1,0 +1,344 @@
+=== PUMP DSR EXTRACTION VALIDATION REPORT ===
+Generated on: 2026-06-28 02:41:19
+
+--- Date: 2025-11-10 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=141847.0, Reconciliation Total=34250.0
+
+--- Date: 2025-11-11 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=158291.0, Reconciliation Total=52103.0
+
+--- Date: 2025-11-12 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=27319.0, Reconciliation Total=48805.0
+
+--- Date: 2025-11-13 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=126351.0, Reconciliation Total=51679.0
+
+--- Date: 2025-11-14 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=146272.0, Reconciliation Total=33138.0
+
+--- Date: 2025-11-15 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=130307.0, Reconciliation Total=3360.0
+
+--- Date: 2025-11-16 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=149965.0, Reconciliation Total=49621.0
+
+--- Date: 2025-11-17 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=130387.0, Reconciliation Total=24780.0
+
+--- Date: 2025-11-18 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=135623.0, Reconciliation Total=31155.0
+
+--- Date: 2025-11-19 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=137131.0, Reconciliation Total=29292.0
+
+--- Date: 2025-11-20 ---
+  Nozzle 4 (DU2-N2): Litres mismatch! Calculated=360.48, Written=360.42
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=160678.0, Reconciliation Total=44528.0
+
+--- Date: 2025-11-21 ---
+  Nozzle 2 (DU1-N2): Litres mismatch! Calculated=293.68, Written=293.08
+  ⚠️ Grand Total discrepancy! Sum of nozzles=144445, Written Grand Total=144945
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=88780.0, Reconciliation Total=19380.0
+
+--- Date: 2025-11-22 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=187852.0, Reconciliation Total=187972.0
+
+--- Date: 2025-11-23 ---
+
+--- Date: 2025-11-24 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=132271.0, Reconciliation Total=55158.0
+
+--- Date: 2025-11-25 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=186062.0, Reconciliation Total=59076
+
+--- Date: 2025-11-26 ---
+
+--- Date: 2025-11-27 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=180186.0, Reconciliation Total=42366.0
+
+--- Date: 2025-11-28 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=170112.0, Reconciliation Total=160869
+
+--- Date: 2025-11-29 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=138109.0, Reconciliation Total=140073.0
+
+--- Date: 2025-11-30 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=195331.0, Reconciliation Total=53755.0
+
+--- Date: 2025-12-01 ---
+  Nozzle 1 (DU1-N1): Litres mismatch! Calculated=546.19, Written=546.09
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=175779.0, Reconciliation Total=176309.0
+
+--- Date: 2025-12-02 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=120327.0, Reconciliation Total=34181
+
+--- Date: 2025-12-03 ---
+
+--- Date: 2025-12-04 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=144363.0, Reconciliation Total=14097
+
+--- Date: 2025-12-05 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=155139.0, Reconciliation Total=32231.0
+
+--- Date: 2025-12-06 ---
+
+--- Date: 2025-12-07 ---
+  Nozzle 3 (DU2-N1): Litres mismatch! Calculated=535.25, Written=35.25
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=108038.0, Reconciliation Total=37862.0
+
+--- Date: 2025-12-08 ---
+  Nozzle 1 (DU1-N1): Amount mismatch! Calculated=63785.15, Written=63874
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=155227.0, Reconciliation Total=35175
+
+--- Date: 2025-12-09 ---
+  Nozzle 3 (DU2-N1): Litres mismatch! Calculated=53.8, Written=53.86
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=130299.0, Reconciliation Total=15000
+
+--- Date: 2025-12-10 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=124937.0, Reconciliation Total=28657.0
+
+--- Date: 2025-12-11 ---
+
+--- Date: 2025-12-12 ---
+  ⚠️ Grand Total discrepancy! Sum of nozzles=18501, Written Grand Total=135863
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=135900.0, Reconciliation Total=19610
+
+--- Date: 2025-12-13 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=105712.0, Reconciliation Total=105602.0
+
+--- Date: 2025-12-14 ---
+
+--- Date: 2025-12-15 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=128032.0, Reconciliation Total=23035.0
+
+--- Date: 2025-12-16 ---
+  Nozzle 2 (DU1-N2): Litres mismatch! Calculated=204.3, Written=234.3
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=118720.0, Reconciliation Total=25490.0
+
+--- Date: 2025-12-17 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=147240.0, Reconciliation Total=22390.0
+
+--- Date: 2025-12-18 ---
+  Nozzle 2 (DU1-N2): Amount mismatch! Calculated=33604.51, Written=33590
+  Nozzle 4 (DU1-N2): Amount mismatch! Calculated=36215.54, Written=36198
+  ⚠️ Grand Total discrepancy! Sum of nozzles=152573, Written Grand Total=140714
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=139703.0, Reconciliation Total=14700
+
+--- Date: 2025-12-19 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=102188.0, Reconciliation Total=13720.0
+
+--- Date: 2025-12-20 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=136073.0, Reconciliation Total=31301.0
+
+--- Date: 2025-12-21 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=1163463.0, Reconciliation Total=40982.0
+
+--- Date: 2025-12-22 ---
+
+--- Date: 2025-12-23 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=164057.0, Reconciliation Total=24541.0
+
+--- Date: 2025-12-24 ---
+  Nozzle 4 (DU1-N2): Litres mismatch! Calculated=466.37, Written=466.97
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=139555.0, Reconciliation Total=24388.0
+
+--- Date: 2025-12-25 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=107368.0, Reconciliation Total=25920
+
+--- Date: 2025-12-26 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=133353.0, Reconciliation Total=134953.0
+
+--- Date: 2025-12-27 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=101733.0, Reconciliation Total=20855.0
+
+--- Date: 2025-12-28 ---
+  Nozzle 3 (DU2-N1): Litres mismatch! Calculated=78.08, Written=72.08
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=163775.0, Reconciliation Total=26747.0
+
+--- Date: 2025-12-29 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=122088.0, Reconciliation Total=25760
+
+--- Date: 2025-12-30 ---
+  ⚠️ Grand Total discrepancy! Sum of nozzles=17432, Written Grand Total=132295
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=135918.0, Reconciliation Total=17426
+
+--- Date: 2025-12-31 ---
+  ⚠️ Grand Total discrepancy! Sum of nozzles=111241, Written Grand Total=110250
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=111270.0, Reconciliation Total=23837
+
+--- Date: 2026-01-01 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=110115.0, Reconciliation Total=14456.0
+
+--- Date: 2026-01-02 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=128894.0, Reconciliation Total=21090.0
+
+--- Date: 2026-01-03 ---
+  Nozzle 4 (DU1-N2): Litres mismatch! Calculated=333.22, Written=332.52
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=88561.0, Reconciliation Total=11099.0
+
+--- Date: 2026-01-04 ---
+  ⚠️ Grand Total discrepancy! Sum of nozzles=31874, Written Grand Total=144652
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=120794.0, Reconciliation Total=31870.0
+
+--- Date: 2026-01-05 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=142197.0, Reconciliation Total=33247.0
+
+--- Date: 2026-01-06 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=72153.455, Reconciliation Total=56870
+
+--- Date: 2026-01-07 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=126308.0, Reconciliation Total=9371
+
+--- Date: 2026-01-08 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=110032.0, Reconciliation Total=15100.0
+
+--- Date: 2026-01-09 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=135239.0, Reconciliation Total=14840.0
+
+--- Date: 2026-01-10 ---
+  Nozzle 2 (DU1-N2): Litres mismatch! Calculated=271.32, Written=271.73
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=113534.0, Reconciliation Total=15070.0
+
+--- Date: 2026-01-11 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=122671.0, Reconciliation Total=20119.0
+
+--- Date: 2026-01-12 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=126164.0, Reconciliation Total=19686
+
+--- Date: 2026-01-13 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=137054.0, Reconciliation Total=18635
+
+--- Date: 2026-01-14 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=97962.0, Reconciliation Total=23380.0
+
+--- Date: 2026-01-15 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=104427.0, Reconciliation Total=19930.0
+
+--- Date: 2026-01-16 ---
+  ⚠️ Grand Total discrepancy! Sum of nozzles=26425, Written Grand Total=107375
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=132084.63, Reconciliation Total=26415.0
+
+--- Date: 2026-01-17 ---
+  ⚠️ Grand Total discrepancy! Sum of nozzles=103712, Written Grand Total=10372
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=103693.0, Reconciliation Total=23970.0
+
+--- Date: 2026-01-18 ---
+  ⚠️ Grand Total discrepancy! Sum of nozzles=101705, Written Grand Total=10705
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=135223.0, Reconciliation Total=33493
+
+--- Date: 2026-01-19 ---
+  Nozzle 3 (DU2-N1): Amount mismatch! Calculated=220.35, Written=209
+  ⚠️ Grand Total discrepancy! Sum of nozzles=51427, Written Grand Total=132703
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=241101.0, Reconciliation Total=51429.0
+
+--- Date: 2026-01-20 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=132254.0, Reconciliation Total=27340
+
+--- Date: 2026-01-21 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=165316.0, Reconciliation Total=29511
+
+--- Date: 2026-01-22 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=174602.0, Reconciliation Total=23211.0
+
+--- Date: 2026-01-23 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=166086.0, Reconciliation Total=33870
+
+--- Date: 2026-01-24 ---
+  Nozzle 4 (DU1-N2): Litres mismatch! Calculated=729.83, Written=669.26
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=112598.0, Reconciliation Total=15725.0
+
+--- Date: 2026-01-25 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=163203.0, Reconciliation Total=29575
+
+--- Date: 2026-01-26 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=76335.0, Reconciliation Total=28106.0
+
+--- Date: 2026-01-27 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=114860.0, Reconciliation Total=29240.0
+
+--- Date: 2026-01-28 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=136909.0, Reconciliation Total=23085
+
+--- Date: 2026-01-29 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=127569.0, Reconciliation Total=38810.0
+
+--- Date: 2026-01-30 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=127484.0, Reconciliation Total=25067.0
+
+--- Date: 2026-01-31 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=129408.0, Reconciliation Total=10667.0
+
+--- Date: 2026-02-01 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=35964.0, Reconciliation Total=669415
+
+--- Date: 2026-06-06 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=127622.0, Reconciliation Total=56794
+
+--- Date: 2026-06-07 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=247098.0, Reconciliation Total=93280
+
+--- Date: 2026-06-08 ---
+  Nozzle 1 (DU1-N1): Litres mismatch! Calculated=2508.21, Written=508.21
+
+--- Date: 2026-06-09 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=7216202.0, Reconciliation Total=85212
+
+--- Date: 2026-06-10 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=180860.0, Reconciliation Total=181000
+
+--- Date: 2026-06-11 ---
+  Nozzle 1 (DU1-N1): Litres mismatch! Calculated=475.33, Written=504.33
+  Nozzle 3 (DU2-N1): Litres mismatch! Calculated=158.91, Written=141.87
+
+--- Date: 2026-06-12 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=218886.0, Reconciliation Total=29572
+
+--- Date: 2026-06-13 ---
+  Nozzle 4 (DU1-N2): Litres mismatch! Calculated=496.47, Written=497.07
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=198204.0, Reconciliation Total=42170.0
+
+--- Date: 2026-06-14 ---
+  Nozzle 1 (DU1-N1): Litres mismatch! Calculated=-1349501.72, Written=498.28
+  Nozzle 2 (DU1-N2): Litres mismatch! Calculated=180.36, Written=747.71
+  Nozzle 3 (DU2-N1): Litres mismatch! Calculated=15.88, Written=101.93
+  Nozzle 4 (DU1-N2): Litres mismatch! Calculated=45.72, Written=183.5
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=134924.0, Reconciliation Total=26050
+
+--- Date: 2026-06-15 ---
+  ⚠️ Grand Total discrepancy! Sum of nozzles=58456, Written Grand Total=217148
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=277191.0, Reconciliation Total=58456.0
+
+--- Date: 2026-06-16 ---
+  Nozzle 3 (DU2-N1): Litres mismatch! Calculated=189.28, Written=184.28
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=264169.0, Reconciliation Total=68410
+
+--- Date: 2026-06-17 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=212118.0, Reconciliation Total=58434.0
+
+--- Date: 2026-06-18 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=83861.0, Reconciliation Total=34902
+
+--- Date: 2026-06-19 ---
+  ⚠️ Grand Total discrepancy! Sum of nozzles=47839, Written Grand Total=181625
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=224679.0, Reconciliation Total=185.0
+
+--- Date: 2026-06-20 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=187859.0, Reconciliation Total=47631.0
+
+--- Date: 2026-06-21 ---
+  ⚠️ Grand Total discrepancy! Sum of nozzles=33588, Written Grand Total=159539
+
+--- Date: 2026-06-22 ---
+  Nozzle 4 (DU1-N2): Amount mismatch! Calculated=20690.7, Written=26690
+  ⚠️ Grand Total discrepancy! Sum of nozzles=148174, Written Grand Total=142174
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=352568.0, Reconciliation Total=29401.0
+
+--- Date: 2026-06-23 ---
+
+--- Date: 2026-06-29 ---
+  ⚠️ Grand Total discrepancy! Sum of nozzles=28025, Written Grand Total=312156
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=290396.0, Reconciliation Total=28059.0
+
+--- Date: 2026-06-30 ---
+  ⚠️ Payments vs Reconciliation Total discrepancy! Sum of payments=236546.0, Reconciliation Total=48948
+
